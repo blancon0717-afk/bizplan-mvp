@@ -147,16 +147,22 @@ export default function ResultPage() {
   async function handleRegenerateAll() {
     setIsRegenAll(true);
     try {
-      const targets = sections.filter(
-        (s) => s.confidence_level === "red" || s.confidence_level === "yellow"
-      );
-      for (const s of targets) {
-        try {
-          await regenerateSection(sessionId, s.section_id);
-        } catch {
-          setRegenError("재생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-        }
+      const res = await fetch(`/api/sessions/${sessionId}/results/regenerate-all`, { method: "POST" });
+      if (res.status === 429) {
+        setRegenError("전체 고도화는 1회만 가능합니다.");
+        return;
       }
+      if (!res.ok) {
+        setRegenError("전체 고도화 중 오류가 발생했습니다.");
+        return;
+      }
+      const data = await res.json();
+      for (const section of (data.sections ?? [])) {
+        updateSectionAfterRegen(section, data.overall_completion);
+      }
+      api.getUsage(sessionId).then(setUsageData).catch(() => {});
+    } catch {
+      setRegenError("전체 고도화 중 오류가 발생했습니다.");
     } finally {
       setIsRegenAll(false);
     }
@@ -308,6 +314,9 @@ export default function ResultPage() {
                   <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
                 ) : "↺"}
                 전체 고도화 ({yellowCount + redCount}개 섹션)
+                <span className={(usageData.regenerate_all?.used ?? 0) >= (usageData.regenerate_all?.max ?? 1) ? "text-xs text-gray-400 ml-1" : "text-xs text-blue-500 ml-1"}>
+                  ({usageData.regenerate_all?.used ?? 0}/{usageData.regenerate_all?.max ?? 1})
+                </span>
               </button>
             )}
             <button

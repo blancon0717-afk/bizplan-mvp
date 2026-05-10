@@ -32,6 +32,7 @@ def create_session(session_id: str, program_code: str) -> Session:
         "regenerate": 0,
         "edit": 0,
         "action_plan": 0,
+        "regenerate_all": 0,
     }
     (_SESSIONS_DIR / f"{session_id}.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"

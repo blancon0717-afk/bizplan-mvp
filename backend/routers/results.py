@@ -179,6 +179,53 @@ def regenerate(session_id: str, section_id: str, body: RegenerateBody = Regenera
     }
 
 
+@router.post("/sessions/{session_id}/results/regenerate-all")
+def regenerate_all(session_id: str):
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if get_usage_count(session_id, "regenerate_all") >= 1:
+        raise HTTPException(status_code=429, detail="전체 고도화는 1회만 가능합니다.")
+    increment_usage(session_id, "regenerate_all")
+
+    results = load_results(session_id)
+    if results is None:
+        raise HTTPException(status_code=404, detail="Results not found")
+
+    form = load_form(session.program_code)
+    questions = load_initial_questions(_INITIAL_Q_PATH)
+    followup = load_followup_questions(_FOLLOWUP_Q_PATH) if _FOLLOWUP_Q_PATH.exists() else None
+    skills = load_skills(_SKILLS_DIR) if _SKILLS_DIR.exists() else []
+
+    targets = [r for r in results if r.confidence_level in ("red", "yellow")]
+    results_map = {r.section_id: r for r in results}
+    for prev in targets:
+        section = form.get_section(prev.section_id)
+        if section is None:
+            continue
+        try:
+            new_result = regenerate_section(
+                form, section, questions, session.answers, skills, prev, followup,
+                company_context=session.company_context,
+            )
+            new_result = apply_post_judgment(new_result)
+            if prev.completion_score > 0 and new_result.completion_score < prev.completion_score:
+                new_result.completion_score = prev.completion_score
+            if prev.confidence_level == "green" and new_result.confidence_level != "green":
+                new_result.confidence_level = "green"
+            results_map[prev.section_id] = new_result
+        except Exception as e:
+            logger.error("[전체 고도화 실패] %s: %s", prev.section_id, e)
+
+    final = list(results_map.values())
+    save_results(session_id, final)
+    overall = calculate_overall_completion(final)
+    return {
+        "sections": [_section_to_dict(r) for r in final],
+        "overall_completion": overall,
+    }
+
+
 def _load_program_info(program_code: str) -> tuple[str, str, str]:
     """CSV에서 program_code에 해당하는 (name, 설명, 지원시기) 반환."""
     if not _PROGRAMS_CSV.exists():
@@ -439,7 +486,7 @@ def get_usage(session_id: str):
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    limits = {"generate": 1, "feedback": 1, "memo": 3, "regenerate": 1, "edit": 1, "action_plan": 1}
+    limits = {"generate": 1, "feedback": 1, "memo": 3, "regenerate": 1, "edit": 1, "action_plan": 1, "regenerate_all": 1}
     return {
         feature: {"used": get_usage_count(session_id, feature), "max": max_val}
         for feature, max_val in limits.items()
