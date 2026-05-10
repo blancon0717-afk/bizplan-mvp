@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useRecommendStore } from "@/store/recommendStore";
 
@@ -71,7 +71,12 @@ export default function ProgressNav() {
   const maxStep = useRecommendStore((s) => s.maxStep);
   const advanceStep = useRecommendStore((s) => s.advanceStep);
 
-  const sessionId = urlSessionId ?? storeSessionId;
+  const [localSessionId, setLocalSessionId] = useState<string | null>(null);
+  useEffect(() => {
+    setLocalSessionId(localStorage.getItem("bizplan_session_id"));
+  }, []);
+
+  const sessionId = urlSessionId ?? storeSessionId ?? localSessionId;
 
   useEffect(() => {
     advanceStep(currentStep);

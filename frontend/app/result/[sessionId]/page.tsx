@@ -51,6 +51,7 @@ export default function ResultPage() {
           api.getSession(sessionId),
         ]);
         init(sessionId, results.sections, results.overall_completion);
+        localStorage.setItem("bizplan_session_id", sessionId);
         const programs = await api.getPrograms();
         const prog = programs.programs.find((p) => p.code === session.program_code);
         setProgramName(prog?.name ?? session.program_code);
@@ -66,7 +67,12 @@ export default function ResultPage() {
           .finally(() => setIsLoadingScore(false));
         api.getUsage(sessionId).then(setUsageData).catch(() => {});
       } catch {
-        setError("결과를 불러올 수 없습니다.");
+        const savedId = localStorage.getItem("bizplan_session_id");
+        if (savedId && savedId !== sessionId) {
+          router.replace(`/result/${savedId}`);
+        } else {
+          setError("결과를 불러올 수 없습니다.");
+        }
       } finally {
         setIsLoading(false);
       }

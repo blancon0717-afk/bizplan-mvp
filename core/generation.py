@@ -865,10 +865,14 @@ def regenerate_section(
 {memo_responses_block or '(메모 답변 없음 — 그래도 기존 내용 개선 시도)'}
 
 ### 재생성 원칙
-- 사용자 보완 답변은 `user_answer` source로 분류
-- 이전 `llm_inferred` 부분 중 사용자 답변으로 대체 가능한 것은 교체
-- 여전히 부족한 부분만 `llm_inferred`로 유지하되 최소화
-- confidence_level은 한 단계 이상 상승 목표 (red→yellow, yellow→green)
+- **핵심 규칙: 최소한의 수정만 허용**
+- 사용자 보완 답변이 있는 메모의 anchor_text가 포함된 단락만 수정
+- 해당 단락 외 나머지 본문은 글자 하나도 바꾸지 말고 그대로 유지
+- 수정 방법: 해당 단락에 사용자 답변 내용을 자연스럽게 녹여서 보강
+- content_segments도 수정된 단락만 변경하고 나머지 segments는 이전 내용 그대로 유지
+- inline_suggestions는 수정된 단락의 메모만 제거하고 나머지 메모는 모두 유지
+- 메모 답변이 없으면 (memo_responses_block이 비어있으면) 본문을 전혀 수정하지 말고 이전 내용 그대로 반환
+- confidence_level은 메모 해소 개수에 비례해서 상승 (1개 해소: 유지 또는 한 단계 상승, 전체 해소: 한 단계 이상 상승)
 
 JSON 스키마는 동일. 반드시 JSON만 반환.
 """

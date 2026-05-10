@@ -33,6 +33,8 @@ from core.skills import load_skills
 router = APIRouter(tags=["generation"])
 logger = logging.getLogger(__name__)
 
+_SEVERITY_ORDER: dict[str, int] = {"critical": 0, "warning": 1, "info": 2}
+
 
 class GenerateRequest(BaseModel):
     section_ids: list[str] | None = None
@@ -239,6 +241,8 @@ async def generate_feedback(session_id: str):
                 eval_data = evaluate_section(r, r.section_id, r.section_title)
                 apply_eval_result(r, eval_data)
             await loop.run_in_executor(_executor, _eval)
+            result.inline_suggestions.sort(key=lambda s: _SEVERITY_ORDER.get(s.severity, 1))
+            result.inline_suggestions = result.inline_suggestions[:5]
             yield _sse("section_feedback_done", {
                 "section_id": result.section_id,
                 "confidence_level": result.confidence_level,
@@ -298,6 +302,8 @@ async def generate_single_section_feedback(session_id: str, section_id: str):
         apply_eval_result(target, eval_data)
 
     await loop.run_in_executor(_executor, _eval)
+    target.inline_suggestions.sort(key=lambda s: _SEVERITY_ORDER.get(s.severity, 1))
+    target.inline_suggestions = target.inline_suggestions[:5]
 
     results_map = {r.section_id: r for r in results}
     save_results(session_id, list(results_map.values()))

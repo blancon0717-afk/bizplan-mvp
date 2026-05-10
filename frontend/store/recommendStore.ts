@@ -26,7 +26,7 @@ export const useRecommendStore = create<RecommendState>()(
     }),
     {
       name: "bizplan-session",
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );
