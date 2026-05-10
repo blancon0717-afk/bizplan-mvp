@@ -304,6 +304,7 @@ export default function ResultPage() {
             <button
               onClick={handleDocumentCheck}
               disabled={isDocumentChecking}
+              title="오탈자, 문장 오류, 논리적 모순을 자동으로 점검합니다"
               className="flex items-center gap-2 px-3 py-2 rounded-xl border border-teal-200 text-teal-600 text-sm font-medium hover:bg-teal-50 disabled:opacity-50 transition-colors"
             >
               {isDocumentChecking ? (
@@ -315,6 +316,7 @@ export default function ResultPage() {
             <button
               onClick={handleActionPlan}
               disabled={isActionPlanLoading}
+              title="사업계획서 합격을 위해 대표님이 직접 실행해야 할 항목을 제시합니다"
               className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-200 text-purple-600 text-sm font-medium hover:bg-purple-50 disabled:opacity-50 transition-colors"
             >
               {isActionPlanLoading ? (
@@ -326,6 +328,7 @@ export default function ResultPage() {
             <button
               onClick={handleFeedback}
               disabled={isFeedbackRunning}
+              title="섹션별 약점을 분석하고 사업계획서 고도화를 위한 구체적인 피드백을 제공합니다"
               className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 text-blue-600 text-sm font-medium hover:bg-blue-50 disabled:opacity-50 transition-colors"
             >
               {isFeedbackRunning ? (

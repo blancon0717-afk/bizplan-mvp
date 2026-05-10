@@ -109,15 +109,6 @@ export default function InterviewPage() {
 
   const isAllAnswered = currentIndex >= questions.length;
 
-  async function handleLoadTestData() {
-    try {
-      const result = await api.loadTestSession(programCode ?? "changjungdae");
-      router.push(`/generating/${result.session_id}`);
-    } catch (e) {
-      alert("테스트 데이터 로드 실패: " + (e as Error).message);
-    }
-  }
-
   if (!isLoaded) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
@@ -226,22 +217,6 @@ export default function InterviewPage() {
         />
       )}
 
-      {/* 개발 모드 전용 테스트 도구 */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="flex-shrink-0 bg-amber-50 border-t border-amber-200 px-4 py-2">
-          <div className="max-w-2xl mx-auto flex items-center gap-3">
-            <span className="text-xs font-semibold text-amber-700 bg-amber-200 px-1.5 py-0.5 rounded">
-              DEV
-            </span>
-            <button
-              onClick={handleLoadTestData}
-              className="text-xs text-amber-800 border border-amber-300 rounded px-3 py-1 hover:bg-amber-100 transition-colors"
-            >
-              🧪 테스트 데이터 불러오기 (이포에이)
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
