@@ -1,6 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { SectionResult } from "@/lib/types";
+
+export interface MemoPanelHandle {
+  scrollToMemo: (originalIndex: number) => void;
+}
 
 const SEVERITY_STYLES = {
   critical: { icon: "🔴", label: "중요", ring: "ring-red-200 bg-red-50" },
@@ -11,10 +15,10 @@ const SEVERITY_STYLES = {
 interface MemoPanelProps {
   sections: SectionResult[];
   activeSectionId: string | null;
-  scrollToMemoIndex?: number | null;
   showAnchors?: boolean;
   onMemoChange: (sectionId: string, memoIndex: number, response: string) => void;
   onRegenerate: (sectionId: string, memoIndex: number, memoResponse: string) => void;
+  onMemoTitleClick?: (originalIndex: number) => void;
   isRegenerating: Record<string, boolean>;
 }
 
@@ -26,10 +30,11 @@ interface MemoCardProps {
   response: string;
   onChange: (value: string) => void;
   onRegenerate: (response: string) => void;
+  onAnchorClick?: () => void;
   isRegenerating: boolean;
 }
 
-function MemoCard({ index, anchorText, note, severity, response, onChange, onRegenerate, isRegenerating }: MemoCardProps) {
+function MemoCard({ index, anchorText, note, severity, response, onChange, onRegenerate, onAnchorClick, isRegenerating }: MemoCardProps) {
   const [value, setValue] = useState(response);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -50,7 +55,12 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
             <span>{style.icon}</span>
-            <span className="text-xs font-medium text-slate-600">{anchorText}</span>
+            <button
+              onClick={onAnchorClick}
+              className="text-xs font-medium text-slate-600 hover:text-blue-600 hover:underline text-left"
+            >
+              {anchorText}
+            </button>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">{note}</p>
         </div>
@@ -84,81 +94,110 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
   );
 }
 
-export default function MemoPanel({ sections, activeSectionId, scrollToMemoIndex, showAnchors = false, onMemoChange, onRegenerate, isRegenerating }: MemoPanelProps) {
-  const section = sections.find((s) => s.section_id === activeSectionId);
-  const memoRefs = useRef<(HTMLDivElement | null)[]>([]);
+const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
+  function MemoPanel({ sections, activeSectionId, showAnchors = false, onMemoChange, onRegenerate, onMemoTitleClick, isRegenerating }, ref) {
+    const section = sections.find((s) => s.section_id === activeSectionId);
+    const memoRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
-  useEffect(() => {
-    if (scrollToMemoIndex !== null && scrollToMemoIndex !== undefined) {
-      memoRefs.current[scrollToMemoIndex]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    useImperativeHandle(ref, () => ({
+      scrollToMemo: (originalIndex: number) => {
+        memoRefs.current[originalIndex]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      },
+    }));
+
+    if (!showAnchors) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
+          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">📋</div>
+          <p className="text-sm font-medium text-slate-600">메모 패널</p>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            상단의 <span className="font-medium text-blue-500">피드백 확인하기</span>를 클릭하면<br />
+            보완이 필요한 항목이 여기에 표시됩니다
+          </p>
+        </div>
+      );
     }
-  }, [scrollToMemoIndex]);
 
-  if (!showAnchors) {
+    if (!section) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+          섹션을 선택하면 메모가 표시됩니다
+        </div>
+      );
+    }
+
+    const visibleMemos = section.inline_suggestions
+      .map((m, originalIndex) => ({ ...m, originalIndex }))
+      .filter((m) => m.severity !== "critical");
+
+    const fullText = (section.content_segments ?? []).map((s) => s.text ?? "").join("");
+    const sortedVisibleMemos = [...visibleMemos].sort((a, b) => {
+      const posA = fullText.indexOf(a.anchor_text);
+      const posB = fullText.indexOf(b.anchor_text);
+      return posA - posB;
+    });
+
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
-        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">📋</div>
-        <p className="text-sm font-medium text-slate-600">메모 패널</p>
-        <p className="text-xs text-slate-400 leading-relaxed">
-          상단의 <span className="font-medium text-blue-500">피드백 확인하기</span>를 클릭하면<br />
-          보완이 필요한 항목이 여기에 표시됩니다
-        </p>
+      <div className="h-full flex flex-col">
+        <div className="flex-shrink-0 px-4 py-3 border-b border-slate-100">
+          <h3 className="font-semibold text-slate-700 text-sm truncate">
+            {section.section_title}
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            메모 {section.resolved_memo_count}/{sortedVisibleMemos.length} 해소 · {section.effective_completion_score}% 완성
+          </p>
+        </div>
+
+        {/* 메모 심각도 범례 */}
+        <div className="flex-shrink-0 px-4 py-1.5 border-b border-slate-100 bg-slate-50">
+          <div className="flex items-center gap-4 text-xs text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block flex-shrink-0" />
+              교체 필요
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block flex-shrink-0" />
+              검토 권장
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block flex-shrink-0" />
+              선택 개선
+            </span>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
+          {sortedVisibleMemos.length === 0 ? (
+            <div className="text-center py-8 text-slate-400 text-sm">
+              <p>이 섹션에는 메모가 없습니다</p>
+              <p className="text-xs mt-1">섹션 고도화로 더 풍부한 초안을 만들어보세요</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sortedVisibleMemos.map((memo, i) => (
+                <div
+                  key={memo.originalIndex}
+                  ref={(el) => { memoRefs.current[memo.originalIndex] = el; }}
+                >
+                  <MemoCard
+                    index={i}
+                    anchorText={memo.anchor_text}
+                    note={memo.note}
+                    severity={memo.severity}
+                    response={memo.response}
+                    onChange={(val) => onMemoChange(section.section_id, memo.originalIndex, val)}
+                    onRegenerate={(val) => onRegenerate(section.section_id, memo.originalIndex, val)}
+                    onAnchorClick={() => onMemoTitleClick?.(memo.originalIndex)}
+                    isRegenerating={!!isRegenerating[section.section_id]}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
-
-  if (!section) {
-    return (
-      <div className="h-full flex items-center justify-center text-slate-400 text-sm">
-        섹션을 선택하면 메모가 표시됩니다
-      </div>
-    );
-  }
-
-  // critical은 본문 하이라이트로만 표시 — 패널에서 제외
-  const visibleMemos = section.inline_suggestions
-    .map((m, originalIndex) => ({ ...m, originalIndex }))
-    .filter((m) => m.severity !== "critical");
-
-  return (
-    <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 px-4 py-3 border-b border-slate-100">
-        <h3 className="font-semibold text-slate-700 text-sm truncate">
-          {section.section_title}
-        </h3>
-        <p className="text-xs text-slate-400 mt-0.5">
-          메모 {section.resolved_memo_count}/{visibleMemos.length} 해소 · {section.effective_completion_score}% 완성
-        </p>
-      </div>
-
-      <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
-        {visibleMemos.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 text-sm">
-            <p>이 섹션에는 메모가 없습니다</p>
-            <p className="text-xs mt-1">섹션 고도화로 더 풍부한 초안을 만들어보세요</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {visibleMemos.map((memo) => (
-              <div
-                key={memo.originalIndex}
-                ref={(el) => { memoRefs.current[memo.originalIndex] = el; }}
-              >
-                <MemoCard
-                  index={memo.originalIndex}
-                  anchorText={memo.anchor_text}
-                  note={memo.note}
-                  severity={memo.severity}
-                  response={memo.response}
-                  onChange={(val) => onMemoChange(section.section_id, memo.originalIndex, val)}
-                  onRegenerate={(val) => onRegenerate(section.section_id, memo.originalIndex, val)}
-                  isRegenerating={!!isRegenerating[section.section_id]}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+);
+MemoPanel.displayName = "MemoPanel";
+export default MemoPanel;

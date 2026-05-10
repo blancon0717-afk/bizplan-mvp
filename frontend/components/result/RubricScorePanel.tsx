@@ -36,10 +36,7 @@ export default function RubricScorePanel({ score, isLoading }: Props) {
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-3 px-4 py-2 hover:bg-white/50 transition-colors text-left"
       >
-        <span className="text-xs text-slate-500 flex-1">
-          루브릭 채점 {prob_pct}% · 모집단 평균 {base_rate_pct}%
-        </span>
-        <span className="text-slate-400 text-xs">{expanded ? "▲" : "▼"}</span>
+        <span className="text-slate-400 text-xs flex-1 text-right">{expanded ? "▲" : "▼"}</span>
       </button>
 
       {expanded && (

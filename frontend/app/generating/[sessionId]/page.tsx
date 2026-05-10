@@ -24,7 +24,7 @@ export default function GeneratingPage() {
   const [doneCount, setDoneCount] = useState(0);
   const [overallCompletion, setOverallCompletion] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [creepProgress, setCreepProgress] = useState(0);
+  const [timeProgress, setTimeProgress] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const startedRef = useRef(false);
 
@@ -175,21 +175,20 @@ export default function GeneratingPage() {
     }
   }, [phase, sessionId, router]);
 
-  // 섹션 완료 시 creep 리셋
+  // generating 시작 시 시간 기반 easeOut 진행 바
   useEffect(() => {
-    setCreepProgress(0);
-  }, [doneCount]);
-
-  // generating 중 진행 바를 다음 섹션 목표 지점까지 천천히 크립
-  useEffect(() => {
-    if (phase !== "generating" || sections.length === 0) return;
-    const sectionPct = 100 / sections.length;
-    const maxCreep = sectionPct * 0.85;
+    if (phase !== "generating") return;
+    setTimeProgress(0);
+    const startTime = Date.now();
+    const duration = 90000;
     const interval = setInterval(() => {
-      setCreepProgress((prev) => Math.min(prev + 0.4, maxCreep));
-    }, 200);
+      const elapsed = Date.now() - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 2);
+      setTimeProgress(Math.min(eased * 99, 99));
+    }, 100);
     return () => clearInterval(interval);
-  }, [phase, sections.length, doneCount]);
+  }, [phase]);
 
   // generating 중 경과 시간 카운트
   useEffect(() => {
@@ -201,16 +200,12 @@ export default function GeneratingPage() {
 
   const total = sections.length;
 
-  // 퍼센트 (완료 기준 정수)
-  const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+  // 섹션 완료 기준 진행률
+  const sectionProgress = total > 0 ? (doneCount / total) * 100 : 0;
 
-  // 표시용 진행률: 완료분 + creep (최대 99%, done 시 100%)
-  const displayProgress =
-    phase === "done"
-      ? 100
-      : total > 0
-      ? Math.min((doneCount / total) * 100 + creepProgress, 99)
-      : 0;
+  // 표시용 진행률: 섹션 완료분과 시간 기반 easeOut 중 큰 값 (최대 99%, done 시 100%)
+  const displayProgress = phase === "done" ? 100 : Math.max(sectionProgress, timeProgress);
+  const pct = Math.round(displayProgress);
 
   // 현재 생성 중인 첫 번째 섹션 제목
   const generatingSectionTitle = sections.find((s) => s.status === "generating")?.title ?? null;

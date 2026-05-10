@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import RubricBadge from "@/components/result/RubricBadge";
-import DocumentPanel from "@/components/result/DocumentPanel";
-import MemoPanel from "@/components/result/MemoPanel";
+import DocumentPanel, { type DocumentPanelHandle } from "@/components/result/DocumentPanel";
+import MemoPanel, { type MemoPanelHandle } from "@/components/result/MemoPanel";
 import RubricScorePanel from "@/components/result/RubricScorePanel";
 import { useResultStore } from "@/store/resultStore";
 import { api } from "@/lib/api";
@@ -18,9 +18,11 @@ export default function ResultPage() {
   const { sections, overallCompletion, localProbPct, activeSectionId, isRegenerating,
     init, setActiveSectionId, updateMemoResponse, updateSectionSuggestions, regenerateSection, editSection, syncProbPct } = useResultStore();
 
+  const documentPanelRef = useRef<DocumentPanelHandle>(null);
+  const memoPanelRef = useRef<MemoPanelHandle>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [scrollToMemoIndex, setScrollToMemoIndex] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [programName, setProgramName] = useState("");
   const [rubricScore, setRubricScore] = useState<RubricScoreResult | null>(null);
@@ -71,8 +73,13 @@ export default function ResultPage() {
 
   function handleAnchorClick(sectionId: string, memoIndex: number) {
     setActiveSectionId(sectionId);
-    setScrollToMemoIndex(memoIndex);
-    setTimeout(() => setScrollToMemoIndex(null), 1000);
+    memoPanelRef.current?.scrollToMemo(memoIndex);
+  }
+
+  function handleMemoTitleClick(originalIndex: number) {
+    if (activeSectionId) {
+      documentPanelRef.current?.scrollToAnchor(activeSectionId, originalIndex);
+    }
   }
 
   function handleStartEdit(sectionId: string, content: string) {
@@ -185,15 +192,14 @@ export default function ResultPage() {
   }
 
   async function handleActionPlan() {
-    if (actionPlan !== null) {
-      setShowActionPlan(true);
-      return;
-    }
+    if (actionPlan) { setShowActionPlan(true); return; }
     setIsActionPlanLoading(true);
     try {
-      const { action_plan } = await api.getActionPlan(sessionId);
-      setActionPlan(action_plan);
+      const result = await api.getActionPlan(sessionId);
+      setActionPlan(result.action_plan);
       setShowActionPlan(true);
+    } catch {
+      setRegenError("액션플랜 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setIsActionPlanLoading(false);
     }
@@ -269,7 +275,7 @@ export default function ResultPage() {
               <h1 className="font-semibold text-slate-800 text-sm truncate">{programName}</h1>
               <div className="flex items-center gap-3 mt-0.5">
                 <span className="text-xs text-slate-400">
-                  🟢 {greenCount} &nbsp; 🟡 {yellowCount} &nbsp; 🔴 {redCount}
+                  🟢 완성 {greenCount} &nbsp; 🟡 보완 필요 {yellowCount} &nbsp; 🔴 미흡 {redCount}
                 </span>
                 <span className="text-xs text-slate-400">
                   📝 메모 {resolvedMemos}/{totalMemos}
@@ -351,55 +357,6 @@ export default function ResultPage() {
         </div>
       </header>
 
-      {/* 범례 */}
-      <div className="flex-shrink-0 bg-slate-50 border-b border-slate-100 px-4 py-1.5">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-          {/* 문서 텍스트 색상 */}
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-slate-800 inline-block flex-shrink-0" />
-            답변 기반
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block flex-shrink-0" />
-            AI 추론
-          </span>
-
-          {/* 메모 심각도 구분선 */}
-          <span className="text-slate-300 select-none">|</span>
-
-          {/* 메모 심각도 */}
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-red-400 inline-block flex-shrink-0" />
-            교체 필요
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-amber-400 inline-block flex-shrink-0" />
-            검토 권장
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-blue-400 inline-block flex-shrink-0" />
-            선택 개선
-          </span>
-
-          {/* 섹션 완성도 구분선 */}
-          <span className="text-slate-300 select-none">|</span>
-
-          {/* 섹션 완성도 */}
-          <span className="flex items-center gap-1">
-            <span className="text-base leading-none">🟢</span>
-            완성
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="text-base leading-none">🟡</span>
-            보완 필요
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="text-base leading-none">🔴</span>
-            미흡
-          </span>
-        </div>
-      </div>
-
       {/* 루브릭 채점 패널 */}
       <RubricScorePanel score={rubricScore} isLoading={isLoadingScore} />
 
@@ -421,6 +378,7 @@ export default function ResultPage() {
         {/* 좌: 문서 패널 (60%) */}
         <div className="w-3/5 border-r border-slate-200 flex flex-col overflow-hidden">
           <DocumentPanel
+            ref={documentPanelRef}
             sections={sections}
             activeSectionId={activeSectionId}
             editingSectionId={editingSectionId}
@@ -440,12 +398,13 @@ export default function ResultPage() {
         {/* 우: 메모 패널 (40%) */}
         <div className="w-2/5 flex flex-col overflow-hidden bg-slate-50">
           <MemoPanel
+            ref={memoPanelRef}
             sections={sections}
             activeSectionId={activeSectionId}
-            scrollToMemoIndex={scrollToMemoIndex}
             showAnchors={showAnchors}
             onMemoChange={(sectionId, memoIndex, response) => updateMemoResponse(sessionId, sectionId, memoIndex, response)}
             onRegenerate={handleMemoRegenerate}
+            onMemoTitleClick={handleMemoTitleClick}
             isRegenerating={isRegenerating}
           />
         </div>

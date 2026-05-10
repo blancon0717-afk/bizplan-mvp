@@ -290,21 +290,26 @@ def generate_action_plan(session_id: str):
     )
 
     from core.llm import call_claude
-    text, _ = call_claude(
-        system=_ACTION_PLAN_SYSTEM,
-        user=_ACTION_PLAN_PROMPT.format(
-            today=today,
-            program_name=program_name,
-            expected_date=expected_date,
-            plan_summary=plan_summary,
-            weak_sections=weak_sections,
-            feedback_memos=feedback_memos,
-        ),
-        model="claude-haiku-4-5-20251001",
-        max_tokens=4000,
-        temperature=0.4,
-        purpose="action_plan",
-    )
+    try:
+        text, _ = call_claude(
+            system=_ACTION_PLAN_SYSTEM,
+            user=_ACTION_PLAN_PROMPT.format(
+                today=today,
+                program_name=program_name,
+                expected_date=expected_date,
+                plan_summary=plan_summary,
+                weak_sections=weak_sections,
+                feedback_memos=feedback_memos,
+            ),
+            model="claude-haiku-4-5-20251001",
+            max_tokens=6000,
+            temperature=0.4,
+            purpose="action_plan",
+            metadata={"session_id": session_id},
+        )
+    except Exception as e:
+        logger.error("[액션플랜 생성 실패] %s: %s", session_id, e)
+        raise HTTPException(status_code=500, detail="액션플랜 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
     return {"action_plan": text}
 
 

@@ -80,7 +80,7 @@ bizplan-mvp/
 - section_generation: 8192
 - section_evaluation: 3072
 - evaluate_business_plan: 6144
-- action_plan: 4000
+- action_plan: 6000
 - document_check: 1500
 - context_extraction: 8192
 

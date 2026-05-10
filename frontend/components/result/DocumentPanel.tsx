@@ -1,7 +1,11 @@
 "use client";
-import { useRef } from "react";
+import { forwardRef, useImperativeHandle, useRef } from "react";
 import type { SectionResult } from "@/lib/types";
-import SegmentRenderer from "./SegmentRenderer";
+import SegmentRenderer, { type SegmentRendererHandle } from "./SegmentRenderer";
+
+export interface DocumentPanelHandle {
+  scrollToAnchor: (sectionId: string, originalIndex: number) => void;
+}
 
 const CATEGORY_KO: Record<string, string> = {
   Problem: "문제인식",
@@ -68,7 +72,7 @@ function groupSections(sections: SectionResult[]): SectionGroup[] {
   return groups;
 }
 
-export default function DocumentPanel({
+const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(function DocumentPanel({
   sections,
   activeSectionId,
   editingSectionId,
@@ -82,8 +86,15 @@ export default function DocumentPanel({
   onEditContentChange,
   onSaveEdit,
   onCancelEdit,
-}: DocumentPanelProps) {
+}, ref) {
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const segRendererRefs = useRef<Record<string, SegmentRendererHandle | null>>({});
+
+  useImperativeHandle(ref, () => ({
+    scrollToAnchor: (sectionId: string, originalIndex: number) => {
+      segRendererRefs.current[sectionId]?.scrollToAnchor(originalIndex);
+    },
+  }));
 
   function scrollToSection(id: string) {
     sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -113,6 +124,20 @@ export default function DocumentPanel({
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* 본문 신뢰도 범례 */}
+      <div className="flex-shrink-0 px-4 py-1.5 border-b border-slate-100 bg-slate-50">
+        <div className="flex items-center gap-4 text-xs text-slate-400">
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-600 inline-block flex-shrink-0" />
+            답변 기반
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
+            AI 추론
+          </span>
         </div>
       </div>
 
@@ -229,6 +254,7 @@ export default function DocumentPanel({
                     </div>
                   ) : (
                     <SegmentRenderer
+                      ref={(el) => { segRendererRefs.current[section.section_id] = el; }}
                       segments={section.content_segments}
                       suggestions={section.inline_suggestions}
                       showAnchors={showAnchors}
@@ -246,21 +272,9 @@ export default function DocumentPanel({
           </div>
         ))}
 
-        {/* 색상 범례 */}
-        <div className="mt-8 pt-4 border-t border-slate-100 flex items-center gap-4 text-xs text-slate-400">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-slate-800 inline-block" /> 답변 기반
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" /> AI 추론
-          </span>
-          {showAnchors && (
-            <span className="flex items-center gap-1">
-              <span className="inline-block w-5 border-b-2 border-dashed border-slate-400" /> 메모 앵커
-            </span>
-          )}
-        </div>
       </div>
     </div>
   );
-}
+});
+DocumentPanel.displayName = "DocumentPanel";
+export default DocumentPanel;

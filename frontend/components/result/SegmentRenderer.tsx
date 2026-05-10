@@ -1,5 +1,10 @@
 "use client";
+import { forwardRef, useImperativeHandle, useRef } from "react";
 import type { ContentSegment, InlineSuggestion } from "@/lib/types";
+
+export interface SegmentRendererHandle {
+  scrollToAnchor: (originalIndex: number) => void;
+}
 
 const MD_TABLE_ROW = /^\s*\|/;
 
@@ -73,6 +78,7 @@ function renderVisualCell(text: string): CellStyle {
 function renderSegmentContent(
   text: string,
   suggestions: InlineSuggestion[],
+  sortedSuggestions: InlineSuggestion[],
   isInferred: boolean,
   segKey: number,
   showAnchors: boolean,
@@ -84,7 +90,7 @@ function renderSegmentContent(
   let blockKey = 0;
 
   const anchor = (t: string) =>
-    renderTextWithAnchors(t, suggestions, isInferred, showAnchors, onAnchorClick);
+    renderTextWithAnchors(t, suggestions, sortedSuggestions, isInferred, showAnchors, onAnchorClick);
 
   while (i < lines.length) {
     const line = lines[i];
@@ -195,6 +201,7 @@ interface SegmentRendererProps {
 function renderTextWithAnchors(
   text: string,
   suggestions: InlineSuggestion[],
+  sortedSuggestions: InlineSuggestion[],
   isInferred: boolean,
   showAnchors: boolean,
   onAnchorClick?: (index: number) => void
@@ -242,21 +249,23 @@ function renderTextWithAnchors(
       );
     }
 
-    const globalIndex = suggestions.indexOf(match);
+    const sortedIndex = sortedSuggestions.indexOf(match);
+    const originalIndex = suggestions.indexOf(match);
     nodes.push(
       <span key={keyIdx++} className="inline">
         <mark
           className="memo-anchor cursor-pointer"
-          onClick={() => onAnchorClick?.(globalIndex)}
+          onClick={() => onAnchorClick?.(originalIndex)}
           title={match.note}
         >
           {match.anchor_text}
         </mark>
         <sup
-          className="text-red-500 font-bold text-xs cursor-pointer ml-0.5"
-          onClick={() => onAnchorClick?.(globalIndex)}
+          data-anchor-index={originalIndex}
+          className="text-red-500 font-bold text-xs cursor-pointer ml-0.5 hover:text-blue-600"
+          onClick={() => onAnchorClick?.(originalIndex)}
         >
-          [{globalIndex + 1}]
+          [{sortedIndex + 1}]
         </sup>
       </span>
     );
@@ -268,23 +277,46 @@ function renderTextWithAnchors(
   return nodes;
 }
 
-export default function SegmentRenderer({ segments, suggestions, showAnchors = true, onAnchorClick }: SegmentRendererProps) {
-  if (!segments || segments.length === 0) return null;
+const SegmentRenderer = forwardRef<SegmentRendererHandle, SegmentRendererProps>(
+  function SegmentRenderer({ segments, suggestions, showAnchors = true, onAnchorClick }, ref) {
+    const containerRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <div className="section-content text-sm leading-relaxed">
-      {segments.map((seg, i) => (
-        <div key={i} className="mb-1">
-          {renderSegmentContent(
-            seg.text,
-            suggestions,
-            seg.source === "llm_inferred",
-            i,
-            showAnchors,
-            onAnchorClick
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+    useImperativeHandle(ref, () => ({
+      scrollToAnchor: (originalIndex: number) => {
+        containerRef.current
+          ?.querySelector<HTMLElement>(`[data-anchor-index="${originalIndex}"]`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      },
+    }));
+
+    if (!segments || segments.length === 0) return null;
+
+    const fullText = segments.map((s) => s.text ?? "").join("");
+    const activeSuggestions = suggestions.filter((s) => s.anchor_text);
+    const sortedSuggestions = [...activeSuggestions].sort((a, b) => {
+      const posA = fullText.indexOf(a.anchor_text);
+      const posB = fullText.indexOf(b.anchor_text);
+      return posA - posB;
+    });
+
+    return (
+      <div ref={containerRef} className="section-content text-sm leading-relaxed">
+        {segments.map((seg, i) => (
+          <div key={i} className="mb-1">
+            {renderSegmentContent(
+              seg.text,
+              suggestions,
+              sortedSuggestions,
+              seg.source === "llm_inferred",
+              i,
+              showAnchors,
+              onAnchorClick
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+);
+SegmentRenderer.displayName = "SegmentRenderer";
+export default SegmentRenderer;
