@@ -177,11 +177,7 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
     const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
     const sortedVisibleMemos = [...visibleMemos]
       .filter((m) => !passedMemos.has(m.originalIndex))
-      .sort((a, b) => {
-        const posA = fullText.indexOf(a.anchor_text);
-        const posB = fullText.indexOf(b.anchor_text);
-        return posA - posB;
-      })
+      .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 1) - (SEVERITY_ORDER[b.severity] ?? 1))
       .slice(0, 5);
 
     return (

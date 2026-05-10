@@ -96,6 +96,11 @@ bizplan-mvp/
 - frontend/components/result/MemoPanel.tsx: forwardRef + useImperativeHandle로 scrollToMemo 노출
 - frontend/components/program/ProgramCard.tsx: FORMS_AVAILABLE 배열 관리 (신규 양식 추가 시 필수 수정)
 
+## 코드 수정 원칙
+- 지시한 대상만 수정한다. 범위가 불명확하면 먼저 물어본다.
+- "A를 X로 바꿔" = A만 바꾼다. 비슷해 보이는 B, C는 건드리지 않는다.
+- 수정 전 변경할 파일 목록을 먼저 보여주고 확인받는다.
+
 ## 개발 원칙
 1. 새 파일 생성 금지. 기존 파일에 추가/수정만.
 2. 규칙 추가 위치:

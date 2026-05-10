@@ -42,6 +42,7 @@ export default function ResultPage() {
   const [documentCheck, setDocumentCheck] = useState<string | null>(null);
   const [isDocumentChecking, setIsDocumentChecking] = useState(false);
   const [usageData, setUsageData] = useState<Record<string, { used: number; max: number }>>({});
+  const [passedMemoMap, setPassedMemoMap] = useState<Record<string, Set<number>>>({});
 
   useEffect(() => {
     async function load() {
@@ -319,45 +320,66 @@ export default function ResultPage() {
                 </span>
               </button>
             )}
-            <button
-              onClick={handleDocumentCheck}
-              disabled={isDocumentChecking}
-              title="오탈자, 문장 오류, 논리적 모순을 자동으로 점검합니다"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-teal-200 text-teal-600 text-sm font-medium hover:bg-teal-50 disabled:opacity-50 transition-colors"
-            >
-              {isDocumentChecking ? (
-                <span className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                "🔍 문서 점검"
-              )}
-            </button>
-            <button
-              onClick={handleActionPlan}
-              disabled={isActionPlanLoading}
-              title="사업계획서 합격을 위해 대표님이 직접 실행해야 할 항목을 제시합니다"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-200 text-purple-600 text-sm font-medium hover:bg-purple-50 disabled:opacity-50 transition-colors"
-            >
-              {isActionPlanLoading ? (
-                <span className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>📋 액션플랜 <span className={(usageData.action_plan?.used ?? 0) >= (usageData.action_plan?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.action_plan?.used ?? 0}/{usageData.action_plan?.max ?? 1})</span></>
-              )}
-            </button>
-            <button
-              onClick={handleFeedback}
-              disabled={isFeedbackRunning}
-              title="섹션별 약점을 분석하고 사업계획서 고도화를 위한 구체적인 피드백을 제공합니다"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 text-blue-600 text-sm font-medium hover:bg-blue-50 disabled:opacity-50 transition-colors"
-            >
-              {isFeedbackRunning ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                  피드백 생성 중 {feedbackDoneCount > 0 && feedbackTotal > 0 ? `(${feedbackDoneCount}/${feedbackTotal})` : ""}
-                </>
-              ) : (
-                <>피드백 확인하기 <span className={(usageData.feedback?.used ?? 0) >= (usageData.feedback?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.feedback?.used ?? 0}/{usageData.feedback?.max ?? 1})</span></>
-              )}
-            </button>
+            <div className="relative group">
+              <button
+                onClick={handleFeedback}
+                disabled={isFeedbackRunning}
+                title="섹션별 약점을 분석하고 사업계획서 고도화를 위한 구체적인 피드백을 제공합니다"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 text-blue-600 text-sm font-medium hover:bg-blue-50 disabled:opacity-50 transition-colors"
+              >
+                {isFeedbackRunning ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    피드백 생성 중 {feedbackDoneCount > 0 && feedbackTotal > 0 ? `(${feedbackDoneCount}/${feedbackTotal})` : ""}
+                  </>
+                ) : (
+                  <>피드백 확인하기 <span className={(usageData.feedback?.used ?? 0) >= (usageData.feedback?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.feedback?.used ?? 0}/{usageData.feedback?.max ?? 1})</span></>
+                )}
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                  섹션별 약점을 분석하고 보완이 필요한 항목을 제시합니다
+                </div>
+              </div>
+            </div>
+            <div className="relative group">
+              <button
+                onClick={handleActionPlan}
+                disabled={isActionPlanLoading}
+                title="사업계획서 합격을 위해 대표님이 직접 실행해야 할 항목을 제시합니다"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-200 text-purple-600 text-sm font-medium hover:bg-purple-50 disabled:opacity-50 transition-colors"
+              >
+                {isActionPlanLoading ? (
+                  <span className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>📋 액션플랜 <span className={(usageData.action_plan?.used ?? 0) >= (usageData.action_plan?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.action_plan?.used ?? 0}/{usageData.action_plan?.max ?? 1})</span></>
+                )}
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                  합격을 위해 대표님이 직접 실행해야 할 항목을 제시합니다
+                </div>
+              </div>
+            </div>
+            <div className="relative group">
+              <button
+                onClick={handleDocumentCheck}
+                disabled={isDocumentChecking}
+                title="오탈자, 문장 오류, 논리적 모순을 자동으로 점검합니다"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-teal-200 text-teal-600 text-sm font-medium hover:bg-teal-50 disabled:opacity-50 transition-colors"
+              >
+                {isDocumentChecking ? (
+                  <span className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "🔍 문서 점검"
+                )}
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                  오탈자, 문장 오류, 논리적 모순을 자동으로 점검합니다
+                </div>
+              </div>
+            </div>
             <button
               onClick={handleDownload}
               disabled={isDownloading}
@@ -422,6 +444,7 @@ export default function ResultPage() {
             onEditContentChange={setEditContent}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
+            passedMemoMap={passedMemoMap}
           />
         </div>
 
@@ -437,7 +460,12 @@ export default function ResultPage() {
             onMemoTitleClick={handleMemoTitleClick}
             isRegenerating={isRegenerating}
             usageData={usageData}
-            onPassMemo={() => {}}
+            onPassMemo={(sectionId, memoIndex) => {
+              setPassedMemoMap(prev => ({
+                ...prev,
+                [sectionId]: new Set([...(prev[sectionId] ?? []), memoIndex])
+              }));
+            }}
           />
         </div>
       </div>

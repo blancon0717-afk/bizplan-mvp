@@ -42,6 +42,7 @@ interface DocumentPanelProps {
   onEditContentChange: (content: string) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
+  passedMemoMap?: Record<string, Set<number>>;
 }
 
 function getMajorGroup(sectionId: string): string {
@@ -88,6 +89,7 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
   onEditContentChange,
   onSaveEdit,
   onCancelEdit,
+  passedMemoMap,
 }, ref) {
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const segRendererRefs = useRef<Record<string, SegmentRendererHandle | null>>({});
@@ -259,7 +261,13 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
                     <SegmentRenderer
                       ref={(el) => { segRendererRefs.current[section.section_id] = el; }}
                       segments={section.content_segments}
-                      suggestions={section.inline_suggestions}
+                      suggestions={[...section.inline_suggestions]
+                        .filter((_, idx) => !passedMemoMap?.[section.section_id]?.has(idx))
+                        .sort((a, b) => {
+                          const order: Record<string, number> = { critical: 0, warning: 1, info: 2 };
+                          return (order[a.severity] ?? 1) - (order[b.severity] ?? 1);
+                        })
+                        .slice(0, 5)}
                       showAnchors={showAnchors}
                       onAnchorClick={(idx) => onAnchorClick(section.section_id, idx)}
                     />

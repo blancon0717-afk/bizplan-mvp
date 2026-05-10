@@ -40,7 +40,7 @@ export default function GeneratingPage() {
         setAllSections(secs);
         setSelectedIds(new Set(secs.map((s) => s.id)));
         localStorage.setItem("bizplan_session_id", sessionId);
-        startGeneration(null);
+        setPhase("selecting");
       })
       .catch(() => {
         setErrorMsg("섹션 정보를 불러올 수 없습니다.");
