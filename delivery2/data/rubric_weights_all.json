@@ -1,0 +1,180 @@
+{
+  "서류합격": {
+    "label_name": "서류 모델 (전체 모수)",
+    "n": 749,
+    "n_pos": 339,
+    "auc_lasso": 0.6404205657508726,
+    "auc_lgbm": 0.6428818068909398,
+    "significant": [
+      {
+        "feature": "FGI",
+        "direction": "-",
+        "or": 0.608,
+        "p": 0.0019,
+        "lasso_strength": 0.1168439630118647
+      },
+      {
+        "feature": "MOU 보유 개수",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.0104,
+        "lasso_strength": 0.08630716442827718
+      },
+      {
+        "feature": "비즈니스 모델 다양화",
+        "direction": "-",
+        "or": NaN,
+        "p": 0.0117,
+        "lasso_strength": 0.03696279327240853
+      },
+      {
+        "feature": "투자의향서 확보 여부",
+        "direction": "+",
+        "or": 1.887,
+        "p": 0.0229,
+        "lasso_strength": 0.059367024910033074
+      },
+      {
+        "feature": "소재지+주관기관 일치 여부",
+        "direction": "+",
+        "or": 1.344,
+        "p": 0.0608,
+        "lasso_strength": 0.026090158244979875
+      },
+      {
+        "feature": "디자인 네트워크 보유",
+        "direction": "-",
+        "or": 0.755,
+        "p": 0.0972,
+        "lasso_strength": 0.05919127135627307
+      }
+    ],
+    "tentative": [
+      {
+        "feature": "필수 재료 공급처 네트워크 보유",
+        "direction": "+",
+        "or": 1.278,
+        "p": 0.1063,
+        "lasso_strength": 0.02890404488085373
+      },
+      {
+        "feature": "실제 실험 사진 보유 여부",
+        "direction": "+",
+        "or": 1.356,
+        "p": 0.1254,
+        "lasso_strength": 0.027004253128529002
+      },
+      {
+        "feature": "견적서 보유 개수",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.2834,
+        "lasso_strength": 0.015352910726548187
+      }
+    ],
+    "null_count": 32
+  },
+  "최종합격": {
+    "label_name": "최종 모델 (서류통과자)",
+    "n": 272,
+    "n_pos": 161,
+    "auc_lasso": 0.524161576236675,
+    "auc_lgbm": 0.49531979877829685,
+    "significant": [
+      {
+        "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+        "direction": "-",
+        "or": NaN,
+        "p": 0.0098,
+        "lasso_strength": 0.2579001226488648
+      },
+      {
+        "feature": "디자인 인력 보유 (팀원 기준)",
+        "direction": "-",
+        "or": NaN,
+        "p": 0.0218,
+        "lasso_strength": 0.5460080598181495
+      },
+      {
+        "feature": "자체 생산 시설 보유",
+        "direction": "+",
+        "or": 2.116,
+        "p": 0.0309,
+        "lasso_strength": 0.19204512279088357
+      },
+      {
+        "feature": "수요처 네트워크 보유",
+        "direction": "+",
+        "or": 1.72,
+        "p": 0.0651,
+        "lasso_strength": 0.12028954152377788
+      },
+      {
+        "feature": "견적서 보유 개수",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.0845,
+        "lasso_strength": 0.2743709416811917
+      }
+    ],
+    "tentative": [
+      {
+        "feature": "실제 실험 사진 보유 여부",
+        "direction": "-",
+        "or": 0.624,
+        "p": 0.1286,
+        "lasso_strength": 0.3575527147546235
+      },
+      {
+        "feature": "제조 전문 네트워크 (기술자) 보유",
+        "direction": "+",
+        "or": 1.467,
+        "p": 0.1388,
+        "lasso_strength": 0.15801171892026464
+      },
+      {
+        "feature": "고용",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.1435,
+        "lasso_strength": 0.3075959678285274
+      },
+      {
+        "feature": "개발인력(sw) 보유(팀원 기준)",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.199,
+        "lasso_strength": 0.004727120882956139
+      },
+      {
+        "feature": "디자인 네트워크 보유",
+        "direction": "-",
+        "or": 0.686,
+        "p": 0.1992,
+        "lasso_strength": 0.19926407460011897
+      },
+      {
+        "feature": "기대출 및 보증 금액 (최근 1년)",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.2186,
+        "lasso_strength": 0.1570315145355186
+      },
+      {
+        "feature": "개발(S/W) 네트워크 보유",
+        "direction": "+",
+        "or": 1.349,
+        "p": 0.2669,
+        "lasso_strength": 0.0056100188553489805
+      },
+      {
+        "feature": "구매 의향서 보유",
+        "direction": "+",
+        "or": 1.319,
+        "p": 0.2695,
+        "lasso_strength": 0.1568845894372987
+      }
+    ],
+    "null_count": 29
+  }
+}

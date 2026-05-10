@@ -1,0 +1,14 @@
+.venv/
+node_modules/
+.env
+__pycache__/
+*.pyc
+logs/
+data/sessions/
+.streamlit/
+*.docx
+.env.local
+data/feedback/
+.claude/settings.local*.json
+.claude/scheduled_tasks.lock
+frontend/*.log

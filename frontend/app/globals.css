@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 채팅 버블 애니메이션 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.25s ease-out forwards;
+}
+
+/* 완성도 카운트업 애니메이션 */
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-count-up {
+  animation: countUp 0.4s ease-out forwards;
+}
+
+/* 커스텀 스크롤바 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+/* 메모 앵커 — 기본: 점선 밑줄, 호버: 연한 배경 */
+.memo-anchor {
+  background-color: transparent;
+  border-bottom: 1.5px dashed #94a3b8;
+  border-radius: 0;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-radius 0.12s ease;
+}
+.memo-anchor:hover {
+  background-color: #e2e8f0;
+  border-radius: 2px;
+}
+
+/* 섹션 컨텐츠 타이포그래피 */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+.section-content p {
+  margin-bottom: 0.75em;
+  line-height: 1.7;
+}
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75em 0;
+  font-size: 0.875rem;
+}
+.section-content th, .section-content td {
+  border: 1px solid #e2e8f0;
+  padding: 6px 12px;
+  text-align: left;
+}
+.section-content th {
+  background: #f1f5f9;
+  font-weight: 600;
+}

@@ -1,0 +1,41 @@
+program_code: initial_package
+program_name: 2026년도 초기창업패키지(일반형)
+target: 창업 3년 이내 초기 창업기업
+max_funding: 1억원
+page_limit: 15
+notes: 지방우대 지역 구분(특별 90% / 우대 80% / 일반 75% / 비해당 70%)
+sections:
+  - id: "1"
+    title: 창업 아이템의 필요성
+    category: Problem
+    order: 1
+    tags: [개발동기, 시장분석]
+    instructions: |
+      국내·외 시장 현황·문제점·개발 필요성 (하위분할 없는 단일 섹션).
+      외부 트렌드 + 내부 동기 통합 서술.
+
+  - id: "2"
+    title: 창업 아이템의 개발 계획
+    category: Solution
+    order: 2
+    tags: [개발준비, 차별성, 일정자금]
+    instructions: |
+      아이디어→제품 구체화 계획 + 차별성·경쟁력 + 사업비 집행계획 포함.
+      사업추진 일정 표 + 사업비 구성 예시 표 + 집행계획 표.
+
+  - id: "3"
+    title: 사업화 추진 전략
+    category: Scale-up
+    order: 3
+    tags: [BM, 사업화전략, 투자, ESG]
+    instructions: |
+      경쟁사 분석 + BM + 투자유치 + 중장기 ESG 도입계획 통합.
+      전체 사업단계 추진 일정 표 포함.
+
+  - id: "4"
+    title: 대표자 및 팀원 구성 계획
+    category: Team
+    order: 4
+    tags: [팀역량, 대표자]
+    instructions: |
+      대표자 + 팀원 + 업무파트너 통합 서술. 팀 구성안 + 협력 기관 표.

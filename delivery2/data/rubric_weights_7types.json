@@ -1,0 +1,124 @@
+{
+  "서류합격": {
+    "label_name": "서류 모델 (전체 모수)",
+    "n": 573,
+    "n_pos": 259,
+    "auc_lasso": 0.6776961942758907,
+    "auc_lgbm": 0.6484265611400336,
+    "significant": [
+      {
+        "feature": "FGI",
+        "direction": "-",
+        "or": 0.548,
+        "p": 0.0007,
+        "lasso_strength": 0.13180644419041812
+      },
+      {
+        "feature": "비즈니스 모델 다양화",
+        "direction": "-",
+        "or": NaN,
+        "p": 0.0046,
+        "lasso_strength": 0.038014072853933954
+      },
+      {
+        "feature": "필수 재료 공급처 네트워크 보유",
+        "direction": "+",
+        "or": 1.593,
+        "p": 0.0071,
+        "lasso_strength": 0.12429085088389014
+      },
+      {
+        "feature": "MOU 보유 개수",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.0586,
+        "lasso_strength": 0.01405619530736083
+      }
+    ],
+    "tentative": [
+      {
+        "feature": "디자인 네트워크 보유",
+        "direction": "-",
+        "or": 0.745,
+        "p": 0.1236,
+        "lasso_strength": 0.04059404611489036
+      },
+      {
+        "feature": "해당 시장 전문가(팀원 기준)",
+        "direction": "-",
+        "or": NaN,
+        "p": 0.2069,
+        "lasso_strength": 0.025594566728200253
+      },
+      {
+        "feature": "고용",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.2933,
+        "lasso_strength": 0.1699581882985843
+      }
+    ],
+    "null_count": 32
+  },
+  "최종합격": {
+    "label_name": "최종 모델 (서류통과자)",
+    "n": 211,
+    "n_pos": 123,
+    "auc_lasso": 0.5418474945533769,
+    "auc_lgbm": 0.495417211328976,
+    "significant": [
+      {
+        "feature": "수요처 네트워크 보유",
+        "direction": "+",
+        "or": 2.664,
+        "p": 0.0032,
+        "lasso_strength": 0.22187018184719404
+      },
+      {
+        "feature": "디자인 인력 보유 (팀원 기준)",
+        "direction": "-",
+        "or": NaN,
+        "p": 0.0364,
+        "lasso_strength": 0.12104889822375574
+      },
+      {
+        "feature": "자체 생산 시설 보유",
+        "direction": "+",
+        "or": 2.063,
+        "p": 0.0721,
+        "lasso_strength": 0.03197454316966505
+      },
+      {
+        "feature": "견적서 보유 개수",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.0921,
+        "lasso_strength": 0.04754132873315383
+      }
+    ],
+    "tentative": [
+      {
+        "feature": "수상이력",
+        "direction": "-",
+        "or": 0.6,
+        "p": 0.1167,
+        "lasso_strength": 0.044133692831459216
+      },
+      {
+        "feature": "고용",
+        "direction": "+",
+        "or": NaN,
+        "p": 0.14,
+        "lasso_strength": 0.06862219808682597
+      },
+      {
+        "feature": "디자인 네트워크 보유",
+        "direction": "-",
+        "or": 0.715,
+        "p": 0.285,
+        "lasso_strength": 0.006895749201493389
+      }
+    ],
+    "null_count": 25
+  }
+}

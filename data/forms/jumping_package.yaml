@@ -1,0 +1,96 @@
+program_code: jumping_package
+program_name: 2026년 창업도약패키지(일반형)
+target: 창업 3~7년 이내 도약기 창업기업
+max_funding: 2억원
+page_limit: 20
+notes: 기존 실적 중시, M&A/IPO 출구전략 요구 (5개 양식 중 유일)
+sections:
+  - id: "overview"
+    title: 개요 (중장기+협약기간 로드맵)
+    category: Overview
+    order: 0
+    tags: [일정자금, BM]
+    instructions: |
+      아이템 개요 + 중장기 사업 로드맵 + 협약기간 내 로드맵 + 산출물 목표.
+      중장기와 협약기간 로드맵을 분리 기재.
+
+  - id: "1"
+    title: 창업아이템 개발 동기(필요성) 및 현황
+    category: Problem
+    order: 1
+    tags: [개발동기, 시장분석]
+    instructions: |
+      개선·고도화·신규출시 배경, 신청 이전 추진이력. 기존 사업과의 관계 설명.
+
+  - id: "2-1-1"
+    title: 창업아이템 소개 및 개선과제
+    category: Solution
+    order: 2
+    tags: [개발준비, BM]
+    instructions: |
+      아이템 소개 + BM + 개선·고도화 과제 구체화.
+
+  - id: "2-1-2"
+    title: 목표시장(고객) 분석
+    category: Solution
+    order: 3
+    tags: [시장분석, 고객]
+    instructions: |
+      타깃 고객 상세 분석, 시장 규모 Bottom-up, 경쟁 강도.
+
+  - id: "2-2"
+    title: 창업아이템 사업화 추진 성과
+    category: Solution
+    order: 4
+    tags: [재무, 사업화전략]
+    instructions: |
+      기존 사업화 추진 성과 — 진입 현황·매출 실적 표. 도약기 특화.
+
+  - id: "3-1"
+    title: 창업아이템 사업화 추진 전략 (M&A/IPO 출구전략 포함)
+    category: Scale-up
+    order: 5
+    tags: [사업화전략, 투자, 해외]
+    instructions: |
+      글로벌 진출 + M&A 대상 기업 또는 IPO 로드맵 필수.
+      벤치마킹 기업·밸류에이션 수치로 현실감.
+
+  - id: "3-2-1"
+    title: 사업비 집행계획 및 사업비 구성
+    category: Scale-up
+    order: 6
+    tags: [일정자금, 재무]
+    instructions: |
+      정부지원 최대 2억, 자기부담 비율. 비목별 세부 집행 계획.
+
+  - id: "3-2-2"
+    title: 향후 자금 조달계획
+    category: Scale-up
+    order: 7
+    tags: [투자, 재무]
+    instructions: |
+      시리즈A/B 등 단계별 라운드 계획. 조달 규모·사용처·타이밍.
+
+  - id: "4-1-1"
+    title: 대표자 역량
+    category: Team
+    order: 8
+    tags: [팀역량, 대표자]
+    instructions: |
+      대표자 경력·전문성 + 창업 동기와 기술 필연성 연결.
+
+  - id: "4-1-2"
+    title: 전문 인력 고용 현황 및 활용 계획
+    category: Team
+    order: 9
+    tags: [팀역량]
+    instructions: |
+      전문 인력(최대 10명) + 협약기간 추가 고용 계획.
+
+  - id: "4-2"
+    title: 보유 인프라 등 활용 계획 + 산업재산권
+    category: Team
+    order: 10
+    tags: [팀역량, IP]
+    instructions: |
+      보유 장비/시설/연구소(최대 10건) + 등록 산업재산권(최대 10건).

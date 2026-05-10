@@ -1,0 +1,342 @@
+{
+  "version": "all",
+  "features": [
+    {
+      "feature": "누적 투자",
+      "tier": "유의미",
+      "direction": "+",
+      "weight": 5,
+      "p": 0.0042,
+      "or": null,
+      "models": [
+        "서류"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "FGI",
+      "tier": "유의미",
+      "direction": "-",
+      "weight": 5,
+      "p": 0.0056,
+      "or": 0.647,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "필수 재료 공급처 네트워크 보유",
+      "tier": "유의미",
+      "direction": "+",
+      "weight": 5,
+      "p": 0.0079,
+      "or": 1.486,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "제조 전문 인력 (기술자) 보유(팀원 기준)",
+      "tier": "유의미",
+      "direction": "+",
+      "weight": 4,
+      "p": 0.0153,
+      "or": null,
+      "models": [
+        "서류",
+        "최종"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "소재지+주관기관 일치 여부",
+      "tier": "유의미",
+      "direction": "+",
+      "weight": 4,
+      "p": 0.0426,
+      "or": 1.379,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "비즈니스 모델 다양화",
+      "tier": "유의미",
+      "direction": "-",
+      "weight": 4,
+      "p": 0.0428,
+      "or": null,
+      "models": [
+        "서류"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "MOU 보유 개수",
+      "tier": "유의미",
+      "direction": "+",
+      "weight": 3,
+      "p": 0.0713,
+      "or": null,
+      "models": [
+        "최종"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "실제 실험 사진 보유 여부",
+      "tier": "유의미",
+      "direction": "-",
+      "weight": 3,
+      "p": 0.0767,
+      "or": 0.576,
+      "models": [
+        "서류",
+        "최종"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "아이템 관련 경력 증빙",
+      "tier": "유의미",
+      "direction": "-",
+      "weight": 3,
+      "p": 0.0903,
+      "or": 0.549,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "투자의향서 확보 여부",
+      "tier": "유의미",
+      "direction": "+",
+      "weight": 3,
+      "p": 0.0916,
+      "or": 1.557,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "디자인 네트워크 보유",
+      "tier": "잠정",
+      "direction": "-",
+      "weight": 2,
+      "p": 0.1206,
+      "or": 0.771,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "R&D 인력 or 자체 학습 데이터 네트워크 보유",
+      "tier": "잠정",
+      "direction": "-",
+      "weight": 2,
+      "p": 0.123,
+      "or": 0.764,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "견적서 보유 개수",
+      "tier": "잠정",
+      "direction": "+",
+      "weight": 2,
+      "p": 0.1292,
+      "or": null,
+      "models": [
+        "서류",
+        "최종"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "수요처 확보 여부",
+      "tier": "잠정",
+      "direction": "+",
+      "weight": 2,
+      "p": 0.1354,
+      "or": 1.254,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "R&D 인력 보유(팀원 기준)",
+      "tier": "잠정",
+      "direction": "+",
+      "weight": 2,
+      "p": 0.1986,
+      "or": null,
+      "models": [
+        "서류"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+      "tier": "잠정",
+      "direction": "-",
+      "weight": 1,
+      "p": 0.2117,
+      "or": null,
+      "models": [
+        "서류",
+        "최종"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "디자인 인력 보유 (팀원 기준)",
+      "tier": "잠정",
+      "direction": "-",
+      "weight": 1,
+      "p": 0.2165,
+      "or": null,
+      "models": [
+        "최종"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "개발인력(sw) 보유(팀원 기준)",
+      "tier": "잠정",
+      "direction": "+",
+      "weight": 1,
+      "p": 0.218,
+      "or": null,
+      "models": [
+        "최종"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "청년 여부(만 39세 이하)",
+      "tier": "잠정",
+      "direction": "+",
+      "weight": 1,
+      "p": 0.2238,
+      "or": 1.261,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "해당 시장 전문 자문 네트워크 보유 위원",
+      "tier": "잠정",
+      "direction": "-",
+      "weight": 1,
+      "p": 0.2279,
+      "or": 0.657,
+      "models": [
+        "최종"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "고용",
+      "tier": "잠정",
+      "direction": "+",
+      "weight": 1,
+      "p": 0.2297,
+      "or": null,
+      "models": [
+        "서류",
+        "최종"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "자체 생산 시설 보유",
+      "tier": "잠정",
+      "direction": "+",
+      "weight": 1,
+      "p": 0.2314,
+      "or": 1.487,
+      "models": [
+        "최종"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "대표자 해당 아이템 산업 경험/기술 보유 여부",
+      "tier": "잠정",
+      "direction": "-",
+      "weight": 1,
+      "p": 0.234,
+      "or": 0.687,
+      "models": [
+        "최종"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "영업 및 마케팅 네트워크 보유",
+      "tier": "잠정",
+      "direction": "-",
+      "weight": 1,
+      "p": 0.2364,
+      "or": 0.833,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    },
+    {
+      "feature": "직전 수출",
+      "tier": "잠정",
+      "direction": "+",
+      "weight": 1,
+      "p": 0.2867,
+      "or": null,
+      "models": [
+        "최종"
+      ],
+      "type": "numeric"
+    },
+    {
+      "feature": "수상이력",
+      "tier": "잠정",
+      "direction": "-",
+      "weight": 1,
+      "p": 0.2994,
+      "or": 0.829,
+      "models": [
+        "서류"
+      ],
+      "type": "binary"
+    }
+  ],
+  "removed": [
+    "MVP 테스트 실행 여부",
+    "개발(S/W) 네트워크 보유",
+    "구매 의향서 보유",
+    "기대출 및 보증 금액 (최근 1년)",
+    "기술임치",
+    "기타 기업 인증 개수",
+    "납품 확정 계약서 보유 여부",
+    "대표자 사업 경험 여부 (매출 1억 이상)",
+    "대표자/팀원 관련 자격증서",
+    "수요처 네트워크 보유",
+    "실제 제조 OR 서비스 사진 보유 여부",
+    "아이템 관련 특허 보유 개수 (등록 기준)",
+    "여성 대표 여부",
+    "제조 전문 네트워크 (기술자) 보유",
+    "지방지원 여부",
+    "직전 매출 (수출 제외)",
+    "해당 시장 전문가(팀원 기준)",
+    "해외 진출 가능성"
+  ]
+}

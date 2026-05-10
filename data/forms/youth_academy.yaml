@@ -1,0 +1,119 @@
+program_code: youth_academy
+program_name: 2026년 창업성공패키지 청년창업사관학교
+target: 만 39세 이하 청년, 창업 3년 이내
+max_funding: 1억원
+page_limit: 10
+sections:
+  - id: "1-1"
+    title: 제품·서비스의 개발동기
+    category: Problem
+    order: 1
+    tags: [개발동기, 대표자]
+    instructions: |
+      기존 제품·서비스가 있다는 전제 하에, 대표자가 해당 아이템을 개발하게 된 동기와
+      내부/외부 배경을 기재한다. 대표자 경험·이력과 문제 인식의 필연성 연결이 핵심.
+
+  - id: "1-2"
+    title: 제품·서비스의 목적(필요성)
+    category: Problem
+    order: 2
+    tags: [개발동기, 고객, 시장분석]
+    instructions: |
+      고객 니즈, 기존 해결책의 한계, 해당 아이템이 해결하려는 문제와
+      그 해결의 필요성을 출처 있는 데이터로 서술한다.
+
+  - id: "2-1"
+    title: 제품·서비스의 개발 방안
+    category: Solution
+    order: 3
+    tags: [개발준비, 차별성]
+    instructions: |
+      현재 구현 정도, 제작 방법(자체/외주), 핵심 기능, 기술적 차별성, 개발 일정을 서술.
+      시각 자료(기능 도해, 프로세스 다이어그램) 적극 활용 권장.
+
+  - id: "2-2"
+    title: 고객 요구사항에 대한 대응방안
+    category: Solution
+    order: 4
+    tags: [고객, 경쟁사, 차별성]
+    instructions: |
+      타깃 고객의 구체적 요구사항 + 자사의 대응방안. 경쟁사 대비 비교(3열 매트릭스)
+      로 차별화 증명. 객관 자료·설문 결과 근거 권장.
+
+  - id: "3-1"
+    title: 비즈니스 모델
+    category: Scale-up
+    order: 5
+    tags: [BM, 재무]
+    instructions: |
+      핵심고객 / 제공가치 / 수익구조 / 원가구조 / 채널 / 파트너 5+요소를 명확히.
+      3트랙 이상 BM(B2B+B2C+구독 등) 제시 시 확장성 평가에 유리.
+
+  - id: "3-2-1"
+    title: 내수시장 확보 방안
+    category: Scale-up
+    order: 6
+    tags: [사업화전략, 재무]
+    instructions: |
+      국내 주 소비자층·타깃 시장, 판매·유통 채널, 마케팅 방안.
+      기존 내수 실적(있다면)과 협약기간 성과 목표 수치.
+
+  - id: "3-2-2"
+    title: 해외시장 진출 방안
+    category: Scale-up
+    order: 7
+    tags: [해외, 사업화전략, IP]
+    instructions: |
+      해외 진출 국가·채널, 수출 실적, 해외 인증·특허, 글로벌 협력 네트워크, MOU 등.
+      청년사관의 고유 강조 항목.
+
+  - id: "3-2-3"
+    title: 협약기간 내 성과 목표 및 달성 방안
+    category: Scale-up
+    order: 8
+    tags: [일정자금]
+    instructions: |
+      협약기간 내 달성할 정량 성과 (고용/매출/수출/투자) 표 + 달성 방안 기재.
+
+  - id: "3-3"
+    title: 자금소요 및 조달계획
+    category: Scale-up
+    order: 9
+    tags: [일정자금, 재무]
+    instructions: |
+      정부지원금 비목별 집행 + 대응자금(현금+현물). 단가 × 기간 × 참여율 수식 권장.
+
+  - id: "3-4"
+    title: 투자유치 실적 및 계획
+    category: Scale-up
+    order: 10
+    tags: [투자, 재무]
+    instructions: |
+      과거 투자유치 이력 표 + 향후 시드/프리A/시리즈A 계획 표.
+      벤치마킹 기업·밸류에이션 수치 권장.
+
+  - id: "4-1"
+    title: 대표자·직원의 보유역량 및 기술보호 노력
+    category: Team
+    order: 11
+    tags: [팀역량, 대표자, IP]
+    instructions: |
+      대표자 경력(대기업/연구소/업계) + 창업 동기 연결 스토리.
+      직원 인력 표(완료/예정, 이해도 A/B/C).
+      업무 파트너 표. 기술보호(NDA, 특허) 노력.
+
+  - id: "4-2"
+    title: 사회적 가치(ESG) 실천계획
+    category: Team
+    order: 12
+    tags: [ESG]
+    instructions: |
+      Environment / Social / Governance 3축별 실천계획. 정량 지표 포함 권장.
+
+  - id: "4-3"
+    title: 지역특화 산업 기반 사업추진계획
+    category: Team
+    order: 13
+    tags: [지역]
+    instructions: |
+      지역주력산업과의 연관성, 지역 내 협력 네트워크, 지역 경제 기여 방안.
