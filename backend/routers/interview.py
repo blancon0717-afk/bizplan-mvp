@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.services.session_store import (
+from services.session_store import (
     get_session,
     save_company_context,
     update_answer,

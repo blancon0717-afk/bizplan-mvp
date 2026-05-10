@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.services.session_store import create_session, update_answer
+from services.session_store import create_session, update_answer
 
 router = APIRouter(prefix="/dev", tags=["dev"])
 

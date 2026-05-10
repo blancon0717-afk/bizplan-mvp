@@ -11,7 +11,7 @@ from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from backend.services.session_store import (
+from services.session_store import (
     get_session,
     load_results,
     save_company_context,

@@ -26,8 +26,8 @@ logging.basicConfig(
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.routers import programs, sessions, interview, generation, results, matching, dev
-from backend.services.session_store import cleanup_old_sessions
+from routers import programs, sessions, interview, generation, results, matching, dev
+from services.session_store import cleanup_old_sessions
 
 
 @asynccontextmanager

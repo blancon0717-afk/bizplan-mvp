@@ -1,7 +1,7 @@
 import uuid
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from backend.services.session_store import create_session, get_session, load_results
+from services.session_store import create_session, get_session, load_results
 
 router = APIRouter(tags=["sessions"])
 

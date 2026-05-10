@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from backend.services.session_store import get_session, load_results, save_results
+from services.session_store import get_session, load_results, save_results
 from core.docx_export import export_to_docx
 from core.forms import load_form
 from core.generation import regenerate_section
