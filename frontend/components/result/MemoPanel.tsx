@@ -178,7 +178,12 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
     const sortedVisibleMemos = [...visibleMemos]
       .filter((m) => !passedMemos.has(m.originalIndex))
       .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 1) - (SEVERITY_ORDER[b.severity] ?? 1))
-      .slice(0, 5);
+      .slice(0, 5)
+      .sort((a, b) => {
+        const posA = fullText.indexOf(a.anchor_text);
+        const posB = fullText.indexOf(b.anchor_text);
+        return posA - posB;
+      });
 
     return (
       <div className="h-full flex flex-col">

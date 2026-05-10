@@ -267,7 +267,12 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
                           const order: Record<string, number> = { critical: 0, warning: 1, info: 2 };
                           return (order[a.severity] ?? 1) - (order[b.severity] ?? 1);
                         })
-                        .slice(0, 5)}
+                        .slice(0, 5)
+                        .sort((a, b) => {
+                          const posA = (section.content_segments ?? []).map(s => s.text ?? "").join("").indexOf(a.anchor_text);
+                          const posB = (section.content_segments ?? []).map(s => s.text ?? "").join("").indexOf(b.anchor_text);
+                          return posA - posB;
+                        })}
                       showAnchors={showAnchors}
                       onAnchorClick={(idx) => onAnchorClick(section.section_id, idx)}
                     />
