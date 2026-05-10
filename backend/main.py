@@ -19,8 +19,8 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 load_dotenv()
 
-_log_dir = Path(__file__).resolve().parent.parent / "logs"
-_log_dir.mkdir(exist_ok=True)
+_log_dir = Path(__file__).resolve().parent / "logs"
+_log_dir.mkdir(exist_ok=True, parents=True)
 
 logging.basicConfig(
     level=logging.INFO,
