@@ -40,6 +40,7 @@ export default function ResultPage() {
   const [isActionPlanLoading, setIsActionPlanLoading] = useState(false);
   const [documentCheck, setDocumentCheck] = useState<string | null>(null);
   const [isDocumentChecking, setIsDocumentChecking] = useState(false);
+  const [usageData, setUsageData] = useState<Record<string, { used: number; max: number }>>({});
 
   useEffect(() => {
     async function load() {
@@ -62,6 +63,7 @@ export default function ResultPage() {
           })
           .catch(() => {})
           .finally(() => setIsLoadingScore(false));
+        api.getUsage(sessionId).then(setUsageData).catch(() => {});
       } catch {
         setError("결과를 불러올 수 없습니다.");
       } finally {
@@ -73,7 +75,9 @@ export default function ResultPage() {
 
   function handleAnchorClick(sectionId: string, memoIndex: number) {
     setActiveSectionId(sectionId);
-    memoPanelRef.current?.scrollToMemo(memoIndex);
+    setTimeout(() => {
+      memoPanelRef.current?.scrollToMemo(memoIndex);
+    }, 50);
   }
 
   function handleMemoTitleClick(originalIndex: number) {
@@ -93,6 +97,7 @@ export default function ResultPage() {
     await editSection(sessionId, editingSectionId, editContent);
     setEditingSectionId(null);
     setEditContent("");
+    api.getUsage(sessionId).then(setUsageData).catch(() => {});
   }
 
   function handleCancelEdit() {
@@ -119,6 +124,7 @@ export default function ResultPage() {
     } catch {
       setRegenError("재생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     }
+    api.getUsage(sessionId).then(setUsageData).catch(() => {});
   }
 
   async function handleMemoRegenerate(sectionId: string, memoIndex: number, memoResponse: string) {
@@ -128,6 +134,7 @@ export default function ResultPage() {
     } catch {
       setRegenError("재생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     }
+    api.getUsage(sessionId).then(setUsageData).catch(() => {});
   }
 
   async function handleRegenerateAll() {
@@ -188,6 +195,7 @@ export default function ResultPage() {
       }
     } finally {
       setIsFeedbackRunning(false);
+      api.getUsage(sessionId).then(setUsageData).catch(() => {});
     }
   }
 
@@ -202,6 +210,7 @@ export default function ResultPage() {
       setRegenError("액션플랜 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setIsActionPlanLoading(false);
+      api.getUsage(sessionId).then(setUsageData).catch(() => {});
     }
   }
 
@@ -322,7 +331,7 @@ export default function ResultPage() {
               {isActionPlanLoading ? (
                 <span className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
               ) : (
-                "📋 액션플랜"
+                <>📋 액션플랜 <span className={(usageData.action_plan?.used ?? 0) >= (usageData.action_plan?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.action_plan?.used ?? 0}/{usageData.action_plan?.max ?? 1})</span></>
               )}
             </button>
             <button
@@ -337,7 +346,7 @@ export default function ResultPage() {
                   피드백 생성 중 {feedbackDoneCount > 0 && feedbackTotal > 0 ? `(${feedbackDoneCount}/${feedbackTotal})` : ""}
                 </>
               ) : (
-                "피드백 확인하기"
+                <>피드백 확인하기 <span className={(usageData.feedback?.used ?? 0) >= (usageData.feedback?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.feedback?.used ?? 0}/{usageData.feedback?.max ?? 1})</span></>
               )}
             </button>
             <button
@@ -391,6 +400,7 @@ export default function ResultPage() {
             onAnchorClick={handleAnchorClick}
             onRegenerate={handleRegenerate}
             isRegenerating={isRegenerating}
+            usageData={usageData}
             onStartEdit={handleStartEdit}
             onEditContentChange={setEditContent}
             onSaveEdit={handleSaveEdit}
@@ -409,6 +419,8 @@ export default function ResultPage() {
             onRegenerate={handleMemoRegenerate}
             onMemoTitleClick={handleMemoTitleClick}
             isRegenerating={isRegenerating}
+            usageData={usageData}
+            onPassMemo={() => {}}
           />
         </div>
       </div>

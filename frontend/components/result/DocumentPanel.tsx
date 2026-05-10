@@ -37,6 +37,7 @@ interface DocumentPanelProps {
   onAnchorClick: (sectionId: string, memoIndex: number) => void;
   onRegenerate: (sectionId: string) => void;
   isRegenerating: Record<string, boolean>;
+  usageData?: Record<string, { used: number; max: number }>;
   onStartEdit: (sectionId: string, content: string) => void;
   onEditContentChange: (content: string) => void;
   onSaveEdit: () => void;
@@ -82,6 +83,7 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
   onAnchorClick,
   onRegenerate,
   isRegenerating,
+  usageData,
   onStartEdit,
   onEditContentChange,
   onSaveEdit,
@@ -206,18 +208,19 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => onStartEdit(section.section_id, section.user_edited_content ?? section.content)}
-                            className="text-xs px-2 py-0.5 rounded border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+                            disabled={(usageData?.edit?.used ?? 0) >= (usageData?.edit?.max ?? 1)}
+                            className={`text-xs px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-50 transition-colors ${(usageData?.edit?.used ?? 0) >= (usageData?.edit?.max ?? 1) ? "text-gray-300 cursor-not-allowed" : "text-slate-400 hover:text-slate-600"}`}
                           >
-                            편집
+                            편집 ({usageData?.edit?.used ?? 0}/{usageData?.edit?.max ?? 1})
                           </button>
                           <button
                             onClick={() => onRegenerate(section.section_id)}
-                            disabled={!!isRegenerating[section.section_id]}
-                            className="text-xs px-2 py-0.5 rounded border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                            disabled={!!isRegenerating[section.section_id] || (usageData?.regenerate?.used ?? 0) >= (usageData?.regenerate?.max ?? 1)}
+                            className={`text-xs px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition-colors ${(usageData?.regenerate?.used ?? 0) >= (usageData?.regenerate?.max ?? 1) ? "text-gray-300" : "text-slate-400 hover:text-slate-600"}`}
                           >
                             {isRegenerating[section.section_id] ? (
                               <span className="w-3 h-3 border border-slate-400 border-t-transparent rounded-full animate-spin inline-block" />
-                            ) : "고도화"}
+                            ) : `고도화 (${usageData?.regenerate?.used ?? 0}/${usageData?.regenerate?.max ?? 1})`}
                           </button>
                         </div>
                       )}

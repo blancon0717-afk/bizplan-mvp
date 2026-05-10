@@ -20,6 +20,8 @@ interface MemoPanelProps {
   onRegenerate: (sectionId: string, memoIndex: number, memoResponse: string) => void;
   onMemoTitleClick?: (originalIndex: number) => void;
   isRegenerating: Record<string, boolean>;
+  usageData?: Record<string, { used: number; max: number }>;
+  onPassMemo: (sectionId: string, memoIndex: number) => void;
 }
 
 interface MemoCardProps {
@@ -32,9 +34,11 @@ interface MemoCardProps {
   onRegenerate: (response: string) => void;
   onAnchorClick?: () => void;
   isRegenerating: boolean;
+  onPass: () => void;
+  isPassed?: boolean;
 }
 
-function MemoCard({ index, anchorText, note, severity, response, onChange, onRegenerate, onAnchorClick, isRegenerating }: MemoCardProps) {
+function MemoCard({ index, anchorText, note, severity, response, onChange, onRegenerate, onAnchorClick, isRegenerating, onPass }: MemoCardProps) {
   const [value, setValue] = useState(response);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -61,6 +65,9 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
             >
               {anchorText}
             </button>
+            {value.trim() && (
+              <span className="text-xs text-emerald-600 font-medium">✓ 반영됨</span>
+            )}
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">{note}</p>
         </div>
@@ -90,18 +97,33 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
           )}
         </button>
       )}
+      <button
+        onClick={onPass}
+        className="mt-2 w-full py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-400 hover:bg-slate-200 transition-colors"
+      >
+        이 메모 패스하기
+      </button>
     </div>
   );
 }
 
 const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
-  function MemoPanel({ sections, activeSectionId, showAnchors = false, onMemoChange, onRegenerate, onMemoTitleClick, isRegenerating }, ref) {
+  function MemoPanel({ sections, activeSectionId, showAnchors = false, onMemoChange, onRegenerate, onMemoTitleClick, isRegenerating, usageData, onPassMemo }, ref) {
     const section = sections.find((s) => s.section_id === activeSectionId);
     const memoRefs = useRef<Record<number, HTMLDivElement | null>>({});
+    const [passedMemos, setPassedMemos] = useState<Set<number>>(new Set());
 
     useImperativeHandle(ref, () => ({
       scrollToMemo: (originalIndex: number) => {
-        memoRefs.current[originalIndex]?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const el = memoRefs.current[originalIndex];
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
+        const keys = Object.keys(memoRefs.current).map(Number).filter(k => memoRefs.current[k]);
+        if (keys.length === 0) return;
+        const closest = keys.reduce((a, b) => Math.abs(a - originalIndex) < Math.abs(b - originalIndex) ? a : b);
+        memoRefs.current[closest]?.scrollIntoView({ behavior: "smooth", block: "start" });
       },
     }));
 
@@ -131,11 +153,13 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
       .filter((m) => m.severity !== "critical");
 
     const fullText = (section.content_segments ?? []).map((s) => s.text ?? "").join("");
-    const sortedVisibleMemos = [...visibleMemos].sort((a, b) => {
-      const posA = fullText.indexOf(a.anchor_text);
-      const posB = fullText.indexOf(b.anchor_text);
-      return posA - posB;
-    });
+    const sortedVisibleMemos = [...visibleMemos]
+      .filter((m) => !passedMemos.has(m.originalIndex))
+      .sort((a, b) => {
+        const posA = fullText.indexOf(a.anchor_text);
+        const posB = fullText.indexOf(b.anchor_text);
+        return posA - posB;
+      });
 
     return (
       <div className="h-full flex flex-col">
@@ -146,6 +170,11 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
           <p className="text-xs text-slate-400 mt-0.5">
             메모 {section.resolved_memo_count}/{sortedVisibleMemos.length} 해소 · {section.effective_completion_score}% 완성
           </p>
+          {usageData?.memo && (
+            <p className={`text-xs mt-0.5 ${(usageData.memo.used ?? 0) >= (usageData.memo.max ?? 3) ? "text-gray-400" : "text-blue-500"}`}>
+              반영 ({usageData.memo.used}/{usageData.memo.max})
+            </p>
+          )}
         </div>
 
         {/* 메모 심각도 범례 */}
@@ -189,6 +218,7 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
                     onRegenerate={(val) => onRegenerate(section.section_id, memo.originalIndex, val)}
                     onAnchorClick={() => onMemoTitleClick?.(memo.originalIndex)}
                     isRegenerating={!!isRegenerating[section.section_id]}
+                    onPass={() => { setPassedMemos(prev => new Set(prev).add(memo.originalIndex)); onPassMemo(section.section_id, memo.originalIndex); }}
                   />
                 </div>
               ))}

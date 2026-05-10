@@ -116,4 +116,7 @@ export const api = {
 
   getDocumentCheck: (sessionId: string) =>
     request<{ result: string }>(`/sessions/${sessionId}/document-check`, { method: "POST" }),
+
+  getUsage: (sessionId: string) =>
+    request<Record<string, { used: number; max: number }>>(`/sessions/${sessionId}/usage`),
 };

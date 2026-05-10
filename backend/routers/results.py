@@ -425,6 +425,18 @@ def get_rubric_score(session_id: str):
     }
 
 
+@router.get("/sessions/{session_id}/usage")
+def get_usage(session_id: str):
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    limits = {"generate": 1, "feedback": 1, "memo": 3, "regenerate": 1, "edit": 1, "action_plan": 1}
+    return {
+        feature: {"used": get_usage_count(session_id, feature), "max": max_val}
+        for feature, max_val in limits.items()
+    }
+
+
 @router.get("/sessions/{session_id}/export/docx")
 def export_docx(session_id: str, business_name: str = "(미지정)"):
     session = get_session(session_id)

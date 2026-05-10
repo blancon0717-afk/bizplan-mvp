@@ -86,6 +86,7 @@ function renderSegmentContent(
 ): React.ReactNode[] {
   const lines = text.split("\n");
   const nodes: React.ReactNode[] = [];
+  const renderedTableKeys = new Set<string>();
   let i = 0;
   let blockKey = 0;
 
@@ -105,6 +106,9 @@ function renderSegmentContent(
       const { headers, body } = parseTableLines(tableLines);
       const allRows = [...headers, ...body];
       if (allRows.length === 0) continue;
+      const tableKey = (headers[0]?.[0] ?? body[0]?.[0] ?? "").trim();
+      if (tableKey && renderedTableKeys.has(tableKey)) continue;
+      renderedTableKeys.add(tableKey);
       const numCols = Math.max(...allRows.map((r) => r.length), 1);
       nodes.push(
         <table key={`seg${segKey}-tbl${blockKey++}`} className="w-full border-collapse my-2 text-xs">
@@ -251,10 +255,11 @@ function renderTextWithAnchors(
 
     const sortedIndex = sortedSuggestions.indexOf(match);
     const originalIndex = suggestions.indexOf(match);
+    const isResolved = match.response.trim() !== "";
     nodes.push(
       <span key={keyIdx++} className="inline">
         <mark
-          className="memo-anchor cursor-pointer"
+          className={isResolved ? "memo-anchor-resolved cursor-pointer bg-emerald-100 rounded px-0.5" : "memo-anchor cursor-pointer"}
           onClick={() => onAnchorClick?.(originalIndex)}
           title={match.note}
         >
@@ -262,10 +267,10 @@ function renderTextWithAnchors(
         </mark>
         <sup
           data-anchor-index={originalIndex}
-          className="text-red-500 font-bold text-xs cursor-pointer ml-0.5 hover:text-blue-600"
+          className={isResolved ? "text-emerald-600 font-bold text-xs cursor-pointer ml-0.5 hover:text-emerald-800" : "text-red-500 font-bold text-xs cursor-pointer ml-0.5 hover:text-blue-600"}
           onClick={() => onAnchorClick?.(originalIndex)}
         >
-          [{sortedIndex + 1}]
+          {isResolved ? `✓[${sortedIndex + 1}]` : `[${sortedIndex + 1}]`}
         </sup>
       </span>
     );

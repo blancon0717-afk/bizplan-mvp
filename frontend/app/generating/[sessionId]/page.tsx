@@ -10,7 +10,7 @@ interface SectionMeta {
   order: number;
 }
 
-type Phase = "loading" | "selecting" | "generating" | "done" | "error";
+type Phase = "loading" | "selecting" | "generating" | "done" | "error" | "limit";
 
 export default function GeneratingPage() {
   const params = useParams();
@@ -91,6 +91,10 @@ export default function GeneratingPage() {
       clearTimeout(timeoutId);
     }
 
+    if (response.status === 429) {
+      setPhase("limit");
+      return;
+    }
     if (!response.ok) {
       setErrorMsg("초안 생성 요청이 실패했습니다.");
       setPhase("error");
@@ -215,6 +219,24 @@ export default function GeneratingPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (phase === "limit") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-sm text-center">
+          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4 text-2xl">📄</div>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">이미 생성된 초안이 있습니다</h1>
+          <p className="text-slate-500 text-sm mb-6">사업계획서 생성은 1회만 가능합니다.</p>
+          <button
+            onClick={() => router.push(`/result/${sessionId}`)}
+            className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+          >
+            결과 보기
+          </button>
+        </div>
       </div>
     );
   }

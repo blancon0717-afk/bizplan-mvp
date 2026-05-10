@@ -24,6 +24,7 @@
 - 작성 의도가 좋아 보여도, 실제 텍스트에 없으면 없는 것으로 간주
 - 불합격 경보 키워드가 하나라도 있으면 반드시 감점
 - 합격 신호는 텍스트에 명시적으로 존재할 때만 인정
+- eval_suggestions의 anchor_text와 note는 반드시 현재 평가 중인 섹션({section_id}, {section_title})의 내용과 직접 관련된 것만 작성할 것. 다른 섹션(BM, 팀구성, 재무 등)에서 다뤄야 할 내용은 절대 이 섹션의 피드백으로 달지 말 것.
 
 반드시 다음 JSON만 반환하세요:
 
@@ -64,3 +65,9 @@ confidence_level 기준:
 - `green`: rubric 6개 중 4개 이상 통과, warning_keyword 없음
 - `yellow`: rubric 2~3개 통과 또는 warning_keyword 있음
 - `red`: rubric 1개 이하 통과 또는 핵심 불합격 패턴 다수 발견
+
+섹션별 rubric_check 적용 기준:
+- section_id에 '1'(Problem 계열)이 포함되면: `has_customer_benefit_numbers`, `has_narrow_target`, `has_replacement_positioning`만 중점 평가. `has_bm_structure`, `has_external_validation`은 해당 없음으로 간주하며 이를 이유로 감점하지 말 것.
+- section_id에 '2'(Solution 계열)가 포함되면: `has_named_technology`, `has_replacement_positioning`, `has_external_validation` 중점 평가.
+- section_id에 '3'(Scale-up/BM 계열)이 포함되면: `has_bm_structure`, `has_customer_benefit_numbers` 중점 평가.
+- section_id에 '4'(Team 계열)가 포함되면: rubric_check 7개 항목 전체를 팀 섹션에 적용하지 말 것. eval_suggestions는 팀 역량(대표자 경력, 팀 구성, 도메인 전문성, 파트너 네트워크)과 직접 관련된 피드백만 작성.

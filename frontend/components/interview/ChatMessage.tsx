@@ -30,7 +30,7 @@ export function AiMessage({ text, hint, questionNumber, total, exampleAnswer, sh
             </p>
           )}
           {exampleAnswer && showExample && (
-            <p className="mt-2 text-xs text-gray-400 italic border-t border-slate-100 pt-2 line-clamp-3">
+            <p className="mt-2 text-xs text-gray-400 italic border-t border-slate-100 pt-2">
               예시: {exampleAnswer}
             </p>
           )}

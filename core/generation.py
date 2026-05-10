@@ -510,6 +510,7 @@ def apply_eval_result(result: "SectionResult", eval_data: dict) -> None:
                 )
             )
             existing_anchors.add(anchor)
+    _resolve_anchor_texts(result)
 
 
 def evaluate_business_plan(results: list["SectionResult"]) -> list[dict]:
@@ -568,6 +569,7 @@ def evaluate_business_plan(results: list["SectionResult"]) -> list[dict]:
 
 def attach_strategic_feedbacks(results_map: dict, feedbacks: list[dict]) -> None:
     """전략 피드백을 해당 섹션의 inline_suggestions에 추가 (in-place)."""
+    modified: set[str] = set()
     for fb in feedbacks:
         target_id = fb.get("target_section_id", "").strip()
         anchor = fb.get("anchor_text", "").strip()
@@ -587,6 +589,9 @@ def attach_strategic_feedbacks(results_map: dict, feedbacks: list[dict]) -> None
                 severity=fb.get("severity", "warning"),
             )
         )
+        modified.add(target_id)
+    for target_id in modified:
+        _resolve_anchor_texts(results_map[target_id])
 
 
 def generate_section(
