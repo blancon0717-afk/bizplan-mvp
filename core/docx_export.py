@@ -23,7 +23,6 @@ from core.generation import ContentSegment, SectionResult
 
 _FONT = "맑은 고딕"
 _COLOR_BLACK = RGBColor(17, 17, 17)
-_COLOR_GRAY = RGBColor(128, 128, 128)
 _COLOR_BLUE = RGBColor(59, 130, 246)
 _COLOR_BLUE_DARK = RGBColor(29, 78, 216)
 _MD_TABLE_ROW = re.compile(r"^\s*\|")
@@ -86,7 +85,7 @@ def _parse_md_table(lines: list[str]) -> tuple[list[list[str]], list[list[str]]]
 
 
 def _add_segment(doc: Document, seg: ContentSegment) -> None:
-    base_color = _COLOR_GRAY if seg.source == "llm_inferred" else _COLOR_BLACK
+    base_color = _COLOR_BLACK
     lines = seg.text.split("\n")
     i = 0
 
@@ -122,7 +121,7 @@ def _add_segment(doc: Document, seg: ContentSegment) -> None:
                     elif is_caption:
                         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                         run = para.add_run(ct)
-                        _set_font(run, 8, False, _COLOR_GRAY)
+                        _set_font(run, 8, False, _COLOR_BLACK)
                         run.font.italic = True
                     elif _DESCRIPTION_CELL.match(ct):
                         _set_cell_bg(cell, "DBEAFE")
@@ -133,14 +132,14 @@ def _add_segment(doc: Document, seg: ContentSegment) -> None:
                         url_m = _URL_PATTERN.search(ct)
                         if url_m:
                             run_pre = para.add_run(ct[:url_m.start()])
-                            _set_font(run_pre, 8, False, _COLOR_GRAY)
+                            _set_font(run_pre, 8, False, _COLOR_BLACK)
                             run_url = para.add_run(url_m.group())
                             _set_font(run_url, 8, False, _COLOR_BLUE)
                             run_url.font.underline = True
                             tail = ct[url_m.end():]
                             if tail:
                                 run_tail = para.add_run(tail)
-                                _set_font(run_tail, 8, False, _COLOR_GRAY)
+                                _set_font(run_tail, 8, False, _COLOR_BLACK)
                         else:
                             run = para.add_run(ct)
                             _set_font(run, 8, False, _COLOR_BLUE)

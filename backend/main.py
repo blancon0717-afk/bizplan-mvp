@@ -1,12 +1,20 @@
 """FastAPI 앱 엔트리포인트.
 
-실행: bizplan-mvp/ 디렉토리에서
-  uvicorn backend.main:app --reload --port 8000
+실행: backend/ 디렉토리에서
+  uvicorn main:app --reload --port 8000
 """
+import sys
+from pathlib import Path
+
+_backend = Path(__file__).resolve().parent   # bizplan-mvp/backend/
+_root    = _backend.parent                   # bizplan-mvp/
+for _p in [str(_backend), str(_root)]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from dotenv import load_dotenv
 load_dotenv()

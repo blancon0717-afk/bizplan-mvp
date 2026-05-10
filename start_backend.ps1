@@ -45,8 +45,8 @@ Write-Host "[2] 포트 $PORT 해제 확인 완료"
 Write-Host "[3] 백엔드 시작 중..."
 $proc = Start-Process `
     -FilePath $PYTHON `
-    -ArgumentList "-m uvicorn backend.main:app --host 0.0.0.0 --port $PORT" `
-    -WorkingDirectory $DIR `
+    -ArgumentList "-m uvicorn main:app --host 0.0.0.0 --port $PORT" `
+    -WorkingDirectory "$DIR\backend" `
     -RedirectStandardOutput $LOG_FILE `
     -WindowStyle Hidden `
     -PassThru
