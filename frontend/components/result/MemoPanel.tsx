@@ -41,6 +41,7 @@ interface MemoCardProps {
 
 function MemoCard({ index, anchorText, note, severity, response, onChange, onRegenerate, onAnchorClick, isRegenerating, onPass, isApplied }: MemoCardProps) {
   const [value, setValue] = useState(response);
+  const [showConfirm, setShowConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { setValue(response); }, [response]);
@@ -82,9 +83,9 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
           value.trim() ? "border-emerald-300 bg-emerald-50/50" : "border-slate-200 bg-slate-50"
         }`}
       />
-      {value.trim() && (
+      {value.trim() && !showConfirm && (
         <button
-          onClick={() => onRegenerate(value)}
+          onClick={() => setShowConfirm(true)}
           disabled={isRegenerating}
           className="mt-2 w-full py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors"
         >
@@ -97,6 +98,25 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
             "본문에 반영하기 →"
           )}
         </button>
+      )}
+      {showConfirm && (
+        <div className="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700">
+          <p className="mb-2">해당 메모 내용을 반영하여 섹션이 재생성됩니다. 계속할까요?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShowConfirm(false); onRegenerate(value); }}
+              className="flex-1 py-1 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            >
+              확인
+            </button>
+            <button
+              onClick={() => setShowConfirm(false)}
+              className="flex-1 py-1 rounded bg-slate-100 text-slate-600 hover:bg-slate-200"
+            >
+              취소
+            </button>
+          </div>
+        </div>
       )}
       <button
         onClick={onPass}
