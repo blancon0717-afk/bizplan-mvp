@@ -97,25 +97,6 @@ export default function RecommendPage() {
             </section>
           )}
 
-          {ineligible.length > 0 && (
-            <section>
-              <h2 className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wide">
-                현재 조건 미해당
-              </h2>
-              <div className="space-y-3">
-                {ineligible.map((p) => (
-                  <ProgramCard
-                    key={p.name}
-                    variant="recommend"
-                    program={p}
-                    onWrite={handleWrite}
-                    isStarting={isStarting}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
           {programs.length === 0 && (
             <div className="text-center py-20 text-slate-400">
               추천 결과가 없습니다.

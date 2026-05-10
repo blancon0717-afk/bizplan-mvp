@@ -73,11 +73,9 @@ export const useResultStore = create<ResultState>((set, get) => ({
       const suggestions = s.inline_suggestions.map((m, i) =>
         i === memoIndex ? { ...m, response } : m
       );
-      const effective = recomputeEffective({ ...s, inline_suggestions: suggestions });
-      return { ...s, inline_suggestions: suggestions, effective_completion_score: effective };
+      return { ...s, inline_suggestions: suggestions };
     });
-    const overall = computeOverall(updated);
-    set({ sections: updated, overallCompletion: overall, localProbPct: computeLocalProbPct(overall) });
+    set({ sections: updated });
     await api.updateMemo(sessionId, sectionId, memoIndex, response).catch(() => {});
   },
 

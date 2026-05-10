@@ -129,6 +129,11 @@ def regenerate(session_id: str, section_id: str, body: RegenerateBody = Regenera
     if results is None:
         raise HTTPException(status_code=404, detail="Results not found")
 
+    feature_key = f"regenerate_{section_id}"
+    if get_usage_count(session_id, feature_key) >= 1:
+        raise HTTPException(status_code=429, detail="이 섹션의 고도화는 1회만 가능합니다.")
+    increment_usage(session_id, feature_key)
+
     form = load_form(session.program_code)
     section = form.get_section(section_id)
     if section is None:
@@ -156,6 +161,10 @@ def regenerate(session_id: str, section_id: str, body: RegenerateBody = Regenera
             company_context=session.company_context,
         )
         new_result = apply_post_judgment(new_result)
+        if prev.completion_score > 0 and new_result.completion_score < prev.completion_score:
+            new_result.completion_score = prev.completion_score
+        if prev.confidence_level == "green" and new_result.confidence_level != "green":
+            new_result.confidence_level = "green"
     except Exception as e:
         logger.error("[재생성 실패] %s: %s", section_id, e)
         raise HTTPException(status_code=500, detail="섹션 재생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")

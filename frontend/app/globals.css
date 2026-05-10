@@ -89,3 +89,15 @@ body {
   background: #f1f5f9;
   font-weight: 600;
 }
+
+/* 앵커 클릭 시 펄스 하이라이트 */
+@keyframes anchorPulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); background-color: #bfdbfe; }
+  100% { transform: scale(1); background-color: transparent; }
+}
+
+.anchor-highlight {
+  animation: anchorPulse 0.8s ease-out;
+  display: inline-block;
+}

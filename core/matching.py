@@ -47,7 +47,7 @@ _KEYWORD_DOMAIN: dict[str, list[str]] = {
 }
 
 # 도메인 불일치 패널티 면제 분야 (어떤 아이템에도 열려 있는 범용 분야)
-_GENERAL_DOMAINS = {"일반(공통)", "★통합공고", "청년(만 39세 이하)"}
+_GENERAL_DOMAINS = {"일반(공통)", "일반", "★통합공고", "청년(만 39세 이하)"}
 
 
 _programs_cache: list[SupportProgram] | None = None
@@ -177,10 +177,12 @@ def recommend(profile: dict) -> list[dict]:
     results: list[dict] = []
 
     for prog in programs:
+        if prog.상태 == "종료":
+            continue
         stage_ok = _is_stage_eligible(profile.get("업력", "초기"), prog)
         region_ok = _is_region_eligible(profile.get("지역", "무관"), prog)
         domain_ok = _is_domain_eligible(profile.get("아이템", ""), prog)
-        is_eligible = stage_ok and region_ok and domain_ok and prog.상태 != "종료"
+        is_eligible = stage_ok and region_ok and domain_ok
 
         score, reasons = _rule_score(profile, prog)
         results.append({

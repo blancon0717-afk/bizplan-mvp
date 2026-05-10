@@ -29,10 +29,13 @@ export default function HomePage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = useRecommendStore.getState().profile;
     if (saved) setProfile(saved);
+    const sid = localStorage.getItem("bizplan_session_id");
+    if (sid) setSavedSessionId(sid);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,6 +67,28 @@ export default function HomePage() {
           <span className="font-semibold text-slate-800 text-lg">사업계획서 AI</span>
         </div>
       </header>
+
+      {savedSessionId && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+          <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+            <p className="text-sm text-blue-700 font-medium">이전에 작성한 사업계획서가 있습니다.</p>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => router.push(`/result/${savedSessionId}`)}
+                className="px-4 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                결과 보기
+              </button>
+              <button
+                onClick={() => { localStorage.removeItem("bizplan_session_id"); setSavedSessionId(null); }}
+                className="px-4 py-1.5 bg-white text-slate-500 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                새로 시작하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-2xl">

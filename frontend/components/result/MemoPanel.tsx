@@ -36,9 +36,10 @@ interface MemoCardProps {
   isRegenerating: boolean;
   onPass: () => void;
   isPassed?: boolean;
+  isApplied?: boolean;
 }
 
-function MemoCard({ index, anchorText, note, severity, response, onChange, onRegenerate, onAnchorClick, isRegenerating, onPass }: MemoCardProps) {
+function MemoCard({ index, anchorText, note, severity, response, onChange, onRegenerate, onAnchorClick, isRegenerating, onPass, isApplied }: MemoCardProps) {
   const [value, setValue] = useState(response);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -63,9 +64,9 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
               onClick={onAnchorClick}
               className="text-xs font-medium text-slate-600 hover:text-blue-600 hover:underline text-left"
             >
-              {anchorText}
+              {anchorText || (note.slice(0, 20) + (note.length > 20 ? "..." : ""))}
             </button>
-            {value.trim() && (
+            {isApplied && (
               <span className="text-xs text-emerald-600 font-medium">✓ 반영됨</span>
             )}
           </div>
@@ -112,6 +113,7 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
     const section = sections.find((s) => s.section_id === activeSectionId);
     const memoRefs = useRef<Record<number, HTMLDivElement | null>>({});
     const [passedMemos, setPassedMemos] = useState<Set<number>>(new Set());
+    const [appliedMemos, setAppliedMemos] = useState<Set<number>>(new Set());
 
     useImperativeHandle(ref, () => ({
       scrollToMemo: (originalIndex: number) => {
@@ -149,8 +151,7 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
     }
 
     const visibleMemos = section.inline_suggestions
-      .map((m, originalIndex) => ({ ...m, originalIndex }))
-      .filter((m) => m.severity !== "critical");
+      .map((m, originalIndex) => ({ ...m, originalIndex }));
 
     const fullText = (section.content_segments ?? []).map((s) => s.text ?? "").join("");
     const sortedVisibleMemos = [...visibleMemos]
@@ -215,9 +216,10 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
                     severity={memo.severity}
                     response={memo.response}
                     onChange={(val) => onMemoChange(section.section_id, memo.originalIndex, val)}
-                    onRegenerate={(val) => onRegenerate(section.section_id, memo.originalIndex, val)}
+                    onRegenerate={(val) => { setAppliedMemos(prev => new Set(prev).add(memo.originalIndex)); onRegenerate(section.section_id, memo.originalIndex, val); }}
                     onAnchorClick={() => onMemoTitleClick?.(memo.originalIndex)}
                     isRegenerating={!!isRegenerating[section.section_id]}
+                    isApplied={appliedMemos.has(memo.originalIndex)}
                     onPass={() => { setPassedMemos(prev => new Set(prev).add(memo.originalIndex)); onPassMemo(section.section_id, memo.originalIndex); }}
                   />
                 </div>

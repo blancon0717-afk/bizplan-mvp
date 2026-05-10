@@ -33,13 +33,20 @@ export default function GeneratingPage() {
     if (startedRef.current) return;
     startedRef.current = true;
 
+    const savedId = localStorage.getItem("bizplan_session_id");
+    if (savedId && savedId !== sessionId) {
+      router.replace(`/result/${savedId}`);
+      return;
+    }
+
     fetch(`/api/sessions/${sessionId}/sections`)
       .then((r) => r.json())
       .then((data) => {
         const secs: SectionMeta[] = data.sections ?? [];
         setAllSections(secs);
         setSelectedIds(new Set(secs.map((s) => s.id)));
-        setPhase("selecting");
+        localStorage.setItem("bizplan_session_id", sessionId);
+        startGeneration(null);
       })
       .catch(() => {
         setErrorMsg("섹션 정보를 불러올 수 없습니다.");
@@ -202,7 +209,12 @@ export default function GeneratingPage() {
     return () => clearInterval(id);
   }, [phase]);
 
-  const total = sections.length;
+  const total = sections.length > 0 ? sections.length : allSections.length;
+
+  // sections에 없는 항목은 allSections 기반으로 "generating" 상태로 채움
+  const displaySections: SectionProgress[] = sections.length > 0
+    ? sections
+    : allSections.map((s) => ({ ...s, status: "generating" as const }));
 
   // 섹션 완료 기준 진행률
   const sectionProgress = total > 0 ? (doneCount / total) * 100 : 0;
@@ -229,7 +241,7 @@ export default function GeneratingPage() {
         <div className="w-full max-w-sm text-center">
           <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4 text-2xl">📄</div>
           <h1 className="text-xl font-bold text-slate-900 mb-2">이미 생성된 초안이 있습니다</h1>
-          <p className="text-slate-500 text-sm mb-6">사업계획서 생성은 1회만 가능합니다.</p>
+          <p className="text-slate-500 text-sm mb-6">사업계획서 생성은 1회만 가능합니다. 기존 결과를 확인하세요.</p>
           <button
             onClick={() => router.push(`/result/${sessionId}`)}
             className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
@@ -369,9 +381,9 @@ export default function GeneratingPage() {
           </div>
         )}
 
-        {sections.length > 0 && (
+        {displaySections.length > 0 && (
           <div className="space-y-2">
-            {sections.map((section, i) => (
+            {displaySections.map((section, i) => (
               <SectionProgressItem key={section.id} section={section} index={i} />
             ))}
           </div>

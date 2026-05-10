@@ -288,9 +288,13 @@ const SegmentRenderer = forwardRef<SegmentRendererHandle, SegmentRendererProps>(
 
     useImperativeHandle(ref, () => ({
       scrollToAnchor: (originalIndex: number) => {
-        containerRef.current
-          ?.querySelector<HTMLElement>(`[data-anchor-index="${originalIndex}"]`)
-          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        const el = containerRef.current?.querySelector<HTMLElement>(`[data-anchor-index="${originalIndex}"]`);
+        if (!el) return;
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("anchor-highlight");
+        void el.offsetWidth;
+        el.classList.add("anchor-highlight");
+        setTimeout(() => el.classList.remove("anchor-highlight"), 1000);
       },
     }));
 
