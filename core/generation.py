@@ -79,6 +79,10 @@ def _clean_segment_text(text: str) -> str:
     text = re.sub(r"\[[^\]]*(?:추정 필요|입력 필요|확인 필요|미정)[^\]]*\]", "", text)
     # : 추정 필요, : 입력 필요, : 확인 필요, : 미정 등 콜론 뒤 인라인 형태 제거
     text = re.sub(r":\s*(?:추정 필요|입력 필요|확인 필요|미정)\b", "", text)
+    # 문장 중간의 플레이스홀더 제거 — [기존 솔루션 1], [지역/산업/고객군], [구체적 수치 또는 기능] 등
+    text = re.sub(r"\[[^\]]{2,30}\]", "", text)
+    # (N개사/N명), (N%) 등 미입력 수치 플레이스홀더 제거
+    text = re.sub(r"\([N][^\)]{0,20}\)", "", text)
     return text.strip()
 _EVAL_CRITERIA_PATH = Path(__file__).resolve().parent.parent / "skills" / "L2_section" / "S03_item_keyword_strategy.md"
 _EVAL_PROMPT_PATH = _PROMPTS_DIR / "section_evaluation.md"
