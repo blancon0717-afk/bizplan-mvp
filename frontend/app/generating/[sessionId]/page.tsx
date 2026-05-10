@@ -33,12 +33,6 @@ export default function GeneratingPage() {
     if (startedRef.current) return;
     startedRef.current = true;
 
-    const savedId = localStorage.getItem("bizplan_session_id");
-    if (savedId && savedId !== sessionId) {
-      router.replace(`/result/${savedId}`);
-      return;
-    }
-
     fetch(`/api/sessions/${sessionId}/sections`)
       .then((r) => r.json())
       .then((data) => {
