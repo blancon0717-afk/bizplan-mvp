@@ -13,6 +13,8 @@ from pydantic import BaseModel
 
 from services.session_store import (
     get_session,
+    get_usage_count,
+    increment_usage,
     load_results,
     save_company_context,
     save_results,
@@ -51,6 +53,9 @@ async def generate_draft(session_id: str, body: GenerateRequest = Body(default=N
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    if get_usage_count(session_id, "generate") >= 1:
+        raise HTTPException(status_code=429, detail="사업계획서 생성은 1회만 가능합니다.")
+    increment_usage(session_id, "generate")
 
     async def event_generator():
         loop = asyncio.get_event_loop()
@@ -209,6 +214,9 @@ async def generate_feedback(session_id: str):
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    if get_usage_count(session_id, "feedback") >= 1:
+        raise HTTPException(status_code=429, detail="피드백 확인은 1회만 가능합니다.")
+    increment_usage(session_id, "feedback")
 
     async def event_generator():
         results = load_results(session_id)
@@ -271,6 +279,9 @@ async def generate_single_section_feedback(session_id: str, section_id: str):
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    if get_usage_count(session_id, "regenerate") >= 1:
+        raise HTTPException(status_code=429, detail="섹션별 고도화는 1회만 가능합니다.")
+    increment_usage(session_id, "regenerate")
 
     results = load_results(session_id)
     if not results:

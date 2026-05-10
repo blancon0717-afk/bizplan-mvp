@@ -25,6 +25,14 @@ def create_session(session_id: str, program_code: str) -> Session:
     session = Session(session_id=session_id, program_code=program_code)
     data = json.loads(session.to_json())
     data["created_at"] = datetime.now(timezone.utc).isoformat()
+    data["usage_count"] = {
+        "generate": 0,
+        "feedback": 0,
+        "memo": 0,
+        "regenerate": 0,
+        "edit": 0,
+        "action_plan": 0,
+    }
     (_SESSIONS_DIR / f"{session_id}.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -94,6 +102,26 @@ def cleanup_old_sessions(max_age_days: float = 3.0) -> int:
     if deleted:
         logger.info("[세션 정리] %d개 세션 삭제 (기준: %d일 초과)", deleted, int(max_age_days))
     return deleted
+
+
+def get_usage_count(session_id: str, feature: str) -> int:
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if not path.exists():
+        return 0
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return raw.get("usage_count", {}).get(feature, 0)
+
+
+def increment_usage(session_id: str, feature: str) -> int:
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if not path.exists():
+        return 0
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    usage = raw.get("usage_count", {})
+    usage[feature] = usage.get(feature, 0) + 1
+    raw["usage_count"] = usage
+    path.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
+    return usage[feature]
 
 
 def save_results(session_id: str, results: list[SectionResult]) -> None:

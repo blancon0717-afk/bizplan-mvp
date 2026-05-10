@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from services.session_store import get_session, load_results, save_results
+from services.session_store import get_session, get_usage_count, increment_usage, load_results, save_results
 from core.docx_export import export_to_docx
 from core.forms import load_form
 from core.generation import regenerate_section
@@ -78,6 +78,10 @@ def update_memo(session_id: str, section_id: str, memo_index: int, body: MemoRes
     if memo_index >= len(section.inline_suggestions):
         raise HTTPException(status_code=400, detail="Memo index out of range")
 
+    if get_usage_count(session_id, "memo") >= 3:
+        raise HTTPException(status_code=429, detail="피드백 반영은 3회만 가능합니다.")
+    increment_usage(session_id, "memo")
+
     section.inline_suggestions[memo_index].response = body.response
     save_results(session_id, results)
 
@@ -102,6 +106,10 @@ def edit_section(session_id: str, section_id: str, body: EditBody):
     section = next((r for r in results if r.section_id == section_id), None)
     if section is None:
         raise HTTPException(status_code=404, detail="Section not found")
+    if get_usage_count(session_id, "edit") >= 1:
+        raise HTTPException(status_code=429, detail="섹션 수정은 1회만 가능합니다.")
+    increment_usage(session_id, "edit")
+
     section.user_edited_content = body.content if body.content.strip() else None
     save_results(session_id, results)
     return {"section_id": section_id, "saved": True}
@@ -250,6 +258,9 @@ def generate_action_plan(session_id: str):
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    if get_usage_count(session_id, "action_plan") >= 1:
+        raise HTTPException(status_code=429, detail="액션플랜 확인은 1회만 가능합니다.")
+    increment_usage(session_id, "action_plan")
     results = load_results(session_id)
     if results is None:
         raise HTTPException(status_code=404, detail="Results not found")
