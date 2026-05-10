@@ -305,20 +305,27 @@ export default function ResultPage() {
               : <RubricBadge probPct={localProbPct} />
             }
             {(yellowCount > 0 || redCount > 0) && (
-              <button
-                onClick={handleRegenerateAll}
-                disabled={isRegenAll}
-                title="보완 필요/미흡 섹션을 일괄 재생성합니다"
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 transition-colors"
-              >
-                {isRegenAll ? (
-                  <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                ) : "↺"}
-                전체 고도화 ({yellowCount + redCount}개 섹션)
-                <span className={(usageData.regenerate_all?.used ?? 0) >= (usageData.regenerate_all?.max ?? 1) ? "text-xs text-gray-400 ml-1" : "text-xs text-blue-500 ml-1"}>
-                  ({usageData.regenerate_all?.used ?? 0}/{usageData.regenerate_all?.max ?? 1})
-                </span>
-              </button>
+              <div className="relative group">
+                <button
+                  onClick={handleRegenerateAll}
+                  disabled={isRegenAll}
+                  title="보완 필요/미흡 섹션을 일괄 재생성합니다"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                >
+                  {isRegenAll ? (
+                    <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                  ) : "↺"}
+                  전체 고도화 ({yellowCount + redCount}개 섹션)
+                  <span className={(usageData.regenerate_all?.used ?? 0) >= (usageData.regenerate_all?.max ?? 1) ? "text-xs text-gray-400 ml-1" : "text-xs text-blue-500 ml-1"}>
+                    ({usageData.regenerate_all?.used ?? 0}/{usageData.regenerate_all?.max ?? 1})
+                  </span>
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                  <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                    보완 필요/미흡 섹션을 일괄 재생성합니다 (1회 한정)
+                  </div>
+                </div>
+              </div>
             )}
             <div className="relative group">
               <button
