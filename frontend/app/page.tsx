@@ -30,12 +30,23 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
+  const [hasCompletedPlan, setHasCompletedPlan] = useState(false);
 
   useEffect(() => {
     const saved = useRecommendStore.getState().profile;
     if (saved) setProfile(saved);
-    const sid = localStorage.getItem("bizplan_session_id");
-    if (sid) setSavedSessionId(sid);
+    const savedId = localStorage.getItem("bizplan_session_id");
+    if (savedId) {
+      fetch(`/api/sessions/${savedId}/results`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.sections && data.sections.length > 0) {
+            setSavedSessionId(savedId);
+            setHasCompletedPlan(true);
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -68,7 +79,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {savedSessionId && (
+      {hasCompletedPlan && (
         <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <p className="text-sm text-blue-700 font-medium">이전에 작성한 사업계획서가 있습니다.</p>
@@ -80,8 +91,8 @@ export default function HomePage() {
                 결과 보기
               </button>
               <button
-                onClick={() => { localStorage.removeItem("bizplan_session_id"); setSavedSessionId(null); }}
-                className="px-4 py-1.5 bg-white text-slate-500 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+                disabled
+                className="px-4 py-1.5 bg-white text-slate-500 text-xs font-semibold rounded-lg border border-slate-200 opacity-50 cursor-not-allowed transition-colors"
               >
                 새로 시작하기
               </button>
