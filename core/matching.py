@@ -64,6 +64,7 @@ class SupportProgram:
     상태: str
     program_code: str
     설명: str
+    has_form: bool = False
 
 
 def load_programs() -> list[SupportProgram]:
@@ -90,6 +91,7 @@ def load_programs() -> list[SupportProgram]:
                 상태=row.get("상태", "").strip(),
                 program_code=row.get("program_code", "").strip(),
                 설명=row.get("설명", "").strip(),
+                has_form=row.get("has_form", "false").strip().lower() == "true",
             ))
     _programs_cache = programs
     return programs
@@ -195,6 +197,7 @@ def recommend(profile: dict) -> list[dict]:
             "상태": prog.상태,
             "program_code": prog.program_code,
             "설명": prog.설명,
+            "has_form": prog.has_form,
             "score": score,
             "match_reasons": reasons,
             "is_eligible": is_eligible,

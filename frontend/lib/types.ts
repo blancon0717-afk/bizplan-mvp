@@ -15,6 +15,7 @@ export interface SupportProgramMatch {
   상태: string;
   program_code: string;
   설명: string;
+  has_form: boolean;
   score: number;
   match_reasons: string[];
   is_eligible: boolean;

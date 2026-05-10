@@ -85,17 +85,7 @@ export default function ProgramCard(props: ProgramCardProps) {
   // variant === "recommend"
   const { program, onWrite, isStarting } = props;
   const amount = formatAmount(program.최대지원금액_만원);
-  const FORMS_AVAILABLE = [
-    "initial_package",
-    "initial_package_deeptech",
-    "youth_academy",
-    "jumping_package",
-    "jumping_package_deeptech",
-    "comeback_package",
-    "changjungdae",
-    "deeptech_academy",
-  ];
-  const hasForm = FORMS_AVAILABLE.includes(program.program_code);
+  const hasForm = program.has_form === true;
 
   return (
     <div
