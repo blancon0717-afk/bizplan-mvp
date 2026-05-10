@@ -205,6 +205,7 @@ def recommend(profile: dict) -> list[dict]:
 
     results.sort(key=lambda x: (
         not x["is_eligible"],
+        not x["has_form"],
         x["상태"] == "통합공고",
         x["상태"] == "종료",
         -x["score"],
