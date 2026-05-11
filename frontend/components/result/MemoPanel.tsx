@@ -22,6 +22,7 @@ interface MemoPanelProps {
   isRegenerating: Record<string, boolean>;
   usageData?: Record<string, { used: number; max: number }>;
   onPassMemo: (sectionId: string, memoIndex: number) => void;
+  passedMemos?: Set<number>;
 }
 
 interface MemoCardProps {
@@ -129,10 +130,9 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
 }
 
 const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
-  function MemoPanel({ sections, activeSectionId, showAnchors = false, onMemoChange, onRegenerate, onMemoTitleClick, isRegenerating, usageData, onPassMemo }, ref) {
+  function MemoPanel({ sections, activeSectionId, showAnchors = false, onMemoChange, onRegenerate, onMemoTitleClick, isRegenerating, usageData, onPassMemo, passedMemos = new Set() }, ref) {
     const section = sections.find((s) => s.section_id === activeSectionId);
     const memoRefs = useRef<Record<number, HTMLDivElement | null>>({});
-    const [passedMemos, setPassedMemos] = useState<Set<number>>(new Set());
     const [appliedMemos, setAppliedMemos] = useState<Set<number>>(new Set());
 
     useImperativeHandle(ref, () => ({
@@ -252,7 +252,7 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
                     onAnchorClick={() => onMemoTitleClick?.(memo.anchor_text)}
                     isRegenerating={!!isRegenerating[section.section_id]}
                     isApplied={appliedMemos.has(memo.originalIndex)}
-                    onPass={() => { setPassedMemos(prev => new Set(prev).add(memo.originalIndex)); onPassMemo(section.section_id, memo.originalIndex); }}
+                    onPass={() => { onPassMemo(section.section_id, memo.originalIndex); }}
                   />
                 </div>
               ))}

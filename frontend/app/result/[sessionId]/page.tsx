@@ -465,6 +465,7 @@ export default function ResultPage() {
                 [sectionId]: new Set([...(prev[sectionId] ?? []), memoIndex])
               }));
             }}
+            passedMemos={passedMemoMap[activeSectionId ?? ""] ?? new Set()}
           />
         </div>
       </div>
