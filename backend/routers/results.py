@@ -129,10 +129,16 @@ def regenerate(session_id: str, section_id: str, body: RegenerateBody = Regenera
     if results is None:
         raise HTTPException(status_code=404, detail="Results not found")
 
-    feature_key = f"regenerate_{section_id}"
-    if get_usage_count(session_id, feature_key) >= 1:
-        raise HTTPException(status_code=429, detail="이 섹션의 고도화는 1회만 가능합니다.")
-    increment_usage(session_id, feature_key)
+    if body.memo_response is not None:
+        feature_key = f"memo_regenerate_{section_id}"
+        if get_usage_count(session_id, feature_key) >= 3:
+            raise HTTPException(status_code=429, detail="이 섹션의 메모 반영은 3회만 가능합니다.")
+        increment_usage(session_id, feature_key)
+    else:
+        feature_key = f"regenerate_{section_id}"
+        if get_usage_count(session_id, feature_key) >= 1:
+            raise HTTPException(status_code=429, detail="이 섹션의 고도화는 1회만 가능합니다.")
+        increment_usage(session_id, feature_key)
 
     form = load_form(session.program_code)
     section = form.get_section(section_id)
