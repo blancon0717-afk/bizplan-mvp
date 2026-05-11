@@ -169,7 +169,6 @@ export default function ResultPage() {
   }
 
   async function handleFeedback() {
-    setShowAnchors(true);
     setIsFeedbackRunning(true);
     setFeedbackDoneCount(0);
     setFeedbackTotal(0);
@@ -197,6 +196,7 @@ export default function ResultPage() {
             } else if (eventType === "section_feedback_done") {
               setFeedbackDoneCount((c) => c + 1);
               updateSectionSuggestions(data.section_id, data.inline_suggestions);
+              setShowAnchors(true);
             } else if (eventType === "all_done") {
               // 전략 피드백 반영 — 재조회 없이 페이로드로 처리
               for (const s of (data.sections ?? [])) {
