@@ -32,7 +32,7 @@ _ELIGIBLE_REGIONS: dict[str, set[str]] = {
 _KEYWORD_DOMAIN: dict[str, list[str]] = {
     "R&D":          ["r&d", "연구", "기술개발", "특허", "연구개발"],
     "제조업":        ["제조", "생산", "공장", "부품", "소재", "하드웨어", "설비"],
-    "신산업/초격차": ["ai", "인공지능", "딥테크", "빅데이터", "블록체인", "우주", "바이오", "반도체", "첨단"],
+    "신산업/초격차": ["ai", "인공지능", "딥테크", "빅데이터", "블록체인", "우주", "바이오", "반도체", "첨단", "앱", "어플", "게임", "플랫폼", "sw", "소프트웨어", "서비스", "솔루션", "자동화", "데이터"],
     "투자":          ["투자", "벤처", "엑셀러레이터", "팁스"],
     "수출":          ["수출", "글로벌", "해외"],
     "소상공인":      ["소상공인", "자영업", "소규모"],
@@ -179,7 +179,7 @@ def recommend(profile: dict) -> list[dict]:
     results: list[dict] = []
 
     for prog in programs:
-        if prog.상태 == "종료":
+        if prog.상태 in ("종료", "통합공고"):
             continue
         stage_ok = _is_stage_eligible(profile.get("업력", "초기"), prog)
         region_ok = _is_region_eligible(profile.get("지역", "무관"), prog)
