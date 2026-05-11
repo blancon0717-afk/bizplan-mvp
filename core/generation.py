@@ -417,7 +417,8 @@ def _resolve_anchor_texts(result: "SectionResult") -> None:
         alen = len(sug.anchor_text)
         if alen < 3 or alen > len(content):
             logger.warning(f"anchor_text 매칭 실패(길이초과): '{sug.anchor_text[:30]}'")
-            sug.anchor_text = sug.note[:20].strip() if sug.note else ""
+            first_line = next((line.strip() for line in content.split('\n') if line.strip() and len(line.strip()) >= 10), "")
+            sug.anchor_text = first_line[:20] if first_line else ""
             continue
         best_ratio = 0.0
         best_window = ""
@@ -434,7 +435,8 @@ def _resolve_anchor_texts(result: "SectionResult") -> None:
             sug.anchor_text = best_window
         else:
             logger.warning(f"anchor_text 매칭 실패: '{sug.anchor_text[:30]}' (best={best_ratio:.2f})")
-            sug.anchor_text = sug.note[:20].strip() if sug.note else ""
+            first_line = next((line.strip() for line in content.split('\n') if line.strip() and len(line.strip()) >= 10), "")
+            sug.anchor_text = first_line[:20] if first_line else ""
 
 
 def evaluate_section(result: "SectionResult", section_id: str, section_title: str) -> dict:
