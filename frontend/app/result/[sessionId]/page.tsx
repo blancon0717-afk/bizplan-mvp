@@ -284,7 +284,7 @@ export default function ResultPage() {
   return (
     <div className="h-screen flex flex-col bg-white overflow-hidden">
       {/* 헤더 */}
-      <header className="flex-shrink-0 border-b border-slate-200 bg-white px-4 py-3">
+      <header className="flex-shrink-0 border-b border-slate-200 bg-white px-4 py-3 overflow-visible">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -318,7 +318,7 @@ export default function ResultPage() {
                     ({usageData.regenerate_all?.used ?? 0}/{usageData.regenerate_all?.max ?? 1})
                   </span>
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-50">
                   <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
                     보완 필요/미흡 섹션을 일괄 재생성합니다 (1회 한정)
                   </div>
@@ -340,7 +340,7 @@ export default function ResultPage() {
                   <>피드백 확인하기 <span className={(usageData.feedback?.used ?? 0) >= (usageData.feedback?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.feedback?.used ?? 0}/{usageData.feedback?.max ?? 1})</span></>
                 )}
               </button>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-50">
                 <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
                   섹션별 약점을 분석하고 보완이 필요한 항목을 제시합니다
                 </div>
@@ -358,7 +358,7 @@ export default function ResultPage() {
                   <>📋 액션플랜 <span className={(usageData.action_plan?.used ?? 0) >= (usageData.action_plan?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.action_plan?.used ?? 0}/{usageData.action_plan?.max ?? 1})</span></>
                 )}
               </button>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-50">
                 <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
                   합격을 위해 대표님이 직접 실행해야 할 항목을 제시합니다
                 </div>
@@ -376,7 +376,7 @@ export default function ResultPage() {
                   "🔍 문서 점검"
                 )}
               </button>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-50">
                 <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
                   오탈자, 문장 오류, 논리적 모순을 자동으로 점검합니다
                 </div>
