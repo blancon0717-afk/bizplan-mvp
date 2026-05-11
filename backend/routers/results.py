@@ -379,7 +379,7 @@ def generate_action_plan(session_id: str):
                 feedback_memos=feedback_memos,
             ),
             model="claude-haiku-4-5-20251001",
-            max_tokens=6000,
+            max_tokens=8000,
             temperature=0.4,
             purpose="action_plan",
             metadata={"session_id": session_id},
