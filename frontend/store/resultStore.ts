@@ -82,7 +82,9 @@ export const useResultStore = create<ResultState>((set, get) => ({
   updateSectionAfterRegen: (section, overall) => {
     set((state) => ({
       sections: state.sections.map((s) =>
-        s.section_id === section.section_id ? section : s
+        s.section_id === section.section_id
+          ? { ...section, inline_suggestions: s.inline_suggestions }
+          : s
       ),
       overallCompletion: overall,
       localProbPct: computeLocalProbPct(overall),

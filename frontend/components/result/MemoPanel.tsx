@@ -145,13 +145,19 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
           const fallback = memoRefs.current[closest];
           if (fallback) {
             const container = fallback.closest('.overflow-y-auto');
-            if (container) container.scrollTop = fallback.offsetTop - container.getBoundingClientRect().top - fallback.getBoundingClientRect().top + container.scrollTop;
+            if (container) {
+              const containerRect = container.getBoundingClientRect();
+              const fallbackRect = fallback.getBoundingClientRect();
+              container.scrollTop = container.scrollTop + fallbackRect.top - containerRect.top;
+            }
           }
           return;
         }
         const container = el.closest('.overflow-y-auto');
         if (container) {
-          container.scrollTop = el.offsetTop;
+          const containerRect = container.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          container.scrollTop = container.scrollTop + elRect.top - containerRect.top;
         } else {
           el.scrollIntoView({ behavior: "smooth", block: "start" });
         }
@@ -187,12 +193,14 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
     const sortedVisibleMemos = [...visibleMemos]
       .filter((m) => !passedMemos.has(m.originalIndex))
       .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 1) - (SEVERITY_ORDER[b.severity] ?? 1))
-      .slice(0, 5)
       .sort((a, b) => {
         const posA = fullText.indexOf(a.anchor_text);
         const posB = fullText.indexOf(b.anchor_text);
         return posA - posB;
       });
+    const unAppliedMemos = sortedVisibleMemos.filter(m => !appliedMemos.has(m.originalIndex));
+    const appliedMemosList = sortedVisibleMemos.filter(m => appliedMemos.has(m.originalIndex));
+    const orderedMemos = [...unAppliedMemos, ...appliedMemosList];
 
     return (
       <div className="h-full flex flex-col">
@@ -229,35 +237,39 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
-          {sortedVisibleMemos.length === 0 ? (
+          {orderedMemos.length === 0 ? (
             <div className="text-center py-8 text-slate-400 text-sm">
               <p>이 섹션에는 메모가 없습니다</p>
               <p className="text-xs mt-1">섹션 고도화로 더 풍부한 초안을 만들어보세요</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {sortedVisibleMemos.map((memo, i) => (
-                <div
-                  key={memo.originalIndex}
-                  ref={(el) => { memoRefs.current[memo.originalIndex] = el; }}
-                >
-                  <MemoCard
-                    index={i}
-                    anchorText={memo.anchor_text}
-                    note={memo.note}
-                    severity={memo.severity}
-                    response={memo.response}
-                    onChange={(val) => onMemoChange(section.section_id, memo.originalIndex, val)}
-                    onRegenerate={(val) => {
-                      onRegenerate(section.section_id, memo.originalIndex, val);
-                    }}
-                    onAnchorClick={() => onMemoTitleClick?.(memo.anchor_text)}
-                    isRegenerating={!!isRegenerating[section.section_id]}
-                    isApplied={appliedMemos.has(memo.originalIndex)}
-                    onPass={() => { onPassMemo(section.section_id, memo.originalIndex); }}
-                  />
-                </div>
-              ))}
+              {orderedMemos.map((memo, i) => {
+                const isApplied = appliedMemos.has(memo.originalIndex);
+                return (
+                  <div
+                    key={memo.originalIndex}
+                    ref={(el) => { memoRefs.current[memo.originalIndex] = el; }}
+                    className={isApplied ? "rounded-lg border bg-emerald-50 border-emerald-200" : ""}
+                  >
+                    <MemoCard
+                      index={i}
+                      anchorText={memo.anchor_text}
+                      note={memo.note}
+                      severity={memo.severity}
+                      response={memo.response}
+                      onChange={(val) => onMemoChange(section.section_id, memo.originalIndex, val)}
+                      onRegenerate={(val) => {
+                        onRegenerate(section.section_id, memo.originalIndex, val);
+                      }}
+                      onAnchorClick={() => onMemoTitleClick?.(memo.anchor_text)}
+                      isRegenerating={!!isRegenerating[section.section_id]}
+                      isApplied={isApplied}
+                      onPass={() => { onPassMemo(section.section_id, memo.originalIndex); }}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
