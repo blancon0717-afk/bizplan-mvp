@@ -17,7 +17,7 @@ export default function ResultPage() {
   const sessionId = params.sessionId as string;
 
   const { sections, overallCompletion, localProbPct, activeSectionId, isRegenerating,
-    init, setActiveSectionId, updateMemoResponse, updateSectionSuggestions, regenerateSection, editSection, syncProbPct } = useResultStore();
+    init, setActiveSectionId, updateMemoResponse, updateSectionSuggestions, updateSectionAfterRegen, regenerateSection, editSection, syncProbPct } = useResultStore();
 
   const documentPanelRef = useRef<DocumentPanelHandle>(null);
   const memoPanelRef = useRef<MemoPanelHandle>(null);
