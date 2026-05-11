@@ -190,14 +190,15 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
 
     const fullText = (section.content_segments ?? []).map((s) => s.text ?? "").join("");
     const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
-    const sortedVisibleMemos = [...visibleMemos]
-      .filter((m) => !passedMemos.has(m.originalIndex))
+    const sortedAll = [...visibleMemos]
       .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 1) - (SEVERITY_ORDER[b.severity] ?? 1))
+      .slice(0, 5)
       .sort((a, b) => {
         const posA = fullText.indexOf(a.anchor_text);
         const posB = fullText.indexOf(b.anchor_text);
         return posA - posB;
       });
+    const sortedVisibleMemos = sortedAll.filter((m) => !passedMemos.has(m.originalIndex));
     const unAppliedMemos = sortedVisibleMemos.filter(m => !appliedMemos.has(m.originalIndex));
     const appliedMemosList = sortedVisibleMemos.filter(m => appliedMemos.has(m.originalIndex));
     const orderedMemos = [...unAppliedMemos, ...appliedMemosList];
