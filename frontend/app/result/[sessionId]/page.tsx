@@ -535,6 +535,9 @@ export default function ResultPage() {
                     <blockquote className="border-l-2 border-slate-300 pl-3 my-2 text-slate-500 text-sm italic">{children}</blockquote>
                   ),
                   hr: () => <hr className="my-3 border-slate-200" />,
+                  del: ({ children }) => (
+                    <span className="text-slate-600">{children}</span>
+                  ),
                   table: ({ children }) => (
                     <table className="w-full border-collapse my-3 text-xs">{children}</table>
                   ),
