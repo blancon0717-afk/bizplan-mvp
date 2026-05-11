@@ -102,7 +102,7 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
       )}
       {showConfirm && (
         <div className="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700">
-          <p className="mb-2">해당 메모 내용을 반영하여 섹션이 재생성됩니다. 계속할까요?</p>
+          <p className="mb-2">해당 메모 내용을 반영하여 섹션이 재생성됩니다. 다른 섹션에도 관련 내용이 있을 수 있으니 확인해주세요. 계속할까요?</p>
           <div className="flex gap-2">
             <button
               onClick={() => { setShowConfirm(false); onRegenerate(value); }}
@@ -248,7 +248,9 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
                     severity={memo.severity}
                     response={memo.response}
                     onChange={(val) => onMemoChange(section.section_id, memo.originalIndex, val)}
-                    onRegenerate={(val) => { setAppliedMemos(prev => new Set(prev).add(memo.originalIndex)); onRegenerate(section.section_id, memo.originalIndex, val); }}
+                    onRegenerate={(val) => {
+                      onRegenerate(section.section_id, memo.originalIndex, val);
+                    }}
                     onAnchorClick={() => onMemoTitleClick?.(memo.anchor_text)}
                     isRegenerating={!!isRegenerating[section.section_id]}
                     isApplied={appliedMemos.has(memo.originalIndex)}
