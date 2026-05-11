@@ -145,6 +145,7 @@ def _add_segment(doc: Document, seg: ContentSegment) -> None:
                             _set_font(run, 8, False, _COLOR_BLUE)
                     else:
                         _add_runs(para, ct, 9, False, base_color)
+            doc.add_paragraph()
 
         # 빈 줄
         elif line.strip() == "":
