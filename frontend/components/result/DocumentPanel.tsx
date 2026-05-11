@@ -5,6 +5,7 @@ import SegmentRenderer, { type SegmentRendererHandle } from "./SegmentRenderer";
 
 export interface DocumentPanelHandle {
   scrollToAnchor: (sectionId: string, originalIndex: number) => void;
+  scrollToAnchorByText: (sectionId: string, anchorText: string) => void;
 }
 
 const CATEGORY_KO: Record<string, string> = {
@@ -97,6 +98,17 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
   useImperativeHandle(ref, () => ({
     scrollToAnchor: (sectionId: string, originalIndex: number) => {
       segRendererRefs.current[sectionId]?.scrollToAnchor(originalIndex);
+    },
+    scrollToAnchorByText: (sectionId: string, anchorText: string) => {
+      const container = sectionRefs.current[sectionId];
+      if (!container) return;
+      const marks = container.querySelectorAll('mark.memo-anchor');
+      for (const mark of marks) {
+        if (mark.textContent === anchorText) {
+          mark.scrollIntoView({ behavior: "smooth", block: "center" });
+          break;
+        }
+      }
     },
   }));
 

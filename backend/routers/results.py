@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from services.session_store import get_session, get_usage_count, increment_usage, load_results, save_results
+from services.session_store import get_session, get_usage_count, increment_usage, load_results, save_results, save_action_plan, load_action_plan
 from core.docx_export import export_to_docx
 from core.forms import load_form
 from core.generation import regenerate_section
@@ -314,6 +314,9 @@ def generate_action_plan(session_id: str):
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    existing = load_action_plan(session_id)
+    if existing:
+        return {"action_plan": existing}
     if get_usage_count(session_id, "action_plan") >= 1:
         raise HTTPException(status_code=429, detail="액션플랜 확인은 1회만 가능합니다.")
     increment_usage(session_id, "action_plan")
@@ -377,6 +380,7 @@ def generate_action_plan(session_id: str):
     except Exception as e:
         logger.error("[액션플랜 생성 실패] %s: %s", session_id, e)
         raise HTTPException(status_code=500, detail="액션플랜 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
+    save_action_plan(session_id, text)
     return {"action_plan": text}
 
 

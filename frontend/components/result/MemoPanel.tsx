@@ -18,7 +18,7 @@ interface MemoPanelProps {
   showAnchors?: boolean;
   onMemoChange: (sectionId: string, memoIndex: number, response: string) => void;
   onRegenerate: (sectionId: string, memoIndex: number, memoResponse: string) => void;
-  onMemoTitleClick?: (originalIndex: number) => void;
+  onMemoTitleClick?: (anchorText: string) => void;
   isRegenerating: Record<string, boolean>;
   usageData?: Record<string, { used: number; max: number }>;
   onPassMemo: (sectionId: string, memoIndex: number) => void;
@@ -138,14 +138,23 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
     useImperativeHandle(ref, () => ({
       scrollToMemo: (originalIndex: number) => {
         const el = memoRefs.current[originalIndex];
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (!el) {
+          const keys = Object.keys(memoRefs.current).map(Number).filter(k => memoRefs.current[k]);
+          if (keys.length === 0) return;
+          const closest = keys.reduce((a, b) => Math.abs(a - originalIndex) < Math.abs(b - originalIndex) ? a : b);
+          const fallback = memoRefs.current[closest];
+          if (fallback) {
+            const container = fallback.closest('.overflow-y-auto');
+            if (container) container.scrollTop = fallback.offsetTop - container.getBoundingClientRect().top - fallback.getBoundingClientRect().top + container.scrollTop;
+          }
           return;
         }
-        const keys = Object.keys(memoRefs.current).map(Number).filter(k => memoRefs.current[k]);
-        if (keys.length === 0) return;
-        const closest = keys.reduce((a, b) => Math.abs(a - originalIndex) < Math.abs(b - originalIndex) ? a : b);
-        memoRefs.current[closest]?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const container = el.closest('.overflow-y-auto');
+        if (container) {
+          container.scrollTop = el.offsetTop;
+        } else {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       },
     }));
 
@@ -240,7 +249,7 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
                     response={memo.response}
                     onChange={(val) => onMemoChange(section.section_id, memo.originalIndex, val)}
                     onRegenerate={(val) => { setAppliedMemos(prev => new Set(prev).add(memo.originalIndex)); onRegenerate(section.section_id, memo.originalIndex, val); }}
-                    onAnchorClick={() => onMemoTitleClick?.(memo.originalIndex)}
+                    onAnchorClick={() => onMemoTitleClick?.(memo.anchor_text)}
                     isRegenerating={!!isRegenerating[section.section_id]}
                     isApplied={appliedMemos.has(memo.originalIndex)}
                     onPass={() => { setPassedMemos(prev => new Set(prev).add(memo.originalIndex)); onPassMemo(section.section_id, memo.originalIndex); }}

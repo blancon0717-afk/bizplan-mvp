@@ -167,7 +167,7 @@ export default function InterviewPage() {
                 questionNumber={questions.indexOf(item.question) + 1}
                 total={questions.length}
                 exampleAnswer={EXAMPLE_ANSWERS[item.question.qid]}
-                showExample={idx === chatHistory.length - 1 && !inputHasText}
+                showExample={idx === chatHistory.length - 1}
               />
             ) : (
               <UserMessage

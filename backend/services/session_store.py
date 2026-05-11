@@ -125,6 +125,23 @@ def increment_usage(session_id: str, feature: str) -> int:
     return usage[feature]
 
 
+def save_action_plan(session_id: str, text: str) -> None:
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if not path.exists():
+        return
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["action_plan"] = text
+    path.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_action_plan(session_id: str) -> Optional[str]:
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if not path.exists():
+        return None
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return raw.get("action_plan") or None
+
+
 def save_results(session_id: str, results: list[SectionResult]) -> None:
     _ensure_dir()
     path = _SESSIONS_DIR / f"{session_id}_results.json"

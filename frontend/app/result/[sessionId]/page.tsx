@@ -6,7 +6,6 @@ import remarkGfm from "remark-gfm";
 import RubricBadge from "@/components/result/RubricBadge";
 import DocumentPanel, { type DocumentPanelHandle } from "@/components/result/DocumentPanel";
 import MemoPanel, { type MemoPanelHandle } from "@/components/result/MemoPanel";
-import RubricScorePanel from "@/components/result/RubricScorePanel";
 import { useResultStore } from "@/store/resultStore";
 import { api } from "@/lib/api";
 import type { RubricScoreResult } from "@/lib/types";
@@ -88,9 +87,9 @@ export default function ResultPage() {
     }, 50);
   }
 
-  function handleMemoTitleClick(originalIndex: number) {
+  function handleMemoTitleClick(anchorText: string) {
     if (activeSectionId) {
-      documentPanelRef.current?.scrollToAnchor(activeSectionId, originalIndex);
+      documentPanelRef.current?.scrollToAnchorByText(activeSectionId, anchorText);
     }
   }
 
@@ -309,7 +308,6 @@ export default function ResultPage() {
                 <button
                   onClick={handleRegenerateAll}
                   disabled={isRegenAll}
-                  title="보완 필요/미흡 섹션을 일괄 재생성합니다"
                   className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 transition-colors"
                 >
                   {isRegenAll ? (
@@ -321,7 +319,7 @@ export default function ResultPage() {
                   </span>
                 </button>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
-                  <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                  <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
                     보완 필요/미흡 섹션을 일괄 재생성합니다 (1회 한정)
                   </div>
                 </div>
@@ -331,7 +329,6 @@ export default function ResultPage() {
               <button
                 onClick={handleFeedback}
                 disabled={isFeedbackRunning}
-                title="섹션별 약점을 분석하고 사업계획서 고도화를 위한 구체적인 피드백을 제공합니다"
                 className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 text-blue-600 text-sm font-medium hover:bg-blue-50 disabled:opacity-50 transition-colors"
               >
                 {isFeedbackRunning ? (
@@ -344,7 +341,7 @@ export default function ResultPage() {
                 )}
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
-                <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
                   섹션별 약점을 분석하고 보완이 필요한 항목을 제시합니다
                 </div>
               </div>
@@ -353,7 +350,6 @@ export default function ResultPage() {
               <button
                 onClick={handleActionPlan}
                 disabled={isActionPlanLoading}
-                title="사업계획서 합격을 위해 대표님이 직접 실행해야 할 항목을 제시합니다"
                 className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-200 text-purple-600 text-sm font-medium hover:bg-purple-50 disabled:opacity-50 transition-colors"
               >
                 {isActionPlanLoading ? (
@@ -363,7 +359,7 @@ export default function ResultPage() {
                 )}
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
-                <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
                   합격을 위해 대표님이 직접 실행해야 할 항목을 제시합니다
                 </div>
               </div>
@@ -372,7 +368,6 @@ export default function ResultPage() {
               <button
                 onClick={handleDocumentCheck}
                 disabled={isDocumentChecking}
-                title="오탈자, 문장 오류, 논리적 모순을 자동으로 점검합니다"
                 className="flex items-center gap-2 px-3 py-2 rounded-xl border border-teal-200 text-teal-600 text-sm font-medium hover:bg-teal-50 disabled:opacity-50 transition-colors"
               >
                 {isDocumentChecking ? (
@@ -382,7 +377,7 @@ export default function ResultPage() {
                 )}
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
-                <div className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
                   오탈자, 문장 오류, 논리적 모순을 자동으로 점검합니다
                 </div>
               </div>
@@ -406,9 +401,6 @@ export default function ResultPage() {
           </div>
         </div>
       </header>
-
-      {/* 루브릭 채점 패널 */}
-      <RubricScorePanel score={rubricScore} isLoading={isLoadingScore} />
 
       {/* 재생성 에러 배너 */}
       {regenError && (
