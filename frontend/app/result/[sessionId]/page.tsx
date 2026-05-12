@@ -51,11 +51,6 @@ export default function ResultPage() {
           api.getSession(sessionId),
         ]);
         init(sessionId, results.sections, results.overall_completion);
-        // 이미 피드백이 생성된 세션이면 메모 패널 자동 표시
-        const hasSuggestions = results.sections.some(
-          (s) => s.inline_suggestions && s.inline_suggestions.length > 0
-        );
-        if (hasSuggestions) setShowAnchors(true);
         localStorage.setItem("bizplan_session_id", sessionId);
         const programs = await api.getPrograms();
         const prog = programs.programs.find((p) => p.code === session.program_code);

@@ -78,10 +78,6 @@ def update_memo(session_id: str, section_id: str, memo_index: int, body: MemoRes
     if memo_index >= len(section.inline_suggestions):
         raise HTTPException(status_code=400, detail="Memo index out of range")
 
-    if get_usage_count(session_id, "memo") >= 3:
-        raise HTTPException(status_code=429, detail="피드백 반영은 3회만 가능합니다.")
-    increment_usage(session_id, "memo")
-
     section.inline_suggestions[memo_index].response = body.response
     save_results(session_id, results)
 
@@ -130,10 +126,9 @@ def regenerate(session_id: str, section_id: str, body: RegenerateBody = Regenera
         raise HTTPException(status_code=404, detail="Results not found")
 
     if body.memo_response is not None:
-        feature_key = f"memo_regenerate_{section_id}"
-        if get_usage_count(session_id, feature_key) >= 3:
-            raise HTTPException(status_code=429, detail="이 섹션의 메모 반영은 3회만 가능합니다.")
-        increment_usage(session_id, feature_key)
+        if get_usage_count(session_id, "memo") >= 3:
+            raise HTTPException(status_code=429, detail="메모 반영은 전체 3회만 가능합니다.")
+        increment_usage(session_id, "memo")
     else:
         feature_key = f"regenerate_{section_id}"
         if get_usage_count(session_id, feature_key) >= 1:
@@ -311,6 +306,8 @@ _ACTION_PLAN_PROMPT = """\
 - 공고일 무시한 타임라인
 - WHY/HOW 없이 항목만 나열
 - HOW:, WHY:, 비용:, 기한:, 산출물: 등 레이블 뒤에 내용 없이 빈 줄이나 불릿만 남기는 것. 반드시 레이블 바로 뒤에 내용을 작성할 것.
+- 불릿(-) 기호만 있고 내용이 없는 줄 생성 금지. 불릿을 쓰려면 반드시 같은 줄에 내용을 작성할 것.
+- 응답이 중간에 잘리지 않도록 마지막 항목까지 완전한 문장으로 마무리할 것.
 """
 
 _ACTION_PLAN_SYSTEM = "당신은 정부지원사업 전문 컨설턴트입니다. 사업계획서와 심사기준을 분석해 창업자에게 실질적인 액션플랜을 제시합니다."
@@ -379,7 +376,7 @@ def generate_action_plan(session_id: str):
                 feedback_memos=feedback_memos,
             ),
             model="claude-haiku-4-5-20251001",
-            max_tokens=8000,
+            max_tokens=4096,
             temperature=0.4,
             purpose="action_plan",
             metadata={"session_id": session_id},

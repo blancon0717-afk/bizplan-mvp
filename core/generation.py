@@ -588,9 +588,11 @@ def attach_strategic_feedbacks(results_map: dict, feedbacks: list[dict]) -> None
         existing_anchors = {s.anchor_text for s in result.inline_suggestions}
         if anchor and anchor in existing_anchors:
             continue
+        if not anchor:
+            continue
         result.inline_suggestions.append(
             InlineSuggestion(
-                anchor_text=anchor or target_id[:15],
+                anchor_text=anchor,
                 note=f"[전략 피드백] {note}",
                 severity=fb.get("severity", "warning"),
             )

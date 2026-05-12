@@ -136,12 +136,12 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
     const [appliedMemos, setAppliedMemos] = useState<Set<number>>(new Set());
 
     useImperativeHandle(ref, () => ({
-      scrollToMemo: (originalIndex: number) => {
-        const el = memoRefs.current[originalIndex];
+      scrollToMemo: (displayIndex: number) => {
+        const el = memoRefs.current[displayIndex];
         if (!el) {
           const keys = Object.keys(memoRefs.current).map(Number).filter(k => memoRefs.current[k]);
           if (keys.length === 0) return;
-          const closest = keys.reduce((a, b) => Math.abs(a - originalIndex) < Math.abs(b - originalIndex) ? a : b);
+          const closest = keys.reduce((a, b) => Math.abs(a - displayIndex) < Math.abs(b - displayIndex) ? a : b);
           const fallback = memoRefs.current[closest];
           if (fallback) {
             const container = fallback.closest('.overflow-y-auto');
@@ -198,7 +198,8 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
         const posB = fullText.indexOf(b.anchor_text);
         return posA - posB;
       });
-    const sortedVisibleMemos = sortedAll.filter((m) => !passedMemos.has(m.originalIndex));
+    const sortedAllWithIndex = sortedAll.map((m, idx) => ({ ...m, displayIndex: idx }));
+    const sortedVisibleMemos = sortedAllWithIndex.filter((m) => !passedMemos.has(m.originalIndex));
     const unAppliedMemos = sortedVisibleMemos.filter(m => !appliedMemos.has(m.originalIndex));
     const appliedMemosList = sortedVisibleMemos.filter(m => appliedMemos.has(m.originalIndex));
     const orderedMemos = [...unAppliedMemos, ...appliedMemosList];
@@ -250,17 +251,18 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
                 return (
                   <div
                     key={memo.originalIndex}
-                    ref={(el) => { memoRefs.current[memo.originalIndex] = el; }}
+                    ref={(el) => { memoRefs.current[memo.displayIndex] = el; }}
                     className={isApplied ? "rounded-lg border bg-emerald-50 border-emerald-200" : ""}
                   >
                     <MemoCard
-                      index={i}
+                      index={memo.displayIndex}
                       anchorText={memo.anchor_text}
                       note={memo.note}
                       severity={memo.severity}
                       response={memo.response}
                       onChange={(val) => onMemoChange(section.section_id, memo.originalIndex, val)}
                       onRegenerate={(val) => {
+                        setAppliedMemos(prev => new Set([...prev, memo.originalIndex]));
                         onRegenerate(section.section_id, memo.originalIndex, val);
                       }}
                       onAnchorClick={() => onMemoTitleClick?.(memo.anchor_text)}

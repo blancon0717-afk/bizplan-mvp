@@ -32,7 +32,7 @@ const URL_RE = /https?:\/\/\S+/;
 
 type CellStyle = { tdClass: string; content: React.ReactNode };
 
-function renderVisualCell(text: string): CellStyle {
+function renderVisualCell(text: string, anchorFn?: (t: string) => React.ReactNode[]): CellStyle {
   const t = text.trim();
   if (CAPTION_CELL_RE.test(t)) {
     return {
@@ -71,7 +71,7 @@ function renderVisualCell(text: string): CellStyle {
   }
   return {
     tdClass: "border border-slate-200 px-2 py-1.5 align-top text-slate-600",
-    content: <span>{t}</span>,
+    content: anchorFn ? <>{anchorFn(t)}</> : <span>{t}</span>,
   };
 }
 
@@ -129,7 +129,7 @@ function renderSegmentContent(
             {body.map((row, ri) => (
               <tr key={ri}>
                 {Array.from({ length: numCols }).map((_, ci) => {
-                  const { tdClass, content } = renderVisualCell(row[ci] ?? "");
+                  const { tdClass, content } = renderVisualCell(row[ci] ?? "", anchor);
                   return <td key={ci} className={tdClass}>{content}</td>;
                 })}
               </tr>
@@ -260,7 +260,7 @@ function renderTextWithAnchors(
       <span key={keyIdx++} className="inline">
         <mark
           className={isResolved ? "memo-anchor-resolved cursor-pointer bg-emerald-100 rounded px-0.5" : "memo-anchor cursor-pointer"}
-          onClick={() => onAnchorClick?.(originalIndex)}
+          onClick={() => onAnchorClick?.(sortedIndex)}
           title={match.note}
         >
           {match.anchor_text}
@@ -268,7 +268,7 @@ function renderTextWithAnchors(
         <sup
           data-anchor-index={originalIndex}
           className={isResolved ? "text-emerald-600 font-bold text-xs cursor-pointer ml-0.5 hover:text-emerald-800" : "text-red-500 font-bold text-xs cursor-pointer ml-0.5 hover:text-blue-600"}
-          onClick={() => onAnchorClick?.(originalIndex)}
+          onClick={() => onAnchorClick?.(sortedIndex)}
         >
           {isResolved ? `✓[${sortedIndex + 1}]` : `[${sortedIndex + 1}]`}
         </sup>
