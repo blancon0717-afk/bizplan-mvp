@@ -932,7 +932,7 @@ JSON 스키마는 동일. 반드시 JSON만 반환.
         return fail
 
     # 파싱 (generate_section 동일 로직 재사용)
-    suggestions = [
+    llm_suggestions = [
         InlineSuggestion(
             anchor_text=item.get("anchor_text", "").strip(),
             note=item.get("note", "").strip(),
@@ -941,6 +941,10 @@ JSON 스키마는 동일. 반드시 JSON만 반환.
         for item in data.get("inline_suggestions", [])
         if isinstance(item, dict) and item.get("anchor_text") and item.get("note")
     ]
+    # 답변 없는 메모는 이전 결과에서 그대로 유지
+    answered_anchors = {s.anchor_text for s in previous_result.inline_suggestions if s.response.strip()}
+    kept_suggestions = [s for s in previous_result.inline_suggestions if not s.response.strip()]
+    suggestions = kept_suggestions + [s for s in llm_suggestions if s.anchor_text not in {k.anchor_text for k in kept_suggestions}]
 
     segments = [
         ContentSegment(

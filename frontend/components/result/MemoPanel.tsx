@@ -191,13 +191,12 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
     const fullText = (section.content_segments ?? []).map((s) => s.text ?? "").join("");
     const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
     const sortedAll = [...visibleMemos]
-      .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 1) - (SEVERITY_ORDER[b.severity] ?? 1))
-      .slice(0, 5)
       .sort((a, b) => {
         const posA = fullText.indexOf(a.anchor_text);
         const posB = fullText.indexOf(b.anchor_text);
         return posA - posB;
-      });
+      })
+      .slice(0, 5);
     const sortedAllWithIndex = sortedAll.map((m, idx) => ({ ...m, displayIndex: idx }));
     const sortedVisibleMemos = sortedAllWithIndex.filter((m) => !passedMemos.has(m.originalIndex));
     const unAppliedMemos = sortedVisibleMemos.filter(m => !appliedMemos.has(m.originalIndex));
@@ -252,7 +251,7 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
                   <div
                     key={memo.originalIndex}
                     ref={(el) => { memoRefs.current[memo.displayIndex] = el; }}
-                    className={isApplied ? "rounded-lg border bg-emerald-50 border-emerald-200" : ""}
+                    className={`transition-all duration-500 ease-in-out ${isApplied ? "rounded-lg border bg-emerald-50 border-emerald-200 opacity-80" : "opacity-100"}`}
                   >
                     <MemoCard
                       index={memo.displayIndex}
