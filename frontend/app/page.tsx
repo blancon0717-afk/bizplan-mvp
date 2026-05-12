@@ -212,22 +212,11 @@ export default function HomePage() {
             </div>
 
             <button
-              type="submit"
-              disabled={isLoading}
-              className={`w-full py-4 rounded-xl font-semibold text-base transition-all duration-200 ${
-                isLoading
-                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  : "bg-blue-600 text-white shadow-md hover:bg-blue-700 hover:shadow-lg active:scale-[0.99]"
-              }`}
+              type="button"
+              disabled
+              className="w-full py-4 rounded-xl font-semibold text-base bg-slate-300 text-slate-500 cursor-not-allowed"
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                  AI 분석 중... (10~15초 소요)
-                </span>
-              ) : (
-                "지원사업 추천받기 →"
-              )}
+              🔧 서비스 준비 중
             </button>
           </form>
         </div>
