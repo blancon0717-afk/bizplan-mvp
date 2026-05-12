@@ -199,8 +199,8 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
       .slice(0, 5);
     const sortedAllWithIndex = sortedAll.map((m, idx) => ({ ...m, displayIndex: idx }));
     const sortedVisibleMemos = sortedAllWithIndex.filter((m) => !passedMemos.has(m.originalIndex));
-    const unAppliedMemos = sortedVisibleMemos.filter(m => !appliedMemos.has(m.originalIndex));
-    const appliedMemosList = sortedVisibleMemos.filter(m => appliedMemos.has(m.originalIndex));
+    const unAppliedMemos = sortedVisibleMemos.filter(m => !(appliedMemos[section.section_id] ?? new Set()).has(m.originalIndex));
+    const appliedMemosList = sortedVisibleMemos.filter(m => (appliedMemos[section.section_id] ?? new Set()).has(m.originalIndex));
     const orderedMemos = [...unAppliedMemos, ...appliedMemosList];
 
     return (
