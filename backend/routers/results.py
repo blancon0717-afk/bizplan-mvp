@@ -102,10 +102,6 @@ def edit_section(session_id: str, section_id: str, body: EditBody):
     section = next((r for r in results if r.section_id == section_id), None)
     if section is None:
         raise HTTPException(status_code=404, detail="Section not found")
-    if get_usage_count(session_id, "edit") >= 1:
-        raise HTTPException(status_code=429, detail="섹션 수정은 1회만 가능합니다.")
-    increment_usage(session_id, "edit")
-
     section.user_edited_content = body.content if body.content.strip() else None
     save_results(session_id, results)
     return {"section_id": section_id, "saved": True}
@@ -501,7 +497,7 @@ def get_usage(session_id: str):
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    limits = {"generate": 1, "feedback": 1, "memo": 3, "regenerate": 1, "edit": 1, "action_plan": 1, "regenerate_all": 1}
+    limits = {"generate": 1, "feedback": 1, "memo": 3, "regenerate": 1, "action_plan": 1, "regenerate_all": 1}
     return {
         feature: {"used": get_usage_count(session_id, feature), "max": max_val}
         for feature, max_val in limits.items()
