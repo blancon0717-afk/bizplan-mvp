@@ -274,7 +274,8 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
                       ref={(el) => { segRendererRefs.current[section.section_id] = el; }}
                       segments={section.content_segments}
                       suggestions={[...section.inline_suggestions]
-                        .filter((_, idx) => !passedMemoMap?.[section.section_id]?.has(idx))
+                        .map((m) => ({ ...m, originalIndex: section.inline_suggestions.indexOf(m) }))
+                        .filter((m) => !passedMemoMap?.[section.section_id]?.has(m.originalIndex))
                         .sort((a, b) => {
                           const order: Record<string, number> = { critical: 0, warning: 1, info: 2 };
                           return (order[a.severity] ?? 1) - (order[b.severity] ?? 1);

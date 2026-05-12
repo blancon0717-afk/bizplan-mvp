@@ -45,7 +45,7 @@ function MemoCard({ index, anchorText, note, severity, response, onChange, onReg
   const [showConfirm, setShowConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => { setValue(response); }, [response]);
+  useEffect(() => { if (!isApplied) setValue(response); }, [response, isApplied]);
 
   function handleChange(v: string) {
     setValue(v);
@@ -133,7 +133,7 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
   function MemoPanel({ sections, activeSectionId, showAnchors = false, onMemoChange, onRegenerate, onMemoTitleClick, isRegenerating, usageData, onPassMemo, passedMemos = new Set() }, ref) {
     const section = sections.find((s) => s.section_id === activeSectionId);
     const memoRefs = useRef<Record<number, HTMLDivElement | null>>({});
-    const [appliedMemos, setAppliedMemos] = useState<Set<number>>(new Set());
+    const [appliedMemos, setAppliedMemos] = useState<Record<string, Set<number>>>({});
 
     useImperativeHandle(ref, () => ({
       scrollToMemo: (displayIndex: number) => {
@@ -247,7 +247,7 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
           ) : (
             <div className="space-y-3">
               {orderedMemos.map((memo, i) => {
-                const isApplied = appliedMemos.has(memo.originalIndex);
+                const isApplied = (appliedMemos[section.section_id] ?? new Set()).has(memo.originalIndex);
                 return (
                   <div
                     key={memo.originalIndex}
@@ -262,7 +262,10 @@ const MemoPanel = forwardRef<MemoPanelHandle, MemoPanelProps>(
                       response={memo.response}
                       onChange={(val) => onMemoChange(section.section_id, memo.originalIndex, val)}
                       onRegenerate={(val) => {
-                        setAppliedMemos(prev => new Set([...prev, memo.originalIndex]));
+                        setAppliedMemos(prev => ({
+                          ...prev,
+                          [section.section_id]: new Set([...(prev[section.section_id] ?? []), memo.originalIndex])
+                        }));
                         onRegenerate(section.section_id, memo.originalIndex, val);
                       }}
                       onAnchorClick={() => onMemoTitleClick?.(memo.anchor_text)}
