@@ -82,7 +82,9 @@ def select_skills_for_section(
         if s.layer == 1:
             selected.append(s)
         elif s.layer == 2:
-            if any(k in s.scope for k in keywords) or any(k in s.body[:500] for k in keywords):
+            if s.scope.strip().lower() == "all":
+                selected.append(s)
+            elif any(k in s.scope for k in keywords) or any(k in s.body[:500] for k in keywords):
                 selected.append(s)
         elif s.layer == 3:
             selected.append(s)  # MVP에선 공통 Skill 하나뿐

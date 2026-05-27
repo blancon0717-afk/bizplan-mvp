@@ -12,8 +12,12 @@ from pathlib import Path
 _FEEDBACK_PATH = (
     Path(__file__).resolve().parent.parent / "data" / "reference" / "feedback_pairs.json"
 )
+_CONSULTING_FEEDBACK_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "feedback" / "사업계획서_피드백.json"
+)
 
 _pairs: list[dict] | None = None
+_consulting_pairs: list[dict] | None = None
 
 # 심사위원 피드백 태그 → 섹션 카테고리/태그 매핑
 # feedback_pairs.json 태그와 폼 섹션 태그가 달라서 직접 매핑
@@ -46,6 +50,18 @@ def _load() -> list[dict]:
             data = json.loads(_FEEDBACK_PATH.read_text(encoding="utf-8"))
             _pairs = data.get("pairs", [])
     return _pairs
+
+
+def _load_consulting() -> list[dict]:
+    global _consulting_pairs
+    if _consulting_pairs is None:
+        if not _CONSULTING_FEEDBACK_PATH.exists():
+            _consulting_pairs = []
+        else:
+            _consulting_pairs = json.loads(
+                _CONSULTING_FEEDBACK_PATH.read_text(encoding="utf-8")
+            )
+    return _consulting_pairs if isinstance(_consulting_pairs, list) else []
 
 
 def get_feedback_examples(
@@ -81,6 +97,20 @@ def get_feedback_examples(
     if _score(selected[0]) == 0:
         return ""
 
+    # 컨설팅 Before/After 피드백에서 태그 매칭되는 것 1건 추가
+    consulting = _load_consulting()
+    consulting_matched = [
+        c for c in consulting
+        if any(
+            kw in (c.get("feedback_text", "") + " ".join(
+                img.get("ocr", "") for img in c.get("before_images", [])
+            ))
+            for kw in keywords
+        )
+        and c.get("feedback_text", "").strip()
+        and c.get("after_text", "").strip()
+    ]
+
     lines = [
         "## 실제 심사위원 피드백 예시 (참고용)\n",
         "아래는 유사한 프로그램·유형에서 실제 심사위원이 남긴 피드백입니다.",
@@ -90,6 +120,16 @@ def get_feedback_examples(
         lines.append(f"**예시 {i}** | {p.get('사업명', '')} | {p.get('아이템명', '')}")
         lines.append(f"태그: {', '.join(p.get('태그', []))}")
         lines.append(f'심사위원 피드백: "{p.get("피드백", "")}"')
+        lines.append("")
+
+    if consulting_matched:
+        best = consulting_matched[0]
+        lines.append("## 실제 컨설팅 Before/After 예시 (참고용)\n")
+        lines.append("아래는 실제 사업계획서 컨설팅에서 개선된 사례입니다.")
+        lines.append("Before 패턴을 피하고 After 방향으로 작성하세요.\n")
+        lines.append(f'Before: "{best.get("before_images", [{}])[0].get("ocr", "")[:200]}"')
+        lines.append(f'피드백: "{best.get("feedback_text", "")}"')
+        lines.append(f'After 개선 방향: "{best.get("after_text", "")[:200]}"')
         lines.append("")
 
     return "\n".join(lines)

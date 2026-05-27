@@ -88,6 +88,7 @@ content_segments 안에 **절대 포함하지 말 것**:
 ### source 값
 - **`user_answer`** (화면 표시: **검정색**): 사용자 답변에서 직접 추출하거나 거의 그대로 살린 내용. `source_qids`에 근거 답변 ID.
 - **`llm_inferred`** (화면 표시: **초록색**): 답변에 없는 내용을 **LLM이 추론·보강·일반 지식으로 채운 부분**. 예: 시장 규모 수치(답변에 없음), 경쟁사 일반 정보, 업종 관례적 표현 등.
+  ⚠ company_context 기반 주의: answers_block의 내용은 AI가 인터뷰 원문을 요약·재구성한 텍스트입니다. 인터뷰 원문과 정확히 일치하는 표현이 아닌 한 llm_inferred로 분류하세요. 의심스러우면 반드시 llm_inferred로 분류합니다 (투명성 우선).
 
 ### content_segment 필수 구조
 
