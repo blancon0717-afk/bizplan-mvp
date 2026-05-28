@@ -35,7 +35,7 @@
   "strategic_feedbacks": [
     {{
       "target_section_id": "피드백을 달아야 할 섹션 ID (예: 1-1, 2-1, overview)",
-      "anchor_text": "해당 섹션 본문에서 정확히 일치하는 문구 (15자 이내, 없으면 섹션 제목 첫 5자)",
+      "anchor_text": "해당 섹션 본문에서 정확히 일치하는 문구 (10~20자). 반드시 본문에 존재하는 문구만 사용할 것. 본문에서 찾을 수 없으면 빈 문자열(\"\")로 반환.",
       "issue_type": "logic_gap | market_reality | pricing | entry_barrier | team_fit | sustainability",
       "note": "구체적인 문제 설명 + 대안 제시 (2~4문장. 이 아이템에 맞는 맥락으로)",
       "severity": "critical | warning | info"

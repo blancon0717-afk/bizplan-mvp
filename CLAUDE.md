@@ -1,3 +1,82 @@
+# bizplan-mvp (구버전 아카이브 — Streamlit 기반)
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## 프로젝트 개요 (구버전)
+
+**사업계획서 AI MVP** (`bizplan-mvp/`) — 정부지원사업 사업계획서를 "1회 인터뷰 → 여러 양식"으로 자동 생성하는 Streamlit 앱.
+
+보조 디렉토리:
+- `bizplan-analysis/` — 합격/불합격 사업계획서 패턴 분석 리서치 문서
+
+## 빌드 & 실행 (구버전)
+
+```bash
+cd bizplan-mvp
+python -m venv .venv
+.venv/Scripts/activate          # Windows
+pip install -r requirements.txt
+streamlit run app.py            # http://localhost:8501
+```
+
+Mock 모드(API 키 없이 UI 테스트): `MOCK_MODE=1 streamlit run app.py`
+
+환경변수: `.env`에 `ANTHROPIC_API_KEY` 설정 필수. 모델은 `CLAUDE_MODEL` 환경변수로 변경 가능 (기본값: `claude-sonnet-4-6`).
+
+## 아키텍처 (구버전)
+
+### 파이프라인 흐름
+
+```
+양식 선택 → 인터뷰(60문항) → 답변→섹션 매핑 → Skill 선택 → 프롬프트 조립 → Claude 호출 → JSON 파싱 → 🟢🟡🔴 판정 → 보완 루프 → DOCX 내보내기
+```
+
+### 핵심 모듈 (`core/`)
+
+| 파일 | 역할 |
+|------|------|
+| `llm.py` | Claude API 래퍼. 모든 호출을 `logs/llm_calls.jsonl`에 기록 (Phase 3 지도학습 대비) |
+| `generation.py` | 섹션 생성 파이프라인 총괄 — 매핑, Skill 선택, 프롬프트 조립, Claude 호출, JSON 파싱. `SectionResult`, `InlineSuggestion`, `ContentSegment` 데이터클래스 정의 |
+| `interview.py` | 인터뷰지 로드(xlsx→JSON), 세션 관리, 후속 질문 로드 |
+| `mapping.py` | tag 기반 답변→섹션 매핑 (1차), 필요 시 LLM 2차 매핑 |
+| `skills.py` | 4계층 Skill 마크다운 로더 및 섹션별 Skill 선택 |
+| `judgment.py` | 🟢🟡🔴 신뢰도 판정 (completeness 기반) |
+| `forms.py` | 양식 YAML 로더 |
+| `docx_export.py` | 결과물 DOCX 변환 |
+
+### 4계층 Skill 시스템 (`skills/`)
+
+프롬프트에 주입되는 작성 지침으로, 계층별로 합산:
+- **L1_universal** — 모든 섹션 공통 원칙 (수치+출처, 범주격차, 과거-미래 쌍둥이 증명)
+- **L2_section** — 섹션별 작성법 (문제정의, 솔루션 메커니즘)
+- **L3_program** — 지원사업 공통 규칙
+- **L4_industry** — 업종 자동 판별
+
+### 프롬프트 (`prompts/`)
+
+- `system.md` — 시스템 프롬프트
+- `section_generation.md` — 섹션 생성 프롬프트 템플릿
+- `answer_mapping.md` — 답변 매핑 프롬프트
+
+### 데이터 (`data/`)
+
+- `forms/` — 5개 양식 YAML (changjungdae, comeback_package, initial_package, jumping_package, youth_academy)
+- `interview/` — 인터뷰 질문지 (xlsx + 파싱 JSON)
+- `examples/` — 테스트 답변 세트
+
+## 설계 원칙 (구버전)
+
+- **양식 중립**: 코드 1개, 양식은 YAML 설정으로 분리 — 새 양식 추가 시 YAML만 작성
+- **할루시네이션 방지**: 답변에 없는 수치/고유명사 임의 생성 금지 → `[수치 필요]` 플레이스홀더
+- **모든 LLM 호출 로깅**: `logs/llm_calls.jsonl`에 자동 축적
+- **한국어 전용**: UI, 프롬프트, Skill 모두 한국어
+
+## 테스트 (구버전)
+
+`tests/` 디렉토리 존재하나 현재 테스트 파일 없음. 사이드바의 "이포에이 답변 세트 불러오기" 버튼으로 실합격작 기반 E2E 수동 테스트 가능.
+
+---
+
 # bizplan-mvp CLAUDE.md
 
 ## 프로젝트 개요
