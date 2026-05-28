@@ -53,13 +53,13 @@
 ```
 
 rubric_check 판단 기준:
-- `has_customer_benefit_numbers`: 고객·사회 이익 수치 (절감/개선/감소 %) 가 본문에 있는가
-- `has_named_technology`: 기술에 고유명사(공법명/브랜드명/약어)가 붙어 있는가
-- `has_bm_structure`: B2B/B2C/구독 등 수익 구조가 레이어로 명시되어 있는가
-- `has_narrow_target`: 타깃이 업종/상황 수준으로 좁고 구체적인가
-- `has_replacement_positioning`: 기존 방식 대체/극복/국산화 선언이 있는가
-- `has_external_validation`: 외부 기관 인증·전문가 개발·MOU가 명시되어 있는가
-- `warning_keyword_detected`: 불합격 경보 키워드 (소상공인맞춤형/반려동물헬스케어/AI단독수식어 등)가 감지되었는가
+- `has_customer_benefit_numbers`: 고객·사회 이익 수치 (절감/개선/감소 %) 가 본문에 있는가. true 예시: "물류비 40% 절감", "배터리 소비 60% 감소". false 예시: "비용을 크게 절감할 수 있음"처럼 수치 없는 경우
+- `has_named_technology`: 기술에 고유명사(공법명/브랜드명/약어)가 붙어 있는가. true 예시: "E4A 포뮬러", "익반죽 공법", "SOLAMIC X-free". false 예시: "AI 기반 기술", "독자 개발 공법"처럼 이름 없는 경우
+- `has_bm_structure`: B2B/B2C/구독 등 수익 구조가 레이어로 명시되어 있는가. true 예시: "B2B 라이선싱 + B2C 구독 + 광고 3트랙". false 예시: "다양한 수익 모델 운영 예정"처럼 구조 불명확한 경우
+- `has_narrow_target`: 타깃이 업종/상황 수준으로 좁고 구체적인가. true 예시: "공사업체 특화 ERP", "어린이집 특화 풀케어". false 예시: "소상공인 맞춤형", "중소기업 대상"처럼 넓은 경우
+- `has_replacement_positioning`: 기존 방식 대체/극복/국산화 선언이 있는가. true 예시: "불소 코팅제 완벽 대체재", "아마존 FBA를 대체하는". false 예시: "기존 제품보다 더 나은"처럼 대체 선언 없는 경우
+- `has_external_validation`: 외부 기관 인증·전문가 개발·MOU가 명시되어 있는가. true 예시: "식약처 인증", "국민체육진흥공단 공식 육성 기업", "대한러닝크루협회 MOU". false 예시: "자체 테스트 완료", "내부 검증 완료"처럼 외부 검증 없는 경우
+- `warning_keyword_detected`: 불합격 경보 키워드 (소상공인맞춤형/반려동물헬스케어/AI단독수식어 등)가 감지되었는가. true(감점): "소상공인 맞춤형", "반려동물 헬스케어", "AI 기반"(도메인 없이 단독). false(정상): 경보 키워드 없는 경우
 
 confidence_level 기준:
 - `green`: rubric 6개 중 4개 이상 통과, warning_keyword 없음
