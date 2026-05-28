@@ -43,10 +43,11 @@ def apply_post_judgment(result: SectionResult) -> SectionResult:
     if result.rubric_check and rubric_pass <= 1:
         level = "red"
 
-    # LLM self-rubric 3개 이상 통과 + missing 1개 이하 + 답변 2개 이상이면 green 승격
+    # LLM self-rubric 2개 이상 통과 + missing 1개 이하 + 답변 2개 이상이면 green 승격
+    # (has_sourced_numbers, has_founder_story는 섹션 유형에 따라 false일 수 있어 3→2로 완화)
     if (
         result.rubric_check
-        and rubric_pass >= 3
+        and rubric_pass >= 2
         and len(result.missing_info) <= 1
         and len(result.used_answer_ids) >= 2
         and level == "yellow"
@@ -56,8 +57,8 @@ def apply_post_judgment(result: SectionResult) -> SectionResult:
     # 통계 루브릭 보정 (stat_max > 0인 경우만)
     if stat_max > 0:
         ratio = stat_total / stat_max
-        # 합격 신호 강함(60%+): yellow → green 승격
-        if ratio >= 0.6 and level == "yellow" and len(result.missing_info) <= 2:
+        # 합격 신호 강함(40%+): yellow → green 승격
+        if ratio >= 0.4 and level == "yellow" and len(result.missing_info) <= 2:
             level = "green"
         # 합격 신호 음수 총점: green → yellow 강등
         if stat_total < 0 and level == "green":

@@ -75,10 +75,10 @@ content_segments 안에 **절대 포함하지 말 것**:
     }
   ],
   "rubric_check": {
-    "has_sourced_numbers": true | false,
-    "has_category_gap": true | false,
-    "has_3_step_logic": true | false,
-    "has_founder_story": true | false
+    "has_sourced_numbers": true | false,  // 수치가 1개 이상 포함되어 있으면 true (llm_inferred 추론 수치도 포함, 출처 없어도 됨)
+    "has_category_gap": true | false,     // 문제 또는 시장 내 공백·격차·미충족 수요를 언급했으면 true
+    "has_3_step_logic": true | false,     // TAM→SAM→SOM 또는 3단계 논리 전개가 있으면 true
+    "has_founder_story": true | false     // 창업자의 문제 경험·전문성·동기·이력이 1회 이상 언급되면 true (Team 섹션 한정 아님)
   },
   "completion_score": 0,
   "completion_reasoning": "이 점수를 부여한 이유 (1~2문장)"
