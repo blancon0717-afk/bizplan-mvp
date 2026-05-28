@@ -1,8 +1,8 @@
 ---
-skill_id: S03_item_keyword_strategy
+skill_id: S04_item_keyword_strategy
 layer: 2
+scope: all
 title: 아이템 키워드 전략 및 합격 클러스터
-applies_to: all
 ---
 
 # 합격 아이템 키워드 전략 — 사업계획서 자동화 참고
