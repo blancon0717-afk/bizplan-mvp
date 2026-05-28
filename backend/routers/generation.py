@@ -253,7 +253,9 @@ async def generate_feedback(session_id: str):
         # 전략 평가
         def _strategic():
             ordered_inner = list(results_map.values())
-            feedbacks = evaluate_business_plan(ordered_inner)
+            session = get_session(session_id)
+            ctx = session.company_context if session else None
+            feedbacks = evaluate_business_plan(ordered_inner, company_context=ctx)
             attach_strategic_feedbacks(results_map, feedbacks)
             return len(feedbacks)
 

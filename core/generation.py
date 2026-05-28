@@ -517,7 +517,7 @@ def apply_eval_result(result: "SectionResult", eval_data: dict) -> None:
     _resolve_anchor_texts(result)
 
 
-def evaluate_business_plan(results: list["SectionResult"]) -> list[dict]:
+def evaluate_business_plan(results: list["SectionResult"], company_context: dict | None = None) -> list[dict]:
     """전체 사업계획서 전략 평가 — 섹션 간 논리 일관성 및 사업 성립 가능성 평가.
 
     모든 섹션을 한 번에 Claude에 넘겨 사업 논리·전략적 타당성을 검토.
@@ -539,10 +539,44 @@ def evaluate_business_plan(results: list["SectionResult"]) -> list[dict]:
 
     sections_blocks = []
     for r in results:
-        content = "\n\n".join(s.text for s in r.content_segments) if r.content_segments else r.content
-        content = content[:1500]
-        sections_blocks.append(f"## [{r.section_id}] {r.section_title}\n\n{content}")
+        # 핵심 주장만 추출 (■ 소제목)
+        if r.content_segments:
+            headlines = [
+                line.strip()
+                for seg in r.content_segments
+                for line in seg.text.split("\n")
+                if line.strip().startswith("■")
+            ]
+            core_summary = "\n".join(headlines[:5])
+        else:
+            core_summary = r.content[:300]
+
+        # critical 메모 추출
+        critical_notes = [
+            f"  - [{s.severity}] {s.note[:80]}"
+            for s in r.inline_suggestions
+            if s.severity == "critical"
+        ][:3]
+        critical_block = "\n".join(critical_notes) if critical_notes else ""
+
+        block = f"## [{r.section_id}] {r.section_title} ({r.confidence_level}, {r.completion_score}점)\n{core_summary}"
+        if critical_block:
+            block += f"\n주요 보완 필요:\n{critical_block}"
+        sections_blocks.append(block)
+
     all_sections_content = "\n\n---\n\n".join(sections_blocks)
+
+    # company_context가 있으면 사업 요약을 앞에 추가
+    if company_context:
+        ctx_fields = ["문제인식", "솔루션", "시장규모", "비즈니스모델", "팀구성", "경쟁우위"]
+        ctx_lines = []
+        for f in ctx_fields:
+            v = (company_context.get(f) or "").strip()
+            if v:
+                ctx_lines.append(f"- {f}: {v[:150]}")
+        if ctx_lines:
+            ctx_block = "## 사업 요약 (인터뷰 기반)\n" + "\n".join(ctx_lines)
+            all_sections_content = ctx_block + "\n\n---\n\n" + all_sections_content
 
     prompt = template.format(
         strategic_guide=strategic_guide,
