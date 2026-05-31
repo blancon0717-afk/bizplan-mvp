@@ -61,7 +61,7 @@
 
    추론 부분은 반드시 severity=critical 인라인 메모로 'AI 추론 내용입니다. 실제 정보로 교체해주세요'를 달아주세요.
    **content_segments를 빈 배열로 반환하는 것은 절대 금지입니다.**
-2. 수치 및 출처 처리 규칙: `[출처 필요]` `[추정값]` `[수치 필요]` 태그를 본문에 절대 삽입하지 말 것. 상세 규칙은 `skills/L1_universal/U01_numbers_with_sources.md` 참조.
+2. 수치 및 출처 처리 규칙: `[출처 필요]` `[추정값]` `[수치 필요]` 태그를 본문에 절대 삽입하지 말 것. 상세 규칙은 MASTER_SKILL.md 2번 항목 참조.
 3. 해당 섹션 분량은 A4 기준 0.5~1.5페이지가 적절합니다 (양식 전체 분량 고려).
 4. **inline_suggestions anchor_text 작성 규칙 (절대 준수)**:
    - anchor_text는 반드시 위에서 작성한 content_segments의 text 안에 **글자 하나도 다르지 않게 그대로 존재하는 문구**여야 함

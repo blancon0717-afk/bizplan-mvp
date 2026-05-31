@@ -88,7 +88,7 @@ _EVAL_CRITERIA_PATH = Path(__file__).resolve().parent.parent / "skills" / "L2_se
 _EVAL_PROMPT_PATH = _PROMPTS_DIR / "section_evaluation.md"
 _STRATEGIC_GUIDE_PATH = _PROMPTS_DIR / "strategic_feedback_guide.md"
 _STRATEGIC_EVAL_PATH = _PROMPTS_DIR / "strategic_evaluation.md"
-_JUDGE_SKILL_PATH = Path(__file__).resolve().parent.parent / "skills" / "L3_program" / "P_judge_feedback_skill.md"
+
 
 # 모듈 레벨 파일 캐시 — 프로세스 재시작 전까지 디스크 재독 없음
 _cache_system_md: str | None = None
@@ -97,7 +97,7 @@ _cache_eval_criteria: str | None = None
 _cache_eval_prompt: str | None = None
 _cache_strategic_guide: str | None = None
 _cache_strategic_eval: str | None = None
-_cache_judge_skill: str | None = None
+
 
 
 def _load_system_md() -> str:
@@ -154,14 +154,6 @@ def _load_strategic_eval() -> str:
         _cache_strategic_eval = _STRATEGIC_EVAL_PATH.read_text(encoding="utf-8")
     return _cache_strategic_eval
 
-
-def _load_judge_skill() -> str:
-    global _cache_judge_skill
-    if _cache_judge_skill is None:
-        _cache_judge_skill = _strip_frontmatter(
-            _JUDGE_SKILL_PATH.read_text(encoding="utf-8")
-        ).strip()
-    return _cache_judge_skill
 
 
 @dataclass
@@ -533,9 +525,7 @@ def evaluate_business_plan(results: list["SectionResult"], company_context: dict
     strategic_guide = _load_strategic_guide()
     template = _load_strategic_eval()
 
-    # P_judge_feedback_skill(심사위원 빈도순 지적 유형)을 평가 가이드에 병합
-    if _JUDGE_SKILL_PATH.exists():
-        strategic_guide = strategic_guide + "\n\n---\n\n## 심사위원 빈도순 지적 유형\n\n" + _load_judge_skill()
+    # (P_judge_feedback_skill은 MASTER_SKILL.md에 통합됨 — 별도 병합 불필요)
 
     sections_blocks = []
     for r in results:
