@@ -84,7 +84,7 @@ def _clean_segment_text(text: str) -> str:
     # (N개사/N명), (N%) 등 미입력 수치 플레이스홀더 제거
     text = re.sub(r"\([N][^\)]{0,20}\)", "", text)
     return text.strip()
-_EVAL_CRITERIA_PATH = Path(__file__).resolve().parent.parent / "skills" / "L2_section" / "S03_item_keyword_strategy.md"
+_EVAL_CRITERIA_PATH = Path(__file__).resolve().parent.parent / "skills" / "L2_section" / "S04_item_keyword_strategy.md"
 _EVAL_PROMPT_PATH = _PROMPTS_DIR / "section_evaluation.md"
 _STRATEGIC_GUIDE_PATH = _PROMPTS_DIR / "strategic_feedback_guide.md"
 _STRATEGIC_EVAL_PATH = _PROMPTS_DIR / "strategic_evaluation.md"
