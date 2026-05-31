@@ -212,11 +212,11 @@ export default function HomePage() {
             </div>
 
             <button
-              type="button"
-              disabled
-              className="w-full py-4 rounded-xl font-semibold text-base bg-slate-300 text-slate-500 cursor-not-allowed"
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed"
             >
-              🔧 서비스 준비 중
+              {isLoading ? "추천 중..." : "지원사업 추천받기 →"}
             </button>
           </form>
         </div>
