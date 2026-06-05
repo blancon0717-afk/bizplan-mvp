@@ -18,6 +18,8 @@ from services.session_store import (
     load_results,
     save_company_context,
     save_results,
+    save_framework_draft,
+    load_framework_draft,
 )
 from core.context_extraction import extract_company_context
 from core.forms import load_form
@@ -25,6 +27,8 @@ from core.generation import (
     evaluate_section, apply_eval_result,
     evaluate_business_plan, attach_strategic_feedbacks,
     generate_section,
+    generate_framework_draft,
+    FRAMEWORK_SECTIONS,
 )
 from core.interview import load_initial_questions, load_followup_questions
 from core.judgment import apply_post_judgment, calculate_overall_completion
@@ -318,4 +322,117 @@ async def generate_single_section_feedback(session_id: str, section_id: str):
             {"anchor_text": s.anchor_text, "note": s.note, "severity": s.severity, "response": s.response}
             for s in target.inline_suggestions
         ],
+    }
+
+
+@router.post("/sessions/{session_id}/generate_framework")
+async def generate_framework(session_id: str):
+    """프레임워크 초안 생성 — SSE 스트리밍 (양식 무관, DRAFT_WRITING_GUIDE 기준)."""
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    async def event_generator():
+        loop = asyncio.get_event_loop()
+
+        try:
+            questions = load_initial_questions(_INITIAL_Q_PATH)
+            skills = load_skills(_SKILLS_DIR) if _SKILLS_DIR.exists() else []
+        except Exception as e:
+            yield _sse("error", {"message": f"초기화 실패: {e}"})
+            return
+
+        # 컨텍스트 추출
+        company_context = session.company_context
+        if not company_context:
+            fresh = get_session(session_id)
+            if fresh:
+                company_context = fresh.company_context
+        if not company_context:
+            try:
+                yield _sse("context_extracting", {"message": "인터뷰 답변 정제 중..."})
+                company_context = await loop.run_in_executor(
+                    _executor,
+                    lambda: extract_company_context(questions, session.answers),
+                )
+                save_company_context(session_id, company_context)
+            except Exception as e:
+                yield _sse("error", {"message": f"컨텍스트 추출 실패: {e}"})
+                return
+
+        total = len(FRAMEWORK_SECTIONS)
+        yield _sse("init", {
+            "sections": [{"id": s["id"], "title": s["title"], "parent_title": s["parent_title"]} for s in FRAMEWORK_SECTIONS],
+            "total": total,
+        })
+
+        def _generate_all():
+            return generate_framework_draft(
+                questions=questions,
+                answers=session.answers,
+                skills=skills,
+                company_context=company_context,
+            )
+
+        try:
+            results = await asyncio.wait_for(
+                loop.run_in_executor(_executor, _generate_all),
+                timeout=180.0,
+            )
+        except asyncio.TimeoutError:
+            yield _sse("error", {"message": "프레임워크 초안 생성 시간 초과 (180초). 다시 시도해주세요."})
+            return
+        except Exception as e:
+            logger.error("[프레임워크 생성 실패] %s: %s", session_id, e)
+            yield _sse("error", {"message": f"초안 생성 중 오류: {e}"})
+            return
+
+        save_framework_draft(session_id, results)
+
+        for result in results:
+            yield _sse("section_done", {
+                "section_id": result.section_id,
+                "section_title": result.section_title,
+                "confidence_level": result.confidence_level,
+                "completion_score": result.effective_completion_score(),
+            })
+
+        from core.judgment import calculate_overall_completion
+        overall = calculate_overall_completion(results)
+        yield _sse("all_done", {
+            "overall_completion": overall,
+            "total_sections": len(results),
+        })
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.get("/sessions/{session_id}/framework")
+def get_framework_draft(session_id: str):
+    """저장된 프레임워크 초안 반환."""
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    results = load_framework_draft(session_id)
+    if not results:
+        raise HTTPException(status_code=404, detail="프레임워크 초안이 없습니다. 먼저 생성해주세요.")
+    return {
+        "sections": [
+            {
+                "section_id": r.section_id,
+                "section_title": r.section_title,
+                "content": r.display_content(),
+                "confidence_level": r.confidence_level,
+                "completion_score": r.effective_completion_score(),
+                "content_segments": [
+                    {"text": s.text, "source": s.source, "source_qids": s.source_qids}
+                    for s in r.content_segments
+                ],
+                "inline_suggestions": [
+                    {"anchor_text": s.anchor_text, "note": s.note, "severity": s.severity, "response": s.response}
+                    for s in r.inline_suggestions
+                ],
+            }
+            for r in results
+        ]
     }

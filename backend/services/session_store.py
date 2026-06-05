@@ -157,6 +157,23 @@ def load_results(session_id: str) -> Optional[list[SectionResult]]:
     return [_dict_to_result(d) for d in raw]
 
 
+def save_framework_draft(session_id: str, results: list[SectionResult]) -> None:
+    """프레임워크 초안(양식 무관)을 {session_id}_framework.json에 저장."""
+    _ensure_dir()
+    path = _SESSIONS_DIR / f"{session_id}_framework.json"
+    data = [asdict(r) for r in results]
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_framework_draft(session_id: str) -> Optional[list[SectionResult]]:
+    """저장된 프레임워크 초안을 로드. 없으면 None 반환."""
+    path = _SESSIONS_DIR / f"{session_id}_framework.json"
+    if not path.exists():
+        return None
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return [_dict_to_result(d) for d in raw]
+
+
 def _dict_to_result(d: dict) -> SectionResult:
     suggestions = [
         InlineSuggestion(**s) for s in d.get("inline_suggestions", [])
