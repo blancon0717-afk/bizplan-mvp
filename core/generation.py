@@ -89,6 +89,7 @@ _EVAL_PROMPT_PATH = _PROMPTS_DIR / "section_evaluation.md"
 _STRATEGIC_GUIDE_PATH = _PROMPTS_DIR / "strategic_feedback_guide.md"
 _STRATEGIC_EVAL_PATH = _PROMPTS_DIR / "strategic_evaluation.md"
 _FRAMEWORK_GEN_PATH = _PROMPTS_DIR / "framework_generation.md"
+_FORM_CONV_PATH = _PROMPTS_DIR / "form_conversion.md"
 
 # 프레임워크 섹션 정의 (양식 무관 기본 구조)
 FRAMEWORK_SECTIONS: list[dict] = [
@@ -111,6 +112,7 @@ _cache_eval_prompt: str | None = None
 _cache_strategic_guide: str | None = None
 _cache_strategic_eval: str | None = None
 _cache_framework_gen: str | None = None
+_cache_form_conv: str | None = None
 
 
 
@@ -1221,6 +1223,176 @@ def generate_framework_draft(
                         confidence_level="red",
                         reasoning=f"생성 실패: {e}",
                         missing_info=["섹션 생성 오류 — 재시도 필요"],
+                        completion_score=0,
+                    )
+
+    return [r for r in results if r is not None]
+
+
+# ──────────────────────────────────────────────
+# 양식 변환 (프레임워크 초안 → 선택 양식 섹션)
+# ──────────────────────────────────────────────
+
+def _load_form_conv() -> str:
+    global _cache_form_conv
+    if _cache_form_conv is None:
+        _cache_form_conv = _FORM_CONV_PATH.read_text(encoding="utf-8")
+    return _cache_form_conv
+
+
+def convert_to_form(
+    framework_results: list[SectionResult],
+    form: Form,
+    skills: list[Skill] | None = None,
+) -> list[SectionResult]:
+    """프레임워크 초안 → 선택한 양식 섹션 구조로 변환.
+
+    Args:
+        framework_results: generate_framework_draft()가 반환한 SectionResult 목록
+        form: 변환 대상 Form (load_form()으로 로드)
+        skills: 로드된 스킬 목록 (없으면 빈 리스트)
+    """
+    import concurrent.futures
+
+    if skills is None:
+        skills = []
+
+    # 1. 프레임워크 초안 9개 섹션을 단일 텍스트로 이어붙임
+    framework_parts = [
+        f"## {r.section_title}\n\n{r.display_content()}"
+        for r in framework_results
+    ]
+    framework_context = "\n\n---\n\n".join(framework_parts)
+
+    system = _load_system_md()
+    template = _load_form_conv()
+
+    results: list[SectionResult | None] = [None] * len(form.sections)
+
+    def _convert_one(idx: int, section: FormSection) -> tuple[int, SectionResult]:
+        if os.getenv("MOCK_MODE", "0") == "1":
+            return idx, _mock_section_result(section, [], [])
+
+        selected = select_skills_for_section(skills, section.category, section.tags) if skills else []
+        skills_block = "\n\n---\n\n".join(s.to_prompt_block() for s in selected)
+        skills_cache_prefix = f"## 적용할 작성 방법론 (Skills)\n\n{skills_block}" if skills_block else ""
+
+        today_date_note = _build_today_date_note(section.tags)
+
+        user = template.format(
+            framework_context=framework_context,
+            section_id=section.id,
+            section_title=section.title,
+            section_instructions=section.instructions or "(별도 지시 없음)",
+            skills_block="(→ 위의 캐시 블록에 포함된 Skills 적용)" if skills_block else "(Skills 없음)",
+            today_date_note=today_date_note,
+        )
+
+        call_kwargs: dict = dict(
+            system=system,
+            user=user,
+            model="claude-haiku-4-5-20251001",
+            max_tokens=8192,
+            temperature=0.3,
+            purpose="form_conversion",
+            metadata={"program_code": form.program_code, "section_id": section.id},
+            use_cache=True,
+        )
+        if skills_cache_prefix:
+            call_kwargs["cached_user_prefix"] = skills_cache_prefix
+
+        text, meta = call_claude(**call_kwargs)
+
+        meta["truncated"] = meta.get("stop_reason") == "max_tokens"
+        if meta["truncated"]:
+            logger.warning("[TRUNCATED] 양식 변환 섹션 %s 응답이 max_tokens로 잘림.", section.id)
+
+        try:
+            data = parse_json_response(text)
+        except Exception as e:
+            return idx, SectionResult(
+                section_id=section.id,
+                section_title=section.title,
+                content="",
+                confidence_level="red",
+                reasoning=f"JSON 파싱 실패: {e}",
+                missing_info=["LLM 응답 파싱 실패"],
+                llm_meta=meta,
+                completion_score=0,
+            )
+
+        suggestions = [
+            InlineSuggestion(
+                anchor_text=re.sub(r"\*\*(.+?)\*\*", r"\1", item.get("anchor_text", "").strip()),
+                note=item.get("note", "").strip(),
+                severity=item.get("severity", "warning"),
+            )
+            for item in data.get("inline_suggestions", [])
+            if isinstance(item, dict) and item.get("anchor_text") and item.get("note")
+        ]
+
+        segments = [
+            ContentSegment(
+                text=_clean_segment_text(seg.get("text", "").strip()),
+                source=seg.get("source", "llm_inferred"),
+                source_qids=list(seg.get("source_qids", []) or []),
+            )
+            for seg in data.get("content_segments", [])
+            if isinstance(seg, dict) and seg.get("text")
+        ]
+
+        content_str = "\n\n".join(s.text for s in segments) if segments else data.get("content", "")
+
+        try:
+            completion_score = max(0, min(100, int(data.get("completion_score", 0))))
+        except (TypeError, ValueError):
+            completion_score = 0
+
+        result = SectionResult(
+            section_id=section.id,
+            section_title=section.title,
+            content=content_str,
+            confidence_level=data.get("confidence_level", "red"),
+            reasoning=data.get("reasoning", ""),
+            used_answer_ids=data.get("used_answer_ids", []),
+            missing_info=data.get("missing_info", []),
+            inline_suggestions=suggestions,
+            content_segments=segments,
+            rubric_check=data.get("rubric_check", {}),
+            llm_meta=meta,
+            completion_score=completion_score,
+            completion_reasoning=data.get("completion_reasoning", ""),
+        )
+        _resolve_anchor_texts(result)
+        if meta.get("truncated") and result.confidence_level == "green":
+            result.confidence_level = "yellow"
+        return idx, result
+
+    # 첫 섹션 단독 생성 (캐시 워밍) → 나머지 병렬
+    _, first = _convert_one(0, form.sections[0])
+    results[0] = first
+
+    if len(form.sections) > 1:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            futures = {
+                executor.submit(_convert_one, i, sec): i
+                for i, sec in enumerate(form.sections[1:], start=1)
+            }
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    idx, result = future.result()
+                    results[idx] = result
+                except Exception as e:
+                    idx = futures[future]
+                    sec = form.sections[idx]
+                    logger.error("[양식 변환 섹션 실패] %s: %s", sec.id, e)
+                    results[idx] = SectionResult(
+                        section_id=sec.id,
+                        section_title=sec.title,
+                        content="",
+                        confidence_level="red",
+                        reasoning=f"변환 실패: {e}",
+                        missing_info=["섹션 변환 오류 — 재시도 필요"],
                         completion_score=0,
                     )
 
