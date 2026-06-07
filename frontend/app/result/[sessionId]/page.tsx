@@ -42,6 +42,7 @@ export default function ResultPage() {
   const [isDocumentChecking, setIsDocumentChecking] = useState(false);
   const [usageData, setUsageData] = useState<Record<string, { used: number; max: number }>>({});
   const [passedMemoMap, setPassedMemoMap] = useState<Record<string, Set<number>>>({});
+  const [dataSource, setDataSource] = useState<"results" | "framework">("results");
 
   useEffect(() => {
     async function load() {
@@ -51,6 +52,7 @@ export default function ResultPage() {
           api.getSession(sessionId),
         ]);
         init(sessionId, results.sections, results.overall_completion);
+        setDataSource("results");
         localStorage.setItem("bizplan_session_id", sessionId);
         const programs = await api.getPrograms();
         const prog = programs.programs.find((p) => p.code === session.program_code);
@@ -67,11 +69,20 @@ export default function ResultPage() {
           .finally(() => setIsLoadingScore(false));
         api.getUsage(sessionId).then(setUsageData).catch(() => {});
       } catch {
-        const savedId = localStorage.getItem("bizplan_session_id");
-        if (savedId && savedId !== sessionId) {
-          router.replace(`/result/${savedId}`);
-        } else {
-          setError("결과를 불러올 수 없습니다.");
+        // results.json 없음 — 프레임워크 초안 시도
+        try {
+          const framework = await api.getFramework(sessionId);
+          init(sessionId, framework.sections, Number(framework.overall_completion) || 0);
+          setDataSource("framework");
+          setProgramName("기본 초안");
+          localStorage.setItem("bizplan_session_id", sessionId);
+        } catch {
+          const savedId = localStorage.getItem("bizplan_session_id");
+          if (savedId && savedId !== sessionId) {
+            router.replace(`/result/${savedId}`);
+          } else {
+            setError("결과를 불러올 수 없습니다.");
+          }
         }
       } finally {
         setIsLoading(false);
@@ -299,10 +310,10 @@ export default function ResultPage() {
           </div>
 
           <div className="flex items-center gap-3 flex-shrink-0">
-            {isLoadingScore
+            {dataSource === "results" && (isLoadingScore
               ? <span className="text-sm text-slate-400 animate-pulse">합격률 계산 중...</span>
               : <RubricBadge probPct={localProbPct} />
-            }
+            )}
             {(yellowCount > 0 || redCount > 0) && (
               <div className="relative group">
                 <button
@@ -346,58 +357,70 @@ export default function ResultPage() {
                 </div>
               </div>
             </div>
-            <div className="relative group">
-              <button
-                onClick={handleActionPlan}
-                disabled={isActionPlanLoading}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-200 text-purple-600 text-sm font-medium hover:bg-purple-50 disabled:opacity-50 transition-colors"
-              >
-                {isActionPlanLoading ? (
-                  <span className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>📋 액션플랜 <span className={(usageData.action_plan?.used ?? 0) >= (usageData.action_plan?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.action_plan?.used ?? 0}/{usageData.action_plan?.max ?? 1})</span></>
-                )}
-              </button>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-50">
-                <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
-                  합격을 위해 대표님이 직접 실행해야 할 항목을 제시합니다
+            {dataSource === "results" && (
+              <>
+                <div className="relative group">
+                  <button
+                    onClick={handleActionPlan}
+                    disabled={isActionPlanLoading}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-200 text-purple-600 text-sm font-medium hover:bg-purple-50 disabled:opacity-50 transition-colors"
+                  >
+                    {isActionPlanLoading ? (
+                      <span className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>📋 액션플랜 <span className={(usageData.action_plan?.used ?? 0) >= (usageData.action_plan?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.action_plan?.used ?? 0}/{usageData.action_plan?.max ?? 1})</span></>
+                    )}
+                  </button>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-50">
+                    <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
+                      합격을 위해 대표님이 직접 실행해야 할 항목을 제시합니다
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="relative group">
-              <button
-                onClick={handleDocumentCheck}
-                disabled={isDocumentChecking}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-teal-200 text-teal-600 text-sm font-medium hover:bg-teal-50 disabled:opacity-50 transition-colors"
-              >
-                {isDocumentChecking ? (
-                  <span className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "🔍 문서 점검"
-                )}
-              </button>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-50">
-                <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
-                  오탈자, 문장 오류, 논리적 모순을 자동으로 점검합니다
+                <div className="relative group">
+                  <button
+                    onClick={handleDocumentCheck}
+                    disabled={isDocumentChecking}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl border border-teal-200 text-teal-600 text-sm font-medium hover:bg-teal-50 disabled:opacity-50 transition-colors"
+                  >
+                    {isDocumentChecking ? (
+                      <span className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      "🔍 문서 점검"
+                    )}
+                  </button>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-50">
+                    <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
+                      오탈자, 문장 오류, 논리적 모순을 자동으로 점검합니다
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <button
-              onClick={handleDownload}
-              disabled={isDownloading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-medium hover:bg-slate-900 disabled:opacity-50 transition-colors shadow-sm"
-            >
-              {isDownloading ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  />
-                </svg>
-              )}
-              DOCX 다운로드
-            </button>
+                <button
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-medium hover:bg-slate-900 disabled:opacity-50 transition-colors shadow-sm"
+                >
+                  {isDownloading ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                  )}
+                  DOCX 다운로드
+                </button>
+              </>
+            )}
+            {dataSource === "framework" && (
+              <button
+                onClick={() => router.push(`/recommend?session=${sessionId}&mode=convert`)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                지원사업 선택하기 →
+              </button>
+            )}
           </div>
         </div>
       </header>

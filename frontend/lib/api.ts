@@ -119,4 +119,20 @@ export const api = {
 
   getUsage: (sessionId: string) =>
     request<Record<string, { used: number; max: number }>>(`/sessions/${sessionId}/usage`),
+
+  generateFramework: (sessionId: string) =>
+    fetch(`${API_BASE}/sessions/${sessionId}/generate_framework`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    }),
+
+  getFramework: (sessionId: string) =>
+    request<GenerationResults>(`/sessions/${sessionId}/framework`),
+
+  convertToForm: (sessionId: string, program_code: string) =>
+    fetch(`${API_BASE}/sessions/${sessionId}/convert_to_form`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ program_code }),
+    }),
 };

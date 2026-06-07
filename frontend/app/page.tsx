@@ -20,7 +20,7 @@ const REGION_OPTIONS: { value: CompanyProfile["지역"]; label: string }[] = [
 
 export default function HomePage() {
   const router = useRouter();
-  const setResults = useRecommendStore((s) => s.setResults);
+  const { setResults, setSessionId } = useRecommendStore();
   const [profile, setProfile] = useState<CompanyProfile>({
     업력: "초기",
     아이템: "",
@@ -37,13 +37,14 @@ export default function HomePage() {
     if (saved) setProfile(saved);
     const savedId = localStorage.getItem("bizplan_session_id");
     if (savedId) {
-      fetch(`/api/sessions/${savedId}/results`)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data && data.sections && data.sections.length > 0) {
-            setSavedSessionId(savedId);
-            setHasCompletedPlan(true);
-          }
+      // 프레임워크 초안 또는 결과가 있으면 이어하기 배너 표시
+      Promise.any([
+        fetch(`/api/sessions/${savedId}/framework`).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+        fetch(`/api/sessions/${savedId}/results`).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+      ])
+        .then(() => {
+          setSavedSessionId(savedId);
+          setHasCompletedPlan(true);
         })
         .catch(() => {});
     }
@@ -58,12 +59,14 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
     try {
-      router.prefetch("/recommend");
-      const res = await api.recommend(profile);
-      setResults(res.programs, profile);
-      router.push("/recommend");
+      const res = await api.createSession("none");
+      const sessionId = res.session_id;
+      localStorage.setItem("bizplan_session_id", sessionId);
+      setResults([], profile);
+      setSessionId(sessionId);
+      router.push(`/interview/${sessionId}`);
     } catch {
-      setError("추천 결과를 불러오지 못했습니다. 백엔드 서버를 확인해주세요.");
+      setError("서버 연결에 실패했습니다. 백엔드 서버를 확인해주세요.");
       setIsLoading(false);
     }
   }
@@ -108,7 +111,7 @@ export default function HomePage() {
               기업 정보를 입력해주세요
             </h1>
             <p className="text-slate-500 text-base">
-              정보를 바탕으로 적합한 지원사업을 추천해드립니다
+              정보를 입력하면 AI가 사업계획서 초안을 작성합니다
             </p>
           </div>
 
@@ -216,7 +219,7 @@ export default function HomePage() {
               disabled={isLoading}
               className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed"
             >
-              {isLoading ? "추천 중..." : "지원사업 추천받기 →"}
+              {isLoading ? "준비 중..." : "인터뷰 시작하기 →"}
             </button>
           </form>
         </div>
