@@ -36,10 +36,11 @@ class Form:
         return None
 
 
+_DEFAULT_FORMS_DIR = Path(__file__).resolve().parent.parent / "data" / "forms"
 _form_cache: dict[str, Form] = {}
 
 
-def load_form(program_code: str, forms_dir: str | Path = "data/forms") -> Form:
+def load_form(program_code: str, forms_dir: str | Path = _DEFAULT_FORMS_DIR) -> Form:
     cache_key = f"{forms_dir}/{program_code}"
     if cache_key in _form_cache:
         return _form_cache[cache_key]

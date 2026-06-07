@@ -75,10 +75,10 @@ export default function GeneratingPage() {
           const data = JSON.parse(dataLine);
           if (eventType === "init") {
             setSections(
-              data.sections.map((s: SectionMeta) => ({
+              data.sections.map((s: SectionMeta, i: number) => ({
                 id: s.id,
                 title: s.title,
-                order: s.order,
+                order: i,
                 status: "generating" as const,
               }))
             );

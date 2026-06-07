@@ -48,9 +48,10 @@ class GenerateRequest(BaseModel):
 class ConvertToFormRequest(BaseModel):
     program_code: str
 
-_INITIAL_Q_PATH = Path("data/interview/initial_questions.json")
-_FOLLOWUP_Q_PATH = Path("data/interview/questions.json")
-_SKILLS_DIR = Path("skills")
+_ROOT_DIR = Path(__file__).resolve().parent.parent.parent  # bizplan-mvp/
+_INITIAL_Q_PATH = _ROOT_DIR / "data" / "interview" / "initial_questions.json"
+_FOLLOWUP_Q_PATH = _ROOT_DIR / "data" / "interview" / "questions.json"
+_SKILLS_DIR = _ROOT_DIR / "skills"
 
 _executor = ThreadPoolExecutor(max_workers=10)
 
@@ -485,7 +486,9 @@ def get_framework_draft(session_id: str):
     results = load_framework_draft(session_id)
     if not results:
         raise HTTPException(status_code=404, detail="프레임워크 초안이 없습니다. 먼저 생성해주세요.")
+    overall = calculate_overall_completion(results)
     return {
+        "overall_completion": overall,
         "sections": [
             {
                 "section_id": r.section_id,
@@ -493,6 +496,17 @@ def get_framework_draft(session_id: str):
                 "content": r.display_content(),
                 "confidence_level": r.confidence_level,
                 "completion_score": r.effective_completion_score(),
+                "effective_completion_score": r.effective_completion_score(),
+                "resolved_memo_count": r.resolved_memo_count(),
+                "reasoning": r.reasoning,
+                "used_answer_ids": r.used_answer_ids,
+                "missing_info": r.missing_info,
+                "user_edited_content": r.user_edited_content,
+                "rubric_check": r.rubric_check,
+                "llm_meta": r.llm_meta,
+                "completion_reasoning": r.completion_reasoning,
+                "category": "",
+                "truncated": bool(r.llm_meta.get("truncated", False)),
                 "content_segments": [
                     {"text": s.text, "source": s.source, "source_qids": s.source_qids}
                     for s in r.content_segments
