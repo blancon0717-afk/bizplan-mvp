@@ -29,6 +29,7 @@ from core.generation import (
     generate_section,
     generate_framework_draft,
     convert_to_form,
+    convert_to_form_v2,
     FRAMEWORK_SECTIONS,
 )
 from core.interview import load_initial_questions, load_followup_questions
@@ -454,6 +455,69 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
             return
         except Exception as e:
             logger.error("[양식 변환 실패] %s: %s", session_id, e)
+            yield _sse("error", {"message": f"양식 변환 중 오류: {e}"})
+            return
+
+        save_results(session_id, results)
+
+        for result in results:
+            yield _sse("section_done", {
+                "section_id": result.section_id,
+                "section_title": result.section_title,
+                "confidence_level": result.confidence_level,
+                "completion_score": result.effective_completion_score(),
+            })
+
+        from core.judgment import calculate_overall_completion
+        overall = calculate_overall_completion(results)
+        yield _sse("all_done", {
+            "overall_completion": overall,
+            "total_sections": len(results),
+        })
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.post("/sessions/{session_id}/convert_to_form_v2")
+async def convert_to_form_v2_endpoint(session_id: str, body: ConvertToFormRequest):
+    """양식 변환 v2 — 재배치 방식 (LLM 1회 매핑 결정 + 내용 복붙). 성능 테스트용."""
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    async def event_generator():
+        loop = asyncio.get_event_loop()
+
+        framework_results = load_framework_draft(session_id)
+        if not framework_results:
+            yield _sse("error", {"message": "프레임워크 초안이 없습니다. 먼저 초안을 생성해주세요."})
+            return
+
+        try:
+            form = load_form(body.program_code)
+        except Exception as e:
+            yield _sse("error", {"message": f"양식 로드 실패: {e}"})
+            return
+
+        total = len(form.sections)
+        yield _sse("init", {
+            "sections": [{"id": s.id, "title": s.title, "order": s.order} for s in form.sections],
+            "total": total,
+        })
+
+        def _convert_all():
+            return convert_to_form_v2(framework_results, form)
+
+        try:
+            results = await asyncio.wait_for(
+                loop.run_in_executor(_executor, _convert_all),
+                timeout=60.0,
+            )
+        except asyncio.TimeoutError:
+            yield _sse("error", {"message": "양식 변환 시간 초과 (60초). 다시 시도해주세요."})
+            return
+        except Exception as e:
+            logger.error("[양식 변환 v2 실패] %s: %s", session_id, e)
             yield _sse("error", {"message": f"양식 변환 중 오류: {e}"})
             return
 

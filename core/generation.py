@@ -90,6 +90,7 @@ _STRATEGIC_GUIDE_PATH = _PROMPTS_DIR / "strategic_feedback_guide.md"
 _STRATEGIC_EVAL_PATH = _PROMPTS_DIR / "strategic_evaluation.md"
 _FRAMEWORK_GEN_PATH = _PROMPTS_DIR / "framework_generation.md"
 _FORM_CONV_PATH = _PROMPTS_DIR / "form_conversion.md"
+_FORM_REARRANGE_PATH = _PROMPTS_DIR / "form_rearrange.md"
 
 # 프레임워크 섹션 정의 (양식 무관 기본 구조)
 FRAMEWORK_SECTIONS: list[dict] = [
@@ -113,6 +114,7 @@ _cache_strategic_guide: str | None = None
 _cache_strategic_eval: str | None = None
 _cache_framework_gen: str | None = None
 _cache_form_conv: str | None = None
+_cache_form_rearrange: str | None = None
 
 
 
@@ -1240,6 +1242,13 @@ def _load_form_conv() -> str:
     return _cache_form_conv
 
 
+def _load_form_rearrange() -> str:
+    global _cache_form_rearrange
+    if _cache_form_rearrange is None:
+        _cache_form_rearrange = _FORM_REARRANGE_PATH.read_text(encoding="utf-8")
+    return _cache_form_rearrange
+
+
 def convert_to_form(
     framework_results: list[SectionResult],
     form: Form,
@@ -1397,3 +1406,106 @@ def convert_to_form(
                     )
 
     return [r for r in results if r is not None]
+
+
+def convert_to_form_v2(
+    framework_results: list[SectionResult],
+    form: Form,
+) -> list[SectionResult]:
+    """재배치 방식: LLM 1회 매핑 결정 → 프레임워크 초안 내용 복붙.
+
+    v1(convert_to_form)과 달리 섹션별 LLM 재호출 없음.
+    동일 입력으로 v1과 결과물을 비교하기 위한 성능 테스트용 함수.
+    """
+    import json as _json
+
+    # 1. 프레임워크 섹션 목록 정리
+    framework_meta = [
+        {
+            "id": r.section_id,
+            "title": r.section_title,
+            "category": next(
+                (s["category"] for s in FRAMEWORK_SECTIONS if s["id"] == r.section_id), ""
+            ),
+            "tags": next(
+                (s["tags"] for s in FRAMEWORK_SECTIONS if s["id"] == r.section_id), []
+            ),
+        }
+        for r in framework_results
+    ]
+
+    # 2. 양식 섹션 목록 정리
+    form_meta = [
+        {
+            "id": s.id,
+            "title": s.title,
+            "category": s.category,
+            "tags": s.tags,
+        }
+        for s in form.sections
+    ]
+
+    # 3. LLM 1회 호출 — 매핑 결정
+    template = _load_form_rearrange()
+    user_prompt = template.format(
+        framework_sections=_json.dumps(framework_meta, ensure_ascii=False, indent=2),
+        form_sections=_json.dumps(form_meta, ensure_ascii=False, indent=2),
+    )
+
+    mapping_text, mapping_meta = call_claude(
+        system=_load_system_md(),
+        user=user_prompt,
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1024,
+        temperature=0.1,
+        purpose="form_rearrange_mapping",
+        metadata={"program_code": form.program_code},
+    )
+
+    try:
+        mapping: dict[str, list[str]] = parse_json_response(mapping_text)
+    except Exception as e:
+        logger.error("[재배치 매핑 파싱 실패] %s", e)
+        mapping = {}
+
+    # 4. 프레임워크 섹션 ID → SectionResult 조회 맵
+    framework_map = {r.section_id: r for r in framework_results}
+
+    # 5. 매핑대로 내용 복붙 → SectionResult 생성
+    results: list[SectionResult] = []
+    for section in form.sections:
+        assigned_ids: list[str] = mapping.get(section.id, [])
+        assigned_results = [framework_map[fid] for fid in assigned_ids if fid in framework_map]
+
+        if assigned_results:
+            parts = []
+            all_segments: list[ContentSegment] = []
+            for fw in assigned_results:
+                parts.append(fw.display_content())
+                all_segments.extend(fw.content_segments)
+
+            content = "\n\n".join(parts)
+            confidence = "green"
+            completion = 70
+        else:
+            content = ""
+            all_segments = []
+            confidence = "red"
+            completion = 0
+
+        result = SectionResult(
+            section_id=section.id,
+            section_title=section.title,
+            content=content,
+            confidence_level=confidence,
+            reasoning=f"재배치: {assigned_ids}" if assigned_ids else "매핑된 섹션 없음",
+            used_answer_ids=[],
+            missing_info=[] if content else ["매핑된 프레임워크 섹션 없음"],
+            inline_suggestions=[],
+            content_segments=all_segments,
+            llm_meta={"method": "rearrange", "mapped_from": assigned_ids, "mapping_meta": mapping_meta},
+            completion_score=completion,
+        )
+        results.append(result)
+
+    return results
