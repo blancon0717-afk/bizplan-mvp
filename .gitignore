@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 logs/
 data/sessions/
+backend/data/sessions/
 .streamlit/
 *.docx
 .env.local
