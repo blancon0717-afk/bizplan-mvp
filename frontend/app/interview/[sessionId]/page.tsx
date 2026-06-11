@@ -69,15 +69,16 @@ export default function InterviewPage() {
   function handleAnswer(text: string) {
     if (currentIndex >= questions.length) return;
     const q = questions[currentIndex];
+    const capturedIndex = currentIndex;
     saveAnswer(q.qid, text).then(() => {
       setChatHistory((prev) => {
         const next = [...prev, { type: "user" as const, qid: q.qid, text }];
-        if (currentIndex + 1 < questions.length) {
-          next.push({ type: "ai" as const, question: questions[currentIndex + 1] });
+        if (capturedIndex + 1 < questions.length) {
+          next.push({ type: "ai" as const, question: questions[capturedIndex + 1] });
         }
         return next;
       });
-      setCurrentIndex(currentIndex + 1);
+      setCurrentIndex((c) => c + 1);
       setInputHasText(false);
     });
   }
@@ -85,14 +86,15 @@ export default function InterviewPage() {
   function handleSkip() {
     if (currentIndex >= questions.length) return;
     const q = questions[currentIndex];
+    const capturedIndex = currentIndex;
     setChatHistory((prev) => {
       const next = [...prev, { type: "user" as const, qid: q.qid, text: "(건너뜀)" }];
-      if (currentIndex + 1 < questions.length) {
-        next.push({ type: "ai" as const, question: questions[currentIndex + 1] });
+      if (capturedIndex + 1 < questions.length) {
+        next.push({ type: "ai" as const, question: questions[capturedIndex + 1] });
       }
       return next;
     });
-    setCurrentIndex(currentIndex + 1);
+    setCurrentIndex((c) => c + 1);
     setInputHasText(false);
   }
 

@@ -1,9 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import dynamic from "next/dynamic";
 import RubricBadge from "@/components/result/RubricBadge";
+
+const MarkdownRenderer = dynamic(() => import("@/components/MarkdownRenderer"), {
+  loading: () => <div className="animate-pulse text-sm text-slate-400 py-4">로딩 중...</div>,
+  ssr: false,
+});
 import DocumentPanel, { type DocumentPanelHandle } from "@/components/result/DocumentPanel";
 import MemoPanel, { type MemoPanelHandle } from "@/components/result/MemoPanel";
 import { useResultStore } from "@/store/resultStore";
@@ -47,15 +51,15 @@ export default function ResultPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [results, session] = await Promise.all([
+        const [results, session, programsData] = await Promise.all([
           api.getResults(sessionId),
           api.getSession(sessionId),
+          api.getPrograms(),
         ]);
         init(sessionId, results.sections, results.overall_completion);
         setDataSource("results");
         localStorage.setItem("bizplan_session_id", sessionId);
-        const programs = await api.getPrograms();
-        const prog = programs.programs.find((p) => p.code === session.program_code);
+        const prog = programsData.programs.find((p) => p.code === session.program_code);
         setProgramName(prog?.name ?? session.program_code);
 
         // 루브릭 채점 — 결과 로드 후 비동기로 실행
@@ -519,56 +523,7 @@ export default function ResultPage() {
 
             {/* 본문 */}
             <div className="overflow-y-auto px-6 py-5 flex-1">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h1: ({ children }) => (
-                    <h1 className="text-base font-bold text-slate-800 mt-5 mb-2 pb-1.5 border-b border-slate-200 first:mt-0">{children}</h1>
-                  ),
-                  h2: ({ children }) => (
-                    <h2 className="text-sm font-bold text-slate-800 mt-4 mb-1.5">{children}</h2>
-                  ),
-                  h3: ({ children }) => (
-                    <h3 className="text-sm font-semibold text-slate-700 mt-3 mb-1">{children}</h3>
-                  ),
-                  p: ({ children }) => (
-                    <p className="text-sm text-slate-600 leading-relaxed my-1.5">{children}</p>
-                  ),
-                  ul: ({ children }) => (
-                    <ul className="list-disc list-inside my-1.5 space-y-0.5 text-sm text-slate-600">{children}</ul>
-                  ),
-                  ol: ({ children }) => (
-                    <ol className="list-decimal list-inside my-1.5 space-y-0.5 text-sm text-slate-600">{children}</ol>
-                  ),
-                  li: ({ children }) => (
-                    <li className="text-sm text-slate-600 leading-relaxed">{children}</li>
-                  ),
-                  strong: ({ children }) => (
-                    <strong className="font-semibold text-slate-800">{children}</strong>
-                  ),
-                  code: ({ children }) => (
-                    <code className="text-xs text-blue-700 bg-blue-50 px-1 py-0.5 rounded">{children}</code>
-                  ),
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-2 border-slate-300 pl-3 my-2 text-slate-500 text-sm italic">{children}</blockquote>
-                  ),
-                  hr: () => <hr className="my-3 border-slate-200" />,
-                  del: ({ children }) => (
-                    <span className="text-slate-600">{children}</span>
-                  ),
-                  table: ({ children }) => (
-                    <table className="w-full border-collapse my-3 text-xs">{children}</table>
-                  ),
-                  th: ({ children }) => (
-                    <th className="border border-slate-200 px-3 py-2 bg-slate-50 text-left text-xs font-semibold text-slate-700">{children}</th>
-                  ),
-                  td: ({ children }) => (
-                    <td className="border border-slate-200 px-3 py-2 text-xs text-slate-600">{children}</td>
-                  ),
-                }}
-              >
-                {actionPlan}
-              </ReactMarkdown>
+              <MarkdownRenderer variant="blue">{actionPlan}</MarkdownRenderer>
             </div>
 
             {/* 푸터 */}
@@ -610,53 +565,7 @@ export default function ResultPage() {
 
             {/* 본문 */}
             <div className="overflow-y-auto px-6 py-5 flex-1">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h1: ({ children }) => (
-                    <h1 className="text-base font-bold text-slate-800 mt-5 mb-2 pb-1.5 border-b border-slate-200 first:mt-0">{children}</h1>
-                  ),
-                  h2: ({ children }) => (
-                    <h2 className="text-sm font-bold text-slate-800 mt-4 mb-1.5">{children}</h2>
-                  ),
-                  h3: ({ children }) => (
-                    <h3 className="text-sm font-semibold text-slate-700 mt-3 mb-1">{children}</h3>
-                  ),
-                  p: ({ children }) => (
-                    <p className="text-sm text-slate-600 leading-relaxed my-1.5">{children}</p>
-                  ),
-                  ul: ({ children }) => (
-                    <ul className="list-disc list-inside my-1.5 space-y-0.5 text-sm text-slate-600">{children}</ul>
-                  ),
-                  ol: ({ children }) => (
-                    <ol className="list-decimal list-inside my-1.5 space-y-0.5 text-sm text-slate-600">{children}</ol>
-                  ),
-                  li: ({ children }) => (
-                    <li className="text-sm text-slate-600 leading-relaxed">{children}</li>
-                  ),
-                  strong: ({ children }) => (
-                    <strong className="font-semibold text-slate-800">{children}</strong>
-                  ),
-                  code: ({ children }) => (
-                    <code className="text-xs text-teal-700 bg-teal-50 px-1 py-0.5 rounded">{children}</code>
-                  ),
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-2 border-slate-300 pl-3 my-2 text-slate-500 text-sm italic">{children}</blockquote>
-                  ),
-                  hr: () => <hr className="my-3 border-slate-200" />,
-                  table: ({ children }) => (
-                    <table className="w-full border-collapse my-3 text-xs">{children}</table>
-                  ),
-                  th: ({ children }) => (
-                    <th className="border border-slate-200 px-3 py-2 bg-slate-50 text-left text-xs font-semibold text-slate-700">{children}</th>
-                  ),
-                  td: ({ children }) => (
-                    <td className="border border-slate-200 px-3 py-2 text-xs text-slate-600">{children}</td>
-                  ),
-                }}
-              >
-                {documentCheck}
-              </ReactMarkdown>
+              <MarkdownRenderer variant="teal">{documentCheck}</MarkdownRenderer>
             </div>
 
             {/* 푸터 */}
