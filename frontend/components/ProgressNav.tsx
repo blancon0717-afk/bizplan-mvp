@@ -5,32 +5,35 @@ import { useRecommendStore } from "@/store/recommendStore";
 
 const STEPS = [
   { id: 1, label: "기업정보 입력" },
-  { id: 2, label: "지원사업 추천" },
-  { id: 3, label: "인터뷰" },
-  { id: 4, label: "섹션별 생성" },
-  { id: 5, label: "사업계획서 초안" },
+  { id: 2, label: "인터뷰" },
+  { id: 3, label: "초안 생성" },
+  { id: 4, label: "초안 검토·피드백" },
+  { id: 5, label: "지원사업 선택" },
+  { id: 6, label: "최종 사업계획서" },
 ] as const;
 
 function getStepFromPath(pathname: string): number {
-  if (pathname.startsWith("/result")) return 5;
-  if (pathname.startsWith("/generating")) return 4;
-  if (pathname.startsWith("/interview")) return 3;
-  if (pathname.startsWith("/recommend")) return 2;
+  if (pathname.startsWith("/result")) return 6;
+  if (pathname.startsWith("/recommend")) return 5;
+  if (pathname.startsWith("/draft")) return 4;
+  if (pathname.startsWith("/generating")) return 3;
+  if (pathname.startsWith("/interview")) return 2;
   return 1;
 }
 
 function getSessionId(pathname: string): string | null {
-  const m = pathname.match(/\/(?:interview|generating|result)\/([^/]+)/);
+  const m = pathname.match(/\/(?:interview|generating|draft|result)\/([^/]+)/);
   return m ? m[1] : null;
 }
 
 function buildUrl(stepId: number, sessionId: string | null): string | null {
   if (stepId === 1) return "/";
-  if (stepId === 2) return "/recommend";
   if (!sessionId) return null;
-  if (stepId === 3) return `/interview/${sessionId}`;
-  if (stepId === 4) return `/generating/${sessionId}`;
-  if (stepId === 5) return `/result/${sessionId}`;
+  if (stepId === 2) return `/interview/${sessionId}`;
+  if (stepId === 3) return `/generating/${sessionId}`;
+  if (stepId === 4) return `/draft/${sessionId}`;
+  if (stepId === 5) return `/recommend?session=${sessionId}&mode=convert`;
+  if (stepId === 6) return `/result/${sessionId}`;
   return null;
 }
 

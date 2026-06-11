@@ -33,7 +33,8 @@ export default function GeneratingPage() {
 
     (async () => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 240_000);
+      // 백엔드 feedback_agent 검수 게이트 추가로 240→360초 상향
+      const timeoutId = setTimeout(() => controller.abort(), 360_000);
 
       let response: Response;
       try {
@@ -132,7 +133,7 @@ export default function GeneratingPage() {
 
   useEffect(() => {
     if (phase === "done") {
-      const t = setTimeout(() => router.push(`/result/${sessionId}`), 1800);
+      const t = setTimeout(() => router.push(`/draft/${sessionId}`), 1800);
       return () => clearTimeout(t);
     }
   }, [phase, sessionId, router]);
@@ -175,10 +176,10 @@ export default function GeneratingPage() {
             사업계획서 초안은 1회만 생성 가능합니다. 기존 결과를 확인하세요.
           </p>
           <button
-            onClick={() => router.push(`/result/${sessionId}`)}
+            onClick={() => router.push(`/draft/${sessionId}`)}
             className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
           >
-            결과 보기
+            초안 보기
           </button>
         </div>
       </div>

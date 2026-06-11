@@ -20,7 +20,7 @@ export default function ResultPage() {
   const sessionId = params.sessionId as string;
 
   const { sections, overallCompletion, localProbPct, activeSectionId, isRegenerating,
-    init, setActiveSectionId, updateMemoResponse, updateSectionSuggestions, updateSectionAfterRegen, regenerateSection, editSection, syncProbPct } = useResultStore();
+    init, setActiveSectionId, updateSectionSuggestions, updateSectionAfterRegen, regenerateSection, editSection, syncProbPct } = useResultStore();
 
   const documentPanelRef = useRef<DocumentPanelHandle>(null);
   const memoPanelRef = useRef<MemoPanelHandle>(null);
@@ -45,8 +45,6 @@ export default function ResultPage() {
   const [documentCheck, setDocumentCheck] = useState<string | null>(null);
   const [isDocumentChecking, setIsDocumentChecking] = useState(false);
   const [usageData, setUsageData] = useState<Record<string, { used: number; max: number }>>({});
-  const [passedMemoMap, setPassedMemoMap] = useState<Record<string, Set<number>>>({});
-  const [dataSource, setDataSource] = useState<"results" | "framework">("results");
 
   useEffect(() => {
     async function load() {
@@ -57,7 +55,6 @@ export default function ResultPage() {
           api.getPrograms(),
         ]);
         init(sessionId, results.sections, results.overall_completion);
-        setDataSource("results");
         localStorage.setItem("bizplan_session_id", sessionId);
         const prog = programsData.programs.find((p) => p.code === session.program_code);
         setProgramName(prog?.name ?? session.program_code);
@@ -73,13 +70,11 @@ export default function ResultPage() {
           .finally(() => setIsLoadingScore(false));
         api.getUsage(sessionId).then(setUsageData).catch(() => {});
       } catch {
-        // results.json 없음 — 프레임워크 초안 시도
+        // 변환 결과 없음 — 초안만 있으면 draft 검토 화면으로 안내
         try {
-          const framework = await api.getFramework(sessionId);
-          init(sessionId, framework.sections, Number(framework.overall_completion) || 0);
-          setDataSource("framework");
-          setProgramName("기본 초안");
-          localStorage.setItem("bizplan_session_id", sessionId);
+          await api.getFramework(sessionId);
+          router.replace(`/draft/${sessionId}`);
+          return;
         } catch {
           const savedId = localStorage.getItem("bizplan_session_id");
           if (savedId && savedId !== sessionId) {
@@ -127,32 +122,9 @@ export default function ResultPage() {
     setEditContent("");
   }
 
-  async function handleSectionFeedback(sectionId: string) {
-    setIsFeedbackRunning(true);
-    try {
-      const res = await fetch(`/api/sessions/${sessionId}/feedback/${sectionId}`, { method: "POST" });
-      if (!res.ok) return;
-      const data = await res.json();
-      updateSectionSuggestions(data.section_id, data.inline_suggestions);
-      setShowAnchors(true);
-    } finally {
-      setIsFeedbackRunning(false);
-    }
-  }
-
   async function handleRegenerate(sectionId: string) {
     try {
       await regenerateSection(sessionId, sectionId);
-    } catch {
-      setRegenError("재생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-    }
-    api.getUsage(sessionId).then(setUsageData).catch(() => {});
-  }
-
-  async function handleMemoRegenerate(sectionId: string, memoIndex: number, memoResponse: string) {
-    try {
-      await regenerateSection(sessionId, sectionId, memoResponse, memoIndex);
-      await handleSectionFeedback(sectionId);
     } catch {
       setRegenError("재생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     }
@@ -271,11 +243,7 @@ export default function ResultPage() {
   const greenCount = sections.filter((s) => s.confidence_level === "green").length;
   const yellowCount = sections.filter((s) => s.confidence_level === "yellow").length;
   const redCount = sections.filter((s) => s.confidence_level === "red").length;
-  const totalMemos = sections.reduce(
-    (sum, s) => sum + s.inline_suggestions.filter((m) => m.severity !== "critical").length,
-    0
-  );
-  const resolvedMemos = sections.reduce((sum, s) => sum + (s.resolved_memo_count ?? 0), 0);
+  const totalMemos = sections.reduce((sum, s) => sum + s.inline_suggestions.length, 0);
 
   if (isLoading) {
     return (
@@ -314,10 +282,10 @@ export default function ResultPage() {
           </div>
 
           <div className="flex items-center gap-3 flex-shrink-0">
-            {dataSource === "results" && (isLoadingScore
+            {isLoadingScore
               ? <span className="text-sm text-slate-400 animate-pulse">합격률 계산 중...</span>
               : <RubricBadge probPct={localProbPct} />
-            )}
+            }
             {(yellowCount > 0 || redCount > 0) && (
               <div className="relative group">
                 <button
@@ -361,8 +329,7 @@ export default function ResultPage() {
                 </div>
               </div>
             </div>
-            {dataSource === "results" && (
-              <>
+            <>
                 <div className="relative group">
                   <button
                     onClick={handleActionPlan}
@@ -415,16 +382,7 @@ export default function ResultPage() {
                   )}
                   DOCX 다운로드
                 </button>
-              </>
-            )}
-            {dataSource === "framework" && (
-              <button
-                onClick={() => router.push(`/recommend?session=${sessionId}&mode=convert`)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                지원사업 선택하기 →
-              </button>
-            )}
+            </>
           </div>
         </div>
       </header>
@@ -451,7 +409,7 @@ export default function ResultPage() {
               <span>🟢 완성 {greenCount}</span>
               <span>🟡 보완 필요 {yellowCount}</span>
               <span>🔴 미흡 {redCount}</span>
-              {showAnchors && <span>📝 메모 {resolvedMemos}/{totalMemos}</span>}
+              {showAnchors && <span>⚖️ 피드백 {totalMemos}건</span>}
             </div>
           </div>
           <DocumentPanel
@@ -470,29 +428,17 @@ export default function ResultPage() {
             onEditContentChange={setEditContent}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
-            passedMemoMap={passedMemoMap}
           />
         </div>
 
-        {/* 우: 메모 패널 (40%) */}
+        {/* 우: 심사위원 피드백 패널 (40%) — 읽기전용 */}
         <div className="w-2/5 flex flex-col overflow-hidden bg-slate-50">
           <MemoPanel
             ref={memoPanelRef}
             sections={sections}
             activeSectionId={activeSectionId}
             showAnchors={showAnchors}
-            onMemoChange={(sectionId, memoIndex, response) => updateMemoResponse(sessionId, sectionId, memoIndex, response)}
-            onRegenerate={handleMemoRegenerate}
             onMemoTitleClick={handleMemoTitleClick}
-            isRegenerating={isRegenerating}
-            usageData={usageData}
-            onPassMemo={(sectionId, memoIndex) => {
-              setPassedMemoMap(prev => ({
-                ...prev,
-                [sectionId]: new Set([...(prev[sectionId] ?? []), memoIndex])
-              }));
-            }}
-            passedMemos={passedMemoMap[activeSectionId ?? ""] ?? new Set()}
           />
         </div>
       </div>

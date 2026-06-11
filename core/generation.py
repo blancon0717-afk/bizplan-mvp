@@ -1042,6 +1042,7 @@ def generate_framework_section(
     answers: dict[str, Answer],
     skills: list[Skill],
     company_context: dict | None = None,
+    extra_instruction: str = "",
 ) -> SectionResult:
     """단일 프레임워크 섹션 생성 (양식 무관).
 
@@ -1051,6 +1052,7 @@ def generate_framework_section(
         answers: 인터뷰 답변 딕셔너리
         skills: 로드된 스킬 목록
         company_context: extract_company_context() 결과
+        extra_instruction: feedback_agent 검수 미달 시 재작성 지침 (재생성 호출에서만 사용)
     """
     section_id = section["id"]
     section_title = section["title"]
@@ -1100,6 +1102,10 @@ def generate_framework_section(
         answers_block=answers_block,
         today_date_note=today_date_note,
     )
+
+    # feedback_agent 검수 미달 → 재생성 시 재작성 지침 첨부
+    if extra_instruction:
+        user = f"{user}\n\n## ⚠️ 검수 피드백 — 아래 재작성 지침을 반드시 반영할 것\n\n{extra_instruction}"
 
     text, meta = call_claude(
         system=system,
@@ -1180,6 +1186,62 @@ def generate_framework_section(
     return result
 
 
+def _apply_feedback_gate(
+    section: dict,
+    result: SectionResult,
+    questions: list[Question],
+    answers: dict[str, Answer],
+    skills: list[Skill],
+    company_context: dict | None,
+) -> SectionResult:
+    """feedback_agent 검수 게이트 — 기준 미달 시 retry_instruction으로 1회 재생성.
+
+    검수/재생성 실패 시 원본 초안을 그대로 반환 (게이트는 품질 보강용, 차단용 아님).
+    """
+    if os.getenv("MOCK_MODE", "0") == "1" or not result.content:
+        return result
+
+    try:
+        from feedback_agent import ReviewRequest, review_section
+    except ImportError:
+        logger.warning("[피드백 게이트] feedback_agent 미설치 — 검수 생략")
+        return result
+
+    import json as _gate_json
+
+    try:
+        interview_context = (
+            _gate_json.dumps(company_context, ensure_ascii=False) if company_context else ""
+        )
+        review = review_section(ReviewRequest(
+            draft_content=result.content,
+            section_id=section["id"],
+            section_category="",  # 빈 값 → feedback_agent의 SECTION_CATEGORY_MAP이 ID 기반 자동 매핑
+            interview_context=interview_context,
+        ))
+    except Exception as e:
+        logger.warning("[피드백 게이트] 검수 실패(%s): %s — 원본 초안 유지", section["id"], e)
+        return result
+
+    if review.passed:
+        return result
+
+    logger.info(
+        "[피드백 게이트] %s 기준 미달 → 재생성 (누락 헤더 %d개, 미충족 기준 %d개)",
+        section["id"], len(review.missing_headers), len(review.failed_criteria),
+    )
+    try:
+        retry = generate_framework_section(
+            section, questions, answers, skills, company_context,
+            extra_instruction=review.retry_instruction,
+        )
+        if retry.content:
+            return retry
+    except Exception as e:
+        logger.warning("[피드백 게이트] 재생성 실패(%s): %s — 원본 초안 유지", section["id"], e)
+    return result
+
+
 def generate_framework_draft(
     questions: list[Question],
     answers: dict[str, Answer],
@@ -1187,6 +1249,8 @@ def generate_framework_draft(
     company_context: dict | None = None,
 ) -> list[SectionResult]:
     """모든 프레임워크 섹션 생성 (첫 섹션 단독 → 나머지 병렬).
+
+    각 섹션은 생성 직후 feedback_agent 검수 게이트를 통과 — 기준 미달 시 1회 재생성.
 
     Returns:
         FRAMEWORK_SECTIONS 순서대로 정렬된 SectionResult 목록
@@ -1197,6 +1261,7 @@ def generate_framework_draft(
 
     def _gen(idx: int, sec: dict) -> tuple[int, SectionResult]:
         r = generate_framework_section(sec, questions, answers, skills, company_context)
+        r = _apply_feedback_gate(sec, r, questions, answers, skills, company_context)
         return idx, r
 
     # 첫 섹션 단독 생성 (캐시 워밍)

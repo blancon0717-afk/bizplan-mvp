@@ -85,7 +85,7 @@ def _get_criteria_agent() -> Agent:
     if _criteria_agent is None:
         _criteria_agent = Agent(
             "anthropic:claude-haiku-4-5-20251001",
-            result_type=_CriteriaCheckOutput,
+            output_type=_CriteriaCheckOutput,  # pydantic-ai 1.x: result_type → output_type
             system_prompt=(
                 "당신은 사업계획서 검수 전문가입니다. "
                 "주어진 기준 목록에 대해 초안이 충족하는지 판단하고 "
@@ -111,7 +111,7 @@ async def review_section_async(request: ReviewRequest) -> ReviewResult:
     if criteria:
         prompt = _build_criteria_prompt(request, criteria)
         result = await _get_criteria_agent().run(prompt)
-        failed_criteria = result.data.failed
+        failed_criteria = result.output.failed  # pydantic-ai 1.x: .data → .output
 
     passed = header_result.passed and len(failed_criteria) == 0
 

@@ -78,7 +78,7 @@ export default function InterviewPage() {
         }
         return next;
       });
-      setCurrentIndex((c) => c + 1);
+      setCurrentIndex(capturedIndex + 1);
       setInputHasText(false);
     });
   }
@@ -94,7 +94,7 @@ export default function InterviewPage() {
       }
       return next;
     });
-    setCurrentIndex((c) => c + 1);
+    setCurrentIndex(capturedIndex + 1);
     setInputHasText(false);
   }
 

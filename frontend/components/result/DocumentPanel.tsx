@@ -31,18 +31,20 @@ const CONFIDENCE_DOT = {
 interface DocumentPanelProps {
   sections: SectionResult[];
   activeSectionId: string | null;
-  editingSectionId: string | null;
-  editContent: string;
+  editingSectionId?: string | null;
+  editContent?: string;
   showAnchors: boolean;
+  /** true면 편집·고도화 버튼 숨김 (draft 초안 검토 화면용) */
+  readOnly?: boolean;
   onSectionClick: (id: string) => void;
   onAnchorClick: (sectionId: string, memoIndex: number) => void;
-  onRegenerate: (sectionId: string) => void;
-  isRegenerating: Record<string, boolean>;
+  onRegenerate?: (sectionId: string) => void;
+  isRegenerating?: Record<string, boolean>;
   usageData?: Record<string, { used: number; max: number }>;
-  onStartEdit: (sectionId: string, content: string) => void;
-  onEditContentChange: (content: string) => void;
-  onSaveEdit: () => void;
-  onCancelEdit: () => void;
+  onStartEdit?: (sectionId: string, content: string) => void;
+  onEditContentChange?: (content: string) => void;
+  onSaveEdit?: () => void;
+  onCancelEdit?: () => void;
   passedMemoMap?: Record<string, Set<number>>;
 }
 
@@ -78,13 +80,14 @@ function groupSections(sections: SectionResult[]): SectionGroup[] {
 const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(function DocumentPanel({
   sections,
   activeSectionId,
-  editingSectionId,
-  editContent,
+  editingSectionId = null,
+  editContent = "",
   showAnchors,
+  readOnly = false,
   onSectionClick,
   onAnchorClick,
   onRegenerate,
-  isRegenerating,
+  isRegenerating = {},
   usageData,
   onStartEdit,
   onEditContentChange,
@@ -218,17 +221,17 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
                           </span>
                         </span>
                       )}
-                      {!isEditing && (
+                      {!readOnly && !isEditing && (
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <button
-                            onClick={() => onStartEdit(section.section_id, section.user_edited_content ?? section.content)}
+                            onClick={() => onStartEdit?.(section.section_id, section.user_edited_content ?? section.content)}
                             disabled={(usageData?.edit?.used ?? 0) >= (usageData?.edit?.max ?? 1)}
                             className={`text-xs px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-50 transition-colors ${(usageData?.edit?.used ?? 0) >= (usageData?.edit?.max ?? 1) ? "text-gray-300 cursor-not-allowed" : "text-slate-400 hover:text-slate-600"}`}
                           >
                             편집 ({usageData?.edit?.used ?? 0}/{usageData?.edit?.max ?? 1})
                           </button>
                           <button
-                            onClick={() => onRegenerate(section.section_id)}
+                            onClick={() => onRegenerate?.(section.section_id)}
                             disabled={!!isRegenerating[section.section_id] || (usageData?.regenerate?.used ?? 0) >= (usageData?.regenerate?.max ?? 1)}
                             className={`text-xs px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition-colors ${(usageData?.regenerate?.used ?? 0) >= (usageData?.regenerate?.max ?? 1) ? "text-gray-300" : "text-slate-400 hover:text-slate-600"}`}
                           >
@@ -246,19 +249,19 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
                     <div onClick={(e) => e.stopPropagation()}>
                       <textarea
                         value={editContent}
-                        onChange={(e) => onEditContentChange(e.target.value)}
+                        onChange={(e) => onEditContentChange?.(e.target.value)}
                         className="w-full min-h-[200px] border border-blue-300 rounded-xl px-4 py-3 text-sm text-slate-800 resize-y focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50/30 leading-relaxed"
                         autoFocus
                       />
                       <div className="flex justify-end gap-2 mt-2">
                         <button
-                          onClick={onCancelEdit}
+                          onClick={() => onCancelEdit?.()}
                           className="px-3 py-1.5 text-xs text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50"
                         >
                           취소
                         </button>
                         <button
-                          onClick={onSaveEdit}
+                          onClick={() => onSaveEdit?.()}
                           className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                         >
                           저장

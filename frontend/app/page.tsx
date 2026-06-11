@@ -31,22 +31,31 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
   const [hasCompletedPlan, setHasCompletedPlan] = useState(false);
+  const [resumeTarget, setResumeTarget] = useState<"result" | "draft">("draft");
 
   useEffect(() => {
     const saved = useRecommendStore.getState().profile;
     if (saved) setProfile(saved);
     const savedId = localStorage.getItem("bizplan_session_id");
     if (savedId) {
-      // 프레임워크 초안 또는 결과가 있으면 이어하기 배너 표시
-      Promise.any([
-        fetch(`/api/sessions/${savedId}/framework`).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-        fetch(`/api/sessions/${savedId}/results`).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-      ])
-        .then(() => {
-          setSavedSessionId(savedId);
-          setHasCompletedPlan(true);
-        })
-        .catch(() => {});
+      // 변환 결과가 있으면 최종 결과로, 초안만 있으면 초안 검토 화면으로 이어하기
+      (async () => {
+        try {
+          const r = await fetch(`/api/sessions/${savedId}/results`);
+          if (r.ok) {
+            setSavedSessionId(savedId);
+            setResumeTarget("result");
+            setHasCompletedPlan(true);
+            return;
+          }
+          const f = await fetch(`/api/sessions/${savedId}/framework`);
+          if (f.ok) {
+            setSavedSessionId(savedId);
+            setResumeTarget("draft");
+            setHasCompletedPlan(true);
+          }
+        } catch { /* 배너 미표시 */ }
+      })();
     }
   }, []);
 
@@ -88,10 +97,10 @@ export default function HomePage() {
             <p className="text-sm text-blue-700 font-medium">이전에 작성한 사업계획서가 있습니다.</p>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
-                onClick={() => router.push(`/result/${savedSessionId}`)}
+                onClick={() => router.push(`/${resumeTarget}/${savedSessionId}`)}
                 className="px-4 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors"
               >
-                결과 보기
+                {resumeTarget === "result" ? "최종 결과 보기" : "초안 보기"}
               </button>
               <button
                 disabled

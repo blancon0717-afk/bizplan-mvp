@@ -232,7 +232,12 @@ async def generate_feedback(session_id: str):
     increment_usage(session_id, "feedback")
 
     async def event_generator():
+        # 변환 결과 우선, 없으면 프레임워크 초안(draft 단계 심사위원 피드백)
         results = load_results(session_id)
+        source = "results"
+        if not results:
+            results = load_framework_draft(session_id)
+            source = "framework"
         if not results:
             yield _sse("error", {"message": "생성된 초안이 없습니다."})
             return
@@ -273,7 +278,10 @@ async def generate_feedback(session_id: str):
         strategic_count = await loop.run_in_executor(_executor, _strategic)
 
         ordered = [results_map[r.section_id] for r in results if r.section_id in results_map]
-        save_results(session_id, ordered)
+        if source == "framework":
+            save_framework_draft(session_id, ordered)
+        else:
+            save_results(session_id, ordered)
 
         # 전략 피드백 포함된 최종 suggestions를 all_done 페이로드로 전달 (재조회 불필요)
         yield _sse("all_done", {
@@ -384,10 +392,10 @@ async def generate_framework(session_id: str):
         try:
             results = await asyncio.wait_for(
                 loop.run_in_executor(_executor, _generate_all),
-                timeout=180.0,
+                timeout=300.0,  # feedback_agent 검수 게이트(검수+재생성) 추가로 180→300초 상향
             )
         except asyncio.TimeoutError:
-            yield _sse("error", {"message": "프레임워크 초안 생성 시간 초과 (180초). 다시 시도해주세요."})
+            yield _sse("error", {"message": "프레임워크 초안 생성 시간 초과 (300초). 다시 시도해주세요."})
             return
         except Exception as e:
             logger.error("[프레임워크 생성 실패] %s: %s", session_id, e)
