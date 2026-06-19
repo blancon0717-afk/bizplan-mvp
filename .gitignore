@@ -13,3 +13,4 @@ data/feedback/
 .claude/settings.local*.json
 .claude/scheduled_tasks.lock
 frontend/*.log
+agent-skills/

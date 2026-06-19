@@ -28,7 +28,7 @@ from core.context_extraction import (
     format_context_block,
     get_section_context_fields,
 )
-from core.feedback_rag import get_feedback_examples
+from core.notion_feedback import get_evaluation_examples, get_feedback_examples
 from core.forms import Form, FormSection
 from core.interview import Answer, Question
 from core.llm import call_claude, parse_json_response
@@ -84,7 +84,8 @@ def _clean_segment_text(text: str) -> str:
     # (N개사/N명), (N%) 등 미입력 수치 플레이스홀더 제거
     text = re.sub(r"\([N][^\)]{0,20}\)", "", text)
     return text.strip()
-_EVAL_CRITERIA_PATH = Path(__file__).resolve().parent.parent / "skills" / "L2_section" / "S04_item_keyword_strategy.md"
+# 심사위원 평가 기준·사례는 노션 데이터(core.notion_feedback)에서만 가져온다.
+# (구버전 _EVAL_CRITERIA_PATH = skills/L2_section/S04... 는 노션 전환으로 제거됨)
 _EVAL_PROMPT_PATH = _PROMPTS_DIR / "section_evaluation.md"
 _STRATEGIC_GUIDE_PATH = _PROMPTS_DIR / "strategic_feedback_guide.md"
 _STRATEGIC_EVAL_PATH = _PROMPTS_DIR / "strategic_evaluation.md"
@@ -108,7 +109,6 @@ FRAMEWORK_SECTIONS: list[dict] = [
 # 모듈 레벨 파일 캐시 — 프로세스 재시작 전까지 디스크 재독 없음
 _cache_system_md: str | None = None
 _cache_section_gen: str | None = None
-_cache_eval_criteria: str | None = None
 _cache_eval_prompt: str | None = None
 _cache_strategic_guide: str | None = None
 _cache_strategic_eval: str | None = None
@@ -130,26 +130,6 @@ def _load_section_gen() -> str:
     if _cache_section_gen is None:
         _cache_section_gen = (_PROMPTS_DIR / "section_generation.md").read_text(encoding="utf-8")
     return _cache_section_gen
-
-
-def _strip_frontmatter(text: str) -> str:
-    """YAML frontmatter(--- 블록) 제거 후 본문만 반환."""
-    if text.startswith("---"):
-        parts = text.split("---", 2)
-        return parts[2] if len(parts) >= 3 else text
-    return text
-
-
-def _load_eval_criteria() -> str:
-    global _cache_eval_criteria
-    if _cache_eval_criteria is None:
-        text = _strip_frontmatter(_EVAL_CRITERIA_PATH.read_text(encoding="utf-8"))
-        # 핵심 2개 섹션만 추출: 11.4KB → ~3KB (토큰 70% 절감)
-        _KEEP = {"합격 클러스터 8가지", "제목 자동 검증 체크리스트"}
-        chunks = re.split(r'\n(?=## )', text)
-        kept = [c for c in chunks if any(k in c.split('\n')[0] for k in _KEEP)]
-        _cache_eval_criteria = "\n\n".join(kept).strip()
-    return _cache_eval_criteria
 
 
 def _load_eval_prompt() -> str:
@@ -451,17 +431,22 @@ def evaluate_section(result: "SectionResult", section_id: str, section_title: st
     """심사자 시점 독립 평가 — 작성 방법론과 분리된 피드백 기준 적용."""
     if os.getenv("MOCK_MODE", "0") == "1":
         return {}
-    if not _EVAL_CRITERIA_PATH.exists() or not _EVAL_PROMPT_PATH.exists():
+    if not _EVAL_PROMPT_PATH.exists():
         return {}
 
-    criteria = _load_eval_criteria()
+    # 평가 기준·사례는 100% 노션 데이터에서만 가져온다 (없으면 프롬프트 내장 루브릭으로 평가)
+    criteria = get_evaluation_examples(section_id, section_title)
     template = _load_eval_prompt()
     content = "\n\n".join(s.text for s in result.content_segments) if result.content_segments else result.content
 
-    # criteria를 system에 고정 → 섹션 간 캐시 히트로 ~1,500 tokens 절감
+    # criteria를 system에 고정 → 섹션 간 캐시 히트로 토큰 절감
     system = (
         "당신은 정부지원사업 심사위원입니다. 탈락 근거를 찾는 것이 역할입니다. 반드시 JSON만 반환하세요.\n\n"
-        "## 평가 기준 (합격/불합격 패턴 분석 데이터)\n\n" + criteria
+        + (
+            "## 실제 심사위원 피드백 사례 (노션 데이터)\n\n" + criteria
+            if criteria
+            else ""
+        )
     )
     prompt = template.format(
         section_id=section_id,

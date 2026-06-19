@@ -14,6 +14,7 @@ for _p in [str(_backend), str(_root)]:
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -41,11 +42,37 @@ from services.session_store import cleanup_old_sessions
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     cleanup_old_sessions()
+
     async def _daily_cleanup():
         while True:
             await asyncio.sleep(86400)
             cleanup_old_sessions()
+
+    async def _notion_sync_loop():
+        """노션 피드백 캐시를 시작 시 1회 + 주기적으로 자동 동기화.
+
+        자격증명이 없으면 루프를 돌리지 않고 커밋된 캐시를 그대로 사용한다.
+        동기화 실패(노션 장애·네트워크 등)는 로그만 남기고 기존 캐시를 유지한다.
+        """
+        if not os.getenv("NOTION_API_KEY"):
+            logging.info("[노션 동기화] NOTION_API_KEY 미설정 — 자동 동기화 비활성(기존 캐시 사용)")
+            return
+        from scripts.sync_notion_feedback import sync as notion_sync
+        import core.notion_feedback as notion_feedback
+        interval = int(os.getenv("NOTION_SYNC_INTERVAL_SEC", "21600"))  # 기본 6시간
+        while True:
+            try:
+                await asyncio.to_thread(notion_sync)   # blocking 호출은 스레드로
+                notion_feedback.reset_cache()          # 메모리 캐시 무효화 → 즉시 반영
+                logging.info("[노션 동기화] 완료 — 피드백 캐시 갱신됨")
+            except SystemExit as e:
+                logging.warning("[노션 동기화] 건너뜀: %s", e)
+            except Exception as e:  # noqa: BLE001
+                logging.warning("[노션 동기화] 실패(기존 캐시 유지): %s", e)
+            await asyncio.sleep(interval)
+
     asyncio.create_task(_daily_cleanup())
+    asyncio.create_task(_notion_sync_loop())
     yield
 
 
