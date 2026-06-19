@@ -53,6 +53,8 @@ def load_skills(skills_dir: str | Path = "skills") -> list[Skill]:
     skills: list[Skill] = []
     root = Path(skills_dir)
     for md in root.rglob("*.md"):
+        if "_archive" in md.parts:
+            continue
         try:
             skills.append(parse_skill_file(md))
         except Exception as e:
