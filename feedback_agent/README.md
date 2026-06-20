@@ -7,7 +7,7 @@
 - **Gate/Checker only** — 내용을 직접 수정하거나 재작성하지 않음
 - 기준 미충족 시 `retry_instruction`을 생성 → 기존 초안 작성 에이전트에게 돌려보냄
 - 두 가지 검사 수행:
-  1. **결정론적 헤더 검사** (`header_checker.py`) — ▶ 소제목 수, TAM/SAM/SOM, 표 구조 등
+  1. **결정론적 헤더 검사** (`header_checker.py`) — ■ 소제목 수, TAM/SAM/SOM, 표 구조 등
   2. **LLM 체크리스트 검사** (`agent.py`) — 카테고리별 콘텐츠 기준 yes/no 판단
 
 ## 설치

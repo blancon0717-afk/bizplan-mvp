@@ -73,7 +73,7 @@ def _build_retry_instruction(
         lines.append("")
 
     lines.append("위 항목을 모두 반영하여 해당 섹션을 재작성하십시오.")
-    lines.append("DRAFT_WRITING_GUIDE의 소제목(▶) 형식과 분량 기준을 준수하십시오.")
+    lines.append("DRAFT_WRITING_GUIDE의 소제목(■) 형식과 분량 기준을 준수하십시오.")
     return "\n".join(lines)
 
 
