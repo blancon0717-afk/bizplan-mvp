@@ -395,8 +395,8 @@ async def generate_framework(session_id: str):
             )
 
         # 하이브리드 생성
-        # Phase 1: Problem + Solution (1-1~2-3) — 전체 누적 컨텍스트로 순차 생성
-        # Phase 2: Scale-up + Team (3-1~4-1) — 인터뷰 내용만으로 병렬 생성
+        # Phase 1: Problem + Solution + Scale-up (1-1~3-2) — 전체 누적 컨텍스트로 순차 생성
+        # Phase 2: Team (4-1만) — 인터뷰 내용만으로 병렬 생성
         seq_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _SEQUENTIAL_IDS]
         par_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _PARALLEL_IDS]
 
@@ -460,6 +460,15 @@ async def generate_framework(session_id: str):
                         sec, questions, session.answers, skills, company_context,
                         prior_context="",
                     )
+                r = SectionResult(
+                    section_id=sec["id"],
+                    section_title=sec["title"],
+                    content="",
+                    confidence_level="red",
+                    reasoning="초기화 — 생성 시작 전",
+                    missing_info=["섹션 생성 오류 — 재시도 필요"],
+                    completion_score=0,
+                )
                 try:
                     r, _ = await asyncio.wait_for(
                         loop.run_in_executor(_executor, _gen),
@@ -476,7 +485,7 @@ async def generate_framework(session_id: str):
                         missing_info=["생성 타임아웃 — 재시도 필요"],
                         completion_score=0,
                     )
-                except Exception as e:
+                except BaseException as e:
                     logger.error("[병렬 섹션 생성 실패] %s: %s", sec["id"], e)
                     r = SectionResult(
                         section_id=sec["id"],

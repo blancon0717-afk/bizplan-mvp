@@ -107,10 +107,10 @@ FRAMEWORK_SECTIONS: list[dict] = [
 ]
 
 # 섹션 생성 순서 분류
-# Problem(1-x) + Solution(2-x): 전체 누적 컨텍스트로 순차 생성
-# Scale-up(3-x) + Team(4-x): 인터뷰 내용 기반 병렬 생성
-_SEQUENTIAL_IDS: frozenset[str] = frozenset({"1-1", "1-2", "1-3", "2-1", "2-2", "2-3"})
-_PARALLEL_IDS: frozenset[str] = frozenset({"3-1", "3-2", "4-1"})
+# Problem(1-x) + Solution(2-x) + Scale-up(3-x): 전체 누적 컨텍스트로 순차 생성
+# Team(4-1): 인터뷰 내용 기반 병렬 생성 (앞 내용과 독립적)
+_SEQUENTIAL_IDS: frozenset[str] = frozenset({"1-1", "1-2", "1-3", "2-1", "2-2", "2-3", "3-1", "3-2"})
+_PARALLEL_IDS: frozenset[str] = frozenset({"4-1"})
 
 # 모듈 레벨 파일 캐시 — 프로세스 재시작 전까지 디스크 재독 없음
 _cache_system_md: str | None = None
