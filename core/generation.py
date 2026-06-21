@@ -1246,6 +1246,49 @@ def _apply_feedback_gate(
     return result
 
 
+def generate_one_framework_section(
+    section: dict,
+    questions: list[Question],
+    answers: dict[str, Answer],
+    skills: list[Skill],
+    company_context: dict | None = None,
+    prior_context: str = "",
+) -> tuple[SectionResult, list[str]]:
+    """단일 프레임워크 섹션 생성 + feedback_agent 검수 게이트 + 헤드라인 추출.
+
+    라우터에서 섹션별 SSE 스트리밍을 위해 사용.
+
+    Returns:
+        (result, new_prior_lines) — new_prior_lines는 다음 섹션의 prior_context에 추가할 줄 목록
+    """
+    try:
+        r = generate_framework_section(
+            section, questions, answers, skills, company_context,
+            prior_context=prior_context,
+        )
+        r = _apply_feedback_gate(
+            section, r, questions, answers, skills, company_context,
+            prior_context=prior_context,
+        )
+    except Exception as e:
+        logger.error("[generate_one_framework_section 실패] %s: %s", section["id"], e)
+        r = SectionResult(
+            section_id=section["id"],
+            section_title=section["title"],
+            content="",
+            confidence_level="red",
+            reasoning=f"생성 실패: {e}",
+            missing_info=["섹션 생성 오류 — 재시도 필요"],
+            completion_score=0,
+        )
+    new_lines: list[str] = []
+    headlines = _extract_headlines(r)
+    if headlines:
+        new_lines.append(f"[{section['parent_title']} > {section['title']}]")
+        new_lines.extend(headlines)
+    return r, new_lines
+
+
 def generate_framework_draft(
     questions: list[Question],
     answers: dict[str, Answer],

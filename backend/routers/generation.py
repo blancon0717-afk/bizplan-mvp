@@ -28,6 +28,8 @@ from core.generation import (
     evaluate_business_plan, attach_strategic_feedbacks,
     generate_section,
     generate_framework_draft,
+    generate_one_framework_section,
+    SectionResult,
     convert_to_form,
     convert_to_form_v2,
     FRAMEWORK_SECTIONS,
@@ -389,37 +391,60 @@ async def generate_framework(session_id: str):
                 company_context=company_context,
             )
 
-        # 순차 생성은 2~4분 소요 → Railway 로드밸런서 30초 무활동 타임아웃 방지를 위해
-        # 15초마다 SSE keepalive 코멘트를 전송하며 대기
-        gen_future = loop.run_in_executor(_executor, _generate_all)
-        elapsed = 0
-        results = None
+        # 섹션별 순차 생성 + 즉시 SSE 전송 — 연결 유지 및 실시간 진행 표시
+        prior_context_lines: list[str] = []
+        results: list[SectionResult] = []
 
-        while True:
-            done, _ = await asyncio.wait({gen_future}, timeout=15.0)
-            if done:
-                try:
-                    results = gen_future.result()
-                except Exception as e:
-                    logger.error("[프레임워크 생성 실패] %s: %s", session_id, e)
-                    yield _sse("error", {"message": f"초안 생성 중 오류: {e}"})
-                    return
-                break
-            elapsed += 15
-            if elapsed >= 300:
-                yield _sse("error", {"message": "프레임워크 초안 생성 시간 초과 (300초). 다시 시도해주세요."})
-                return
-            yield ": keepalive\n\n"
+        for sec in FRAMEWORK_SECTIONS:
+            prior_ctx = "\n".join(prior_context_lines) if prior_context_lines else "(아직 없음 — 첫 번째 섹션)"
+
+            def _gen_sec(s=sec, pc=prior_ctx):
+                return generate_one_framework_section(
+                    s, questions, session.answers, skills, company_context,
+                    prior_context=pc,
+                )
+
+            try:
+                r, new_lines = await asyncio.wait_for(
+                    loop.run_in_executor(_executor, _gen_sec),
+                    timeout=90.0,
+                )
+            except asyncio.TimeoutError:
+                logger.error("[섹션 타임아웃] %s", sec["id"])
+                r = SectionResult(
+                    section_id=sec["id"],
+                    section_title=sec["title"],
+                    content="",
+                    confidence_level="red",
+                    reasoning="타임아웃: 섹션 생성 90초 초과",
+                    missing_info=["생성 타임아웃 — 재시도 필요"],
+                    completion_score=0,
+                )
+                new_lines = []
+            except Exception as e:
+                logger.error("[섹션 생성 실패] %s: %s", sec["id"], e)
+                r = SectionResult(
+                    section_id=sec["id"],
+                    section_title=sec["title"],
+                    content="",
+                    confidence_level="red",
+                    reasoning=f"생성 실패: {e}",
+                    missing_info=["섹션 생성 오류 — 재시도 필요"],
+                    completion_score=0,
+                )
+                new_lines = []
+
+            results.append(r)
+            prior_context_lines.extend(new_lines)
+
+            yield _sse("section_done", {
+                "section_id": r.section_id,
+                "section_title": r.section_title,
+                "confidence_level": r.confidence_level,
+                "completion_score": r.effective_completion_score(),
+            })
 
         save_framework_draft(session_id, results)
-
-        for result in results:
-            yield _sse("section_done", {
-                "section_id": result.section_id,
-                "section_title": result.section_title,
-                "confidence_level": result.confidence_level,
-                "completion_score": result.effective_completion_score(),
-            })
 
         from core.judgment import calculate_overall_completion
         overall = calculate_overall_completion(results)
