@@ -33,6 +33,9 @@ from core.generation import (
     convert_to_form,
     convert_to_form_v2,
     FRAMEWORK_SECTIONS,
+    _SEQUENTIAL_IDS,
+    _PARALLEL_IDS,
+    _build_full_prior_context,
 )
 from core.interview import load_initial_questions, load_followup_questions
 from core.judgment import apply_post_judgment, calculate_overall_completion
@@ -391,22 +394,28 @@ async def generate_framework(session_id: str):
                 company_context=company_context,
             )
 
-        # 섹션별 순차 생성 + 즉시 SSE 전송 — 연결 유지 및 실시간 진행 표시
-        prior_context_lines: list[str] = []
-        results: list[SectionResult] = []
+        # 하이브리드 생성
+        # Phase 1: Problem + Solution (1-1~2-3) — 전체 누적 컨텍스트로 순차 생성
+        # Phase 2: Scale-up + Team (3-1~4-1) — 인터뷰 내용만으로 병렬 생성
+        seq_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _SEQUENTIAL_IDS]
+        par_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _PARALLEL_IDS]
 
-        for sec in FRAMEWORK_SECTIONS:
-            prior_ctx = "\n".join(prior_context_lines) if prior_context_lines else "(아직 없음 — 첫 번째 섹션)"
+        seq_results: list[SectionResult] = []  # 누적 컨텍스트용
+        all_results: list[SectionResult] = []
 
-            def _gen_sec(s=sec, pc=prior_ctx):
+        # Phase 1: 순차 생성
+        for sec in seq_sections:
+            prior_ctx = _build_full_prior_context(seq_results)
+
+            def _gen_seq(s=sec, pc=prior_ctx):
                 return generate_one_framework_section(
                     s, questions, session.answers, skills, company_context,
                     prior_context=pc,
                 )
 
             try:
-                r, new_lines = await asyncio.wait_for(
-                    loop.run_in_executor(_executor, _gen_sec),
+                r, _ = await asyncio.wait_for(
+                    loop.run_in_executor(_executor, _gen_seq),
                     timeout=90.0,
                 )
             except asyncio.TimeoutError:
@@ -420,7 +429,6 @@ async def generate_framework(session_id: str):
                     missing_info=["생성 타임아웃 — 재시도 필요"],
                     completion_score=0,
                 )
-                new_lines = []
             except Exception as e:
                 logger.error("[섹션 생성 실패] %s: %s", sec["id"], e)
                 r = SectionResult(
@@ -432,17 +440,70 @@ async def generate_framework(session_id: str):
                     missing_info=["섹션 생성 오류 — 재시도 필요"],
                     completion_score=0,
                 )
-                new_lines = []
 
-            results.append(r)
-            prior_context_lines.extend(new_lines)
-
+            seq_results.append(r)
+            all_results.append(r)
             yield _sse("section_done", {
                 "section_id": r.section_id,
                 "section_title": r.section_title,
                 "confidence_level": r.confidence_level,
                 "completion_score": r.effective_completion_score(),
             })
+
+        # Phase 2: 병렬 생성 (Scale-up + Team)
+        if par_sections:
+            par_queue: asyncio.Queue = asyncio.Queue()
+
+            async def _run_par(sec: dict) -> None:
+                def _gen():
+                    return generate_one_framework_section(
+                        sec, questions, session.answers, skills, company_context,
+                        prior_context="",
+                    )
+                try:
+                    r, _ = await asyncio.wait_for(
+                        loop.run_in_executor(_executor, _gen),
+                        timeout=90.0,
+                    )
+                except asyncio.TimeoutError:
+                    logger.error("[병렬 섹션 타임아웃] %s", sec["id"])
+                    r = SectionResult(
+                        section_id=sec["id"],
+                        section_title=sec["title"],
+                        content="",
+                        confidence_level="red",
+                        reasoning="타임아웃: 섹션 생성 90초 초과",
+                        missing_info=["생성 타임아웃 — 재시도 필요"],
+                        completion_score=0,
+                    )
+                except Exception as e:
+                    logger.error("[병렬 섹션 생성 실패] %s: %s", sec["id"], e)
+                    r = SectionResult(
+                        section_id=sec["id"],
+                        section_title=sec["title"],
+                        content="",
+                        confidence_level="red",
+                        reasoning=f"생성 실패: {e}",
+                        missing_info=["섹션 생성 오류 — 재시도 필요"],
+                        completion_score=0,
+                    )
+                await par_queue.put(r)
+
+            par_tasks = [asyncio.create_task(_run_par(s)) for s in par_sections]
+            for _ in range(len(par_sections)):
+                r = await par_queue.get()
+                all_results.append(r)
+                yield _sse("section_done", {
+                    "section_id": r.section_id,
+                    "section_title": r.section_title,
+                    "confidence_level": r.confidence_level,
+                    "completion_score": r.effective_completion_score(),
+                })
+            await asyncio.gather(*par_tasks, return_exceptions=True)
+
+        # FRAMEWORK_SECTIONS 순서로 정렬 후 저장
+        section_order = {s["id"]: i for i, s in enumerate(FRAMEWORK_SECTIONS)}
+        results = sorted(all_results, key=lambda r: section_order.get(r.section_id, 999))
 
         save_framework_draft(session_id, results)
 

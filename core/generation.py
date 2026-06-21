@@ -106,6 +106,12 @@ FRAMEWORK_SECTIONS: list[dict] = [
     {"id": "4-1", "title": "기업 구성",                "parent_title": "4. 기업 구성",          "category": "Team",     "tags": ["팀역량"]},
 ]
 
+# 섹션 생성 순서 분류
+# Problem(1-x) + Solution(2-x): 전체 누적 컨텍스트로 순차 생성
+# Scale-up(3-x) + Team(4-x): 인터뷰 내용 기반 병렬 생성
+_SEQUENTIAL_IDS: frozenset[str] = frozenset({"1-1", "1-2", "1-3", "2-1", "2-2", "2-3"})
+_PARALLEL_IDS: frozenset[str] = frozenset({"3-1", "3-2", "4-1"})
+
 # 모듈 레벨 파일 캐시 — 프로세스 재시작 전까지 디스크 재독 없음
 _cache_system_md: str | None = None
 _cache_section_gen: str | None = None
@@ -1035,6 +1041,23 @@ def _build_prior_context(prior_headlines: list[str]) -> str:
     return "\n".join(prior_headlines) if prior_headlines else "(아직 없음 — 첫 번째 섹션)"
 
 
+def _build_full_prior_context(completed_results: list["SectionResult"]) -> str:
+    """앞서 생성된 섹션들의 전체 본문을 누적 컨텍스트로 구성.
+
+    Problem(1-x) + Solution(2-x) 순차 생성 시 사용.
+    각 섹션은 이전 섹션들의 전체 내용을 인지한 상태에서 작성되어
+    논거·통계·수치 중복을 방지하고 문제→솔루션 논리 흐름을 강화함.
+    """
+    if not completed_results:
+        return "(아직 없음 — 첫 번째 섹션)"
+    parts = []
+    for r in completed_results:
+        content = r.content
+        if content:
+            parts.append(f"### [{r.section_id}] {r.section_title}\n\n{content}")
+    return "\n\n---\n\n".join(parts) if parts else "(아직 없음 — 첫 번째 섹션)"
+
+
 def generate_framework_section(
     section: dict,
     questions: list[Question],
@@ -1295,31 +1318,40 @@ def generate_framework_draft(
     skills: list[Skill],
     company_context: dict | None = None,
 ) -> list[SectionResult]:
-    """모든 프레임워크 섹션을 번호 순으로 완전 순차 생성 (중복 방지 누적 컨텍스트 적용).
+    """프레임워크 섹션 하이브리드 생성.
 
-    각 섹션은 앞서 생성된 섹션들의 ■ 소제목을 prior_context로 전달받아,
-    이미 등장한 메시지와 겹치지 않는 새로운 각도로 작성한다.
-    생성 직후 feedback_agent 검수 게이트를 통과 — 기준 미달 시 1회 재생성.
+    Phase 1 — Problem + Solution (1-1~2-3): 전체 누적 컨텍스트로 순차 생성.
+        각 섹션이 이전 모든 섹션의 본문을 인지하여 논거·수치 중복을 방지하고
+        문제→솔루션 논리 흐름을 강화함.
+
+    Phase 2 — Scale-up + Team (3-1~4-1): 인터뷰 내용만으로 병렬 생성.
+        전략·자금·팀 섹션은 인터뷰 답변이 핵심 재료이므로 prior_context 없이
+        독립 생성하여 속도를 높이고 attention dilution을 방지함.
 
     Returns:
         FRAMEWORK_SECTIONS 순서대로 정렬된 SectionResult 목록
     """
-    results: list[SectionResult] = []
-    prior_headlines: list[str] = []  # 앞 섹션들의 ■ 소제목 누적
+    import concurrent.futures
 
-    for sec in FRAMEWORK_SECTIONS:
-        prior_context = _build_prior_context(prior_headlines)
+    seq_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _SEQUENTIAL_IDS]
+    par_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _PARALLEL_IDS]
+
+    seq_results: list[SectionResult] = []  # 누적 컨텍스트용
+
+    # Phase 1: 순차 생성 (Problem + Solution)
+    for sec in seq_sections:
+        prior_ctx = _build_full_prior_context(seq_results)
         try:
             r = generate_framework_section(
                 sec, questions, answers, skills, company_context,
-                prior_context=prior_context,
+                prior_context=prior_ctx,
             )
             r = _apply_feedback_gate(
                 sec, r, questions, answers, skills, company_context,
-                prior_context=prior_context,
+                prior_context=prior_ctx,
             )
         except Exception as e:
-            logger.error("[프레임워크 섹션 실패] %s: %s", sec["id"], e)
+            logger.error("[프레임워크 순차 섹션 실패] %s: %s", sec["id"], e)
             r = SectionResult(
                 section_id=sec["id"],
                 section_title=sec["title"],
@@ -1329,14 +1361,48 @@ def generate_framework_draft(
                 missing_info=["섹션 생성 오류 — 재시도 필요"],
                 completion_score=0,
             )
+        seq_results.append(r)
 
-        results.append(r)
+    # Phase 2: 병렬 생성 (Scale-up + Team) — prior_context 없음
+    par_results_map: dict[str, SectionResult] = {}
 
-        # 이 섹션의 ■ 소제목을 누적 (다음 섹션의 중복 방지 컨텍스트로 사용)
-        headlines = _extract_headlines(r)
-        if headlines:
-            prior_headlines.append(f"[{sec['parent_title']} > {sec['title']}]")
-            prior_headlines.extend(headlines)
+    def _gen_par(sec: dict) -> SectionResult:
+        try:
+            r = generate_framework_section(
+                sec, questions, answers, skills, company_context,
+                prior_context="",
+            )
+            r = _apply_feedback_gate(
+                sec, r, questions, answers, skills, company_context,
+                prior_context="",
+            )
+        except Exception as e:
+            logger.error("[프레임워크 병렬 섹션 실패] %s: %s", sec["id"], e)
+            r = SectionResult(
+                section_id=sec["id"],
+                section_title=sec["title"],
+                content="",
+                confidence_level="red",
+                reasoning=f"생성 실패: {e}",
+                missing_info=["섹션 생성 오류 — 재시도 필요"],
+                completion_score=0,
+            )
+        return r
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {executor.submit(_gen_par, s): s["id"] for s in par_sections}
+        for future in concurrent.futures.as_completed(futures):
+            sec_id = futures[future]
+            try:
+                par_results_map[sec_id] = future.result()
+            except Exception as e:
+                logger.error("[병렬 섹션 future 실패] %s: %s", sec_id, e)
+
+    # FRAMEWORK_SECTIONS 순서 유지하여 반환
+    results: list[SectionResult] = list(seq_results)
+    for sec in par_sections:
+        if sec["id"] in par_results_map:
+            results.append(par_results_map[sec["id"]])
 
     return results
 
