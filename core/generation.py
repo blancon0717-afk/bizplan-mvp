@@ -1021,6 +1021,20 @@ def _load_framework_gen() -> str:
     return _cache_framework_gen
 
 
+def _extract_headlines(result: SectionResult) -> list[str]:
+    """SectionResult 본문에서 ■ 소제목 줄만 추출 (누적 중복방지 컨텍스트용)."""
+    return [
+        line.strip()
+        for line in (result.content or "").splitlines()
+        if line.strip().startswith("■")
+    ]
+
+
+def _build_prior_context(prior_headlines: list[str]) -> str:
+    """누적된 앞 섹션 소제목 목록을 프롬프트 블록 텍스트로 구성."""
+    return "\n".join(prior_headlines) if prior_headlines else "(아직 없음 — 첫 번째 섹션)"
+
+
 def generate_framework_section(
     section: dict,
     questions: list[Question],
@@ -1028,6 +1042,7 @@ def generate_framework_section(
     skills: list[Skill],
     company_context: dict | None = None,
     extra_instruction: str = "",
+    prior_context: str = "",
 ) -> SectionResult:
     """단일 프레임워크 섹션 생성 (양식 무관).
 
@@ -1038,6 +1053,7 @@ def generate_framework_section(
         skills: 로드된 스킬 목록
         company_context: extract_company_context() 결과
         extra_instruction: feedback_agent 검수 미달 시 재작성 지침 (재생성 호출에서만 사용)
+        prior_context: 앞서 생성된 섹션들의 ■ 소제목 누적 (중복 방지용)
     """
     section_id = section["id"]
     section_title = section["title"]
@@ -1085,6 +1101,7 @@ def generate_framework_section(
         parent_title=parent_title,
         skills_block="(→ 위의 캐시 블록에 포함된 DRAFT_WRITING_GUIDE 적용)",
         answers_block=answers_block,
+        prior_context=prior_context or "(아직 없음 — 첫 번째 섹션)",
         today_date_note=today_date_note,
     )
 
@@ -1178,6 +1195,7 @@ def _apply_feedback_gate(
     answers: dict[str, Answer],
     skills: list[Skill],
     company_context: dict | None,
+    prior_context: str = "",
 ) -> SectionResult:
     """feedback_agent 검수 게이트 — 기준 미달 시 retry_instruction으로 1회 재생성.
 
@@ -1219,6 +1237,7 @@ def _apply_feedback_gate(
         retry = generate_framework_section(
             section, questions, answers, skills, company_context,
             extra_instruction=review.retry_instruction,
+            prior_context=prior_context,
         )
         if retry.content:
             return retry
@@ -1233,52 +1252,50 @@ def generate_framework_draft(
     skills: list[Skill],
     company_context: dict | None = None,
 ) -> list[SectionResult]:
-    """모든 프레임워크 섹션 생성 (첫 섹션 단독 → 나머지 병렬).
+    """모든 프레임워크 섹션을 번호 순으로 완전 순차 생성 (중복 방지 누적 컨텍스트 적용).
 
-    각 섹션은 생성 직후 feedback_agent 검수 게이트를 통과 — 기준 미달 시 1회 재생성.
+    각 섹션은 앞서 생성된 섹션들의 ■ 소제목을 prior_context로 전달받아,
+    이미 등장한 메시지와 겹치지 않는 새로운 각도로 작성한다.
+    생성 직후 feedback_agent 검수 게이트를 통과 — 기준 미달 시 1회 재생성.
 
     Returns:
         FRAMEWORK_SECTIONS 순서대로 정렬된 SectionResult 목록
     """
-    import concurrent.futures
+    results: list[SectionResult] = []
+    prior_headlines: list[str] = []  # 앞 섹션들의 ■ 소제목 누적
 
-    results: list[SectionResult | None] = [None] * len(FRAMEWORK_SECTIONS)
+    for sec in FRAMEWORK_SECTIONS:
+        prior_context = _build_prior_context(prior_headlines)
+        try:
+            r = generate_framework_section(
+                sec, questions, answers, skills, company_context,
+                prior_context=prior_context,
+            )
+            r = _apply_feedback_gate(
+                sec, r, questions, answers, skills, company_context,
+                prior_context=prior_context,
+            )
+        except Exception as e:
+            logger.error("[프레임워크 섹션 실패] %s: %s", sec["id"], e)
+            r = SectionResult(
+                section_id=sec["id"],
+                section_title=sec["title"],
+                content="",
+                confidence_level="red",
+                reasoning=f"생성 실패: {e}",
+                missing_info=["섹션 생성 오류 — 재시도 필요"],
+                completion_score=0,
+            )
 
-    def _gen(idx: int, sec: dict) -> tuple[int, SectionResult]:
-        r = generate_framework_section(sec, questions, answers, skills, company_context)
-        r = _apply_feedback_gate(sec, r, questions, answers, skills, company_context)
-        return idx, r
+        results.append(r)
 
-    # 첫 섹션 단독 생성 (캐시 워밍)
-    _, first_result = _gen(0, FRAMEWORK_SECTIONS[0])
-    results[0] = first_result
+        # 이 섹션의 ■ 소제목을 누적 (다음 섹션의 중복 방지 컨텍스트로 사용)
+        headlines = _extract_headlines(r)
+        if headlines:
+            prior_headlines.append(f"[{sec['parent_title']} > {sec['title']}]")
+            prior_headlines.extend(headlines)
 
-    # 나머지 병렬 생성
-    if len(FRAMEWORK_SECTIONS) > 1:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            futures = {
-                executor.submit(_gen, i, sec): i
-                for i, sec in enumerate(FRAMEWORK_SECTIONS[1:], start=1)
-            }
-            for future in concurrent.futures.as_completed(futures):
-                try:
-                    idx, result = future.result()
-                    results[idx] = result
-                except Exception as e:
-                    idx = futures[future]
-                    sec = FRAMEWORK_SECTIONS[idx]
-                    logger.error("[프레임워크 섹션 실패] %s: %s", sec["id"], e)
-                    results[idx] = SectionResult(
-                        section_id=sec["id"],
-                        section_title=sec["title"],
-                        content="",
-                        confidence_level="red",
-                        reasoning=f"생성 실패: {e}",
-                        missing_info=["섹션 생성 오류 — 재시도 필요"],
-                        completion_score=0,
-                    )
-
-    return [r for r in results if r is not None]
+    return results
 
 
 # ──────────────────────────────────────────────
