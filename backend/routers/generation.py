@@ -389,18 +389,27 @@ async def generate_framework(session_id: str):
                 company_context=company_context,
             )
 
-        try:
-            results = await asyncio.wait_for(
-                loop.run_in_executor(_executor, _generate_all),
-                timeout=300.0,  # feedback_agent 검수 게이트(검수+재생성) 추가로 180→300초 상향
-            )
-        except asyncio.TimeoutError:
-            yield _sse("error", {"message": "프레임워크 초안 생성 시간 초과 (300초). 다시 시도해주세요."})
-            return
-        except Exception as e:
-            logger.error("[프레임워크 생성 실패] %s: %s", session_id, e)
-            yield _sse("error", {"message": f"초안 생성 중 오류: {e}"})
-            return
+        # 순차 생성은 2~4분 소요 → Railway 로드밸런서 30초 무활동 타임아웃 방지를 위해
+        # 15초마다 SSE keepalive 코멘트를 전송하며 대기
+        gen_future = loop.run_in_executor(_executor, _generate_all)
+        elapsed = 0
+        results = None
+
+        while True:
+            done, _ = await asyncio.wait({gen_future}, timeout=15.0)
+            if done:
+                try:
+                    results = gen_future.result()
+                except Exception as e:
+                    logger.error("[프레임워크 생성 실패] %s: %s", session_id, e)
+                    yield _sse("error", {"message": f"초안 생성 중 오류: {e}"})
+                    return
+                break
+            elapsed += 15
+            if elapsed >= 300:
+                yield _sse("error", {"message": "프레임워크 초안 생성 시간 초과 (300초). 다시 시도해주세요."})
+                return
+            yield ": keepalive\n\n"
 
         save_framework_draft(session_id, results)
 
