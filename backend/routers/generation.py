@@ -416,7 +416,7 @@ async def generate_framework(session_id: str):
             try:
                 r, _ = await asyncio.wait_for(
                     loop.run_in_executor(_executor, _gen_seq),
-                    timeout=90.0,
+                    timeout=180.0,
                 )
             except asyncio.TimeoutError:
                 logger.error("[섹션 타임아웃] %s", sec["id"])
@@ -425,7 +425,7 @@ async def generate_framework(session_id: str):
                     section_title=sec["title"],
                     content="",
                     confidence_level="red",
-                    reasoning="타임아웃: 섹션 생성 90초 초과",
+                    reasoning="타임아웃: 섹션 생성 180초 초과",
                     missing_info=["생성 타임아웃 — 재시도 필요"],
                     completion_score=0,
                 )
@@ -450,7 +450,7 @@ async def generate_framework(session_id: str):
                 "completion_score": r.effective_completion_score(),
             })
 
-        # Phase 2: 병렬 생성 (Scale-up + Team)
+        # Phase 2: 병렬 생성 (Team — 4-1만)
         if par_sections:
             par_queue: asyncio.Queue = asyncio.Queue()
 
@@ -472,7 +472,7 @@ async def generate_framework(session_id: str):
                 try:
                     r, _ = await asyncio.wait_for(
                         loop.run_in_executor(_executor, _gen),
-                        timeout=90.0,
+                        timeout=180.0,
                     )
                 except asyncio.TimeoutError:
                     logger.error("[병렬 섹션 타임아웃] %s", sec["id"])
@@ -481,7 +481,7 @@ async def generate_framework(session_id: str):
                         section_title=sec["title"],
                         content="",
                         confidence_level="red",
-                        reasoning="타임아웃: 섹션 생성 90초 초과",
+                        reasoning="타임아웃: 섹션 생성 180초 초과",
                         missing_info=["생성 타임아웃 — 재시도 필요"],
                         completion_score=0,
                     )
