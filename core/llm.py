@@ -29,7 +29,7 @@ def get_client() -> Anthropic:
         raise RuntimeError(
             "ANTHROPIC_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요."
         )
-    return Anthropic(api_key=api_key)
+    return Anthropic(api_key=api_key, max_retries=1)
 
 
 def call_claude(
@@ -72,7 +72,7 @@ def call_claude(
     resp = client.messages.create(
         model=mdl,
         max_tokens=max_tokens,
-        timeout=90.0,
+        timeout=60.0,
         temperature=temperature,
         system=system_param,
         messages=[{"role": "user", "content": user_content}],

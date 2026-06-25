@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -406,11 +407,12 @@ async def generate_framework(session_id: str):
         # Phase 1: 순차 생성
         for sec in seq_sections:
             prior_ctx = _build_full_prior_context(seq_results)
+            cancel_event = threading.Event()
 
-            def _gen_seq(s=sec, pc=prior_ctx):
+            def _gen_seq(s=sec, pc=prior_ctx, ce=cancel_event):
                 return generate_one_framework_section(
                     s, questions, session.answers, skills, company_context,
-                    prior_context=pc,
+                    prior_context=pc, cancel_event=ce,
                 )
 
             try:
@@ -419,6 +421,7 @@ async def generate_framework(session_id: str):
                     timeout=180.0,
                 )
             except asyncio.TimeoutError:
+                cancel_event.set()
                 logger.error("[섹션 타임아웃] %s", sec["id"])
                 r = SectionResult(
                     section_id=sec["id"],
@@ -455,10 +458,12 @@ async def generate_framework(session_id: str):
             par_queue: asyncio.Queue = asyncio.Queue()
 
             async def _run_par(sec: dict) -> None:
+                cancel_event = threading.Event()
+
                 def _gen():
                     return generate_one_framework_section(
                         sec, questions, session.answers, skills, company_context,
-                        prior_context="",
+                        prior_context="", cancel_event=cancel_event,
                     )
                 r = SectionResult(
                     section_id=sec["id"],
@@ -475,6 +480,7 @@ async def generate_framework(session_id: str):
                         timeout=180.0,
                     )
                 except asyncio.TimeoutError:
+                    cancel_event.set()
                     logger.error("[병렬 섹션 타임아웃] %s", sec["id"])
                     r = SectionResult(
                         section_id=sec["id"],
@@ -486,6 +492,7 @@ async def generate_framework(session_id: str):
                         completion_score=0,
                     )
                 except BaseException as e:
+                    cancel_event.set()
                     logger.error("[병렬 섹션 생성 실패] %s: %s", sec["id"], e)
                     r = SectionResult(
                         section_id=sec["id"],

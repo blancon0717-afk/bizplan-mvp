@@ -17,6 +17,7 @@ import logging
 import os
 import re
 import random
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -1219,12 +1220,17 @@ def _apply_feedback_gate(
     skills: list[Skill],
     company_context: dict | None,
     prior_context: str = "",
+    cancel_event: threading.Event | None = None,
 ) -> SectionResult:
     """feedback_agent 검수 게이트 — 기준 미달 시 retry_instruction으로 1회 재생성.
 
     검수/재생성 실패 시 원본 초안을 그대로 반환 (게이트는 품질 보강용, 차단용 아님).
+    cancel_event가 설정되면(상위 호출이 타임아웃으로 이미 포기한 상태) 추가 LLM 호출을
+    하지 않고 즉시 반환 — 좀비 스레드의 불필요한 API 소비를 막기 위함.
     """
     if os.getenv("MOCK_MODE", "0") == "1" or not result.content:
+        return result
+    if cancel_event is not None and cancel_event.is_set():
         return result
 
     try:
@@ -1251,6 +1257,8 @@ def _apply_feedback_gate(
 
     if review.passed:
         return result
+    if cancel_event is not None and cancel_event.is_set():
+        return result
 
     logger.info(
         "[피드백 게이트] %s 기준 미달 → 재생성 (누락 헤더 %d개, 미충족 기준 %d개)",
@@ -1276,10 +1284,13 @@ def generate_one_framework_section(
     skills: list[Skill],
     company_context: dict | None = None,
     prior_context: str = "",
+    cancel_event: threading.Event | None = None,
 ) -> tuple[SectionResult, list[str]]:
     """단일 프레임워크 섹션 생성 + feedback_agent 검수 게이트 + 헤드라인 추출.
 
     라우터에서 섹션별 SSE 스트리밍을 위해 사용.
+    cancel_event: 상위(asyncio.wait_for)가 타임아웃으로 이미 포기했음을 알리는 신호.
+        설정되면 피드백 게이트의 추가 LLM 호출(검수·재생성)을 생략함.
 
     Returns:
         (result, new_prior_lines) — new_prior_lines는 다음 섹션의 prior_context에 추가할 줄 목록
@@ -1292,6 +1303,7 @@ def generate_one_framework_section(
         r = _apply_feedback_gate(
             section, r, questions, answers, skills, company_context,
             prior_context=prior_context,
+            cancel_event=cancel_event,
         )
     except Exception as e:
         logger.error("[generate_one_framework_section 실패] %s: %s", section["id"], e)
