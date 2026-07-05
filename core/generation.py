@@ -40,18 +40,27 @@ from core.skills import Skill, select_skills_for_section
 _PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 
 _SCHEDULE_TAG = "일정자금"
+# 로드맵·추진일정·협약기간 등 연도·시점 표기가 들어가는 섹션 태그 전체.
+# 일정자금(3-2) 외에 사업화전략(3-1: 로드맵·KPI·추진일정), 차별성·개발준비(2-2: 고도화 로드맵·IP)도 포함.
+_DATE_AWARE_TAGS: frozenset[str] = frozenset({"일정자금", "사업화전략", "차별성", "개발준비"})
 
 
 def _build_today_date_note(tags: list[str]) -> str:
-    """일정자금 태그가 있는 섹션에만 작성 기준일 규칙을 반환."""
-    if _SCHEDULE_TAG not in tags:
+    """날짜 표기가 들어가는 섹션에만 작성 기준일 규칙을 반환."""
+    if not (set(tags) & _DATE_AWARE_TAGS):
         return ""
-    today = datetime.now().strftime("%Y년 %m월")
+    now = datetime.now()
+    today = now.strftime("%Y년 %m월")
+    # 협약기간(정부지원사업 수행기간) 연도: 작성 1~4월 → 해당 연도 / 5~12월 → 다음 연도 (5~12월 수행)
+    contract_year = now.year if now.month <= 4 else now.year + 1
     return (
-        f"\n> ⏰ **추진일정 날짜 규칙** (사업계획서 작성일: {today})\n"
-        f"> - 시작 시점: {today} 기준으로 작성\n"
-        f"> - 1개월 단위로 구성\n"
-        f"> - {today} 이전 날짜(과거 날짜) 절대 사용 금지\n"
+        f"\n> ⏰ **작성 기준일 규칙** (사업계획서 작성일: {today})\n"
+        f"> - 로드맵·추진일정 등 향후 계획의 연도·시점 표기는 {today} 기준으로 계산\n"
+        f"> - 협약기간(정부지원사업 수행기간)은 **{contract_year}년 5월~12월**로 작성\n"
+        f"> - 향후 일정에 {today} 이전(작성일 이전) 날짜 사용 금지\n"
+        f"> - 단, 이미 일어난 실제 이력(연혁·매출 실적·기등록 특허의 등록일 등)은 실제 과거 날짜를 그대로 사용\n"
+        f"> - 본문 내 Good Example의 연도(예: '25, 2025년 등)는 형식 참고용일 뿐, "
+        f"실제 연도는 반드시 이 규칙에 따라 재계산할 것\n"
     )
 
 

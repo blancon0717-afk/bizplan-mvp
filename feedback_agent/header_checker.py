@@ -35,6 +35,10 @@ _REQUIREMENTS: dict[str, list[tuple[str, object]]] = {
         ("■ 소제목 최소 2개 (아이템 정의 + 핵심 기술)", lambda t: t.count("■") >= 2),
         ("사용 프로세스 단계 표기 (① 또는 1단계 형식)", lambda t: "①" in t or "1)" in t or "1단계" in t),
         ("경쟁사 비교표 포함 여부", lambda t: ("경쟁사" in t or "비교" in t) and "|" in t),
+        ("지식재산권 현황·확보 계획 표", lambda t: any(
+            ("지식재산" in ln or "출원" in ln or "등록번호" in ln) and ln.count("|") >= 2
+            for ln in t.splitlines()
+        )),
     ],
     "2-3": [
         ("■ 소제목 최소 1개", lambda t: t.count("■") >= 1),
@@ -46,7 +50,11 @@ _REQUIREMENTS: dict[str, list[tuple[str, object]]] = {
         ("월별 사업추진 일정 표 (표 B, 최소 5행)", lambda t: "협약" in t and "|" in t and t.count("|") >= 15),
     ],
     "3-2": [
-        ("사업비 집행 계획 표 (비목 컬럼 포함)", lambda t: "비목" in t or "정부지원사업비" in t),
+        # 서술형 우회 차단 — 같은 줄에 '비목/정부지원사업비'가 있고 표 구분자(|)가 3개 이상인 표 헤더 행이 실제로 존재해야 통과
+        ("사업비 집행 계획 표 (비목 컬럼 포함)", lambda t: any(
+            ("비목" in ln.replace(" ", "") or "정부지원사업비" in ln.replace(" ", "")) and ln.count("|") >= 3
+            for ln in t.splitlines()
+        )),
         ("자금 조달 계획 표", lambda t: "조달" in t and "|" in t),
     ],
     "4-1": [
