@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -36,6 +37,7 @@ from core.generation import (
     FRAMEWORK_SECTIONS,
     _SEQUENTIAL_IDS,
     _PARALLEL_IDS,
+    _SECTION_INNER_DEADLINE_S,
     _build_full_prior_context,
 )
 from core.interview import load_initial_questions, load_followup_questions
@@ -65,6 +67,40 @@ _executor = ThreadPoolExecutor(max_workers=10)
 
 def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+# SSE 주석 라인 — 이벤트가 아니므로 프론트 파서(event:/data: 없는 청크는 무시)가 건너뛴다.
+# Railway·Next.js 프록시가 응답 무침묵 구간을 연결 끊김으로 판단하지 않도록 주기적으로 흘려보낸다.
+_KEEPALIVE = ": keepalive\n\n"
+_KEEPALIVE_INTERVAL_S = 15.0
+
+
+async def _run_with_keepalive(loop, fn, timeout: float):
+    """executor 작업을 돌리며 15초마다 keepalive 신호를 방출하는 async generator.
+
+    yield ("ping", None)  — 대기 중 15초 경과
+    yield ("done", result) — 작업 완료(정상 반환값)
+    yield ("error", exc)   — 작업이 예외로 종료
+    yield ("timeout", None) — timeout 초과 (executor 스레드는 계속 도므로 호출측에서 cancel 신호 필요)
+    generator는 done/error/timeout 중 하나를 방출한 직후 종료한다.
+    """
+    task = loop.run_in_executor(_executor, fn)
+    deadline = loop.time() + timeout
+    while True:
+        remaining = deadline - loop.time()
+        if remaining <= 0:
+            yield ("timeout", None)
+            return
+        done, _pending = await asyncio.wait(
+            {task}, timeout=min(_KEEPALIVE_INTERVAL_S, remaining)
+        )
+        if task in done:
+            try:
+                yield ("done", task.result())
+            except Exception as e:  # noqa: BLE001 — 상위에서 red 플레이스홀더로 처리
+                yield ("error", e)
+            return
+        yield ("ping", None)
 
 
 @router.post("/sessions/{session_id}/generate")
@@ -281,7 +317,17 @@ async def generate_feedback(session_id: str):
             attach_strategic_feedbacks(results_map, feedbacks)
             return len(feedbacks)
 
-        strategic_count = await loop.run_in_executor(_executor, _strategic)
+        # 전략 평가는 마지막 단일 장기 호출이라 침묵 구간이 길다 → keepalive로 프록시 연결 유지
+        strategic_count = 0
+        async for kind, payload in _run_with_keepalive(loop, _strategic, 180.0):
+            if kind == "ping":
+                yield _KEEPALIVE
+            elif kind == "done":
+                strategic_count = payload
+            elif kind == "error":
+                logger.error("[전략 평가 실패] %s: %s", session_id, payload)
+            elif kind == "timeout":
+                logger.error("[전략 평가 타임아웃] %s", session_id)
 
         ordered = [results_map[r.section_id] for r in results if r.section_id in results_map]
         if source == "framework":
@@ -408,41 +454,45 @@ async def generate_framework(session_id: str):
         for sec in seq_sections:
             prior_ctx = _build_full_prior_context(seq_results)
             cancel_event = threading.Event()
+            # 섹션 내부 마감(165s). 라우터 안전망(180s)보다 먼저 검수·재생성을 끊어
+            # 1차 초안이 통째로 버려지는 것을 막는다.
+            deadline = time.monotonic() + _SECTION_INNER_DEADLINE_S
 
-            def _gen_seq(s=sec, pc=prior_ctx, ce=cancel_event):
+            def _gen_seq(s=sec, pc=prior_ctx, ce=cancel_event, dl=deadline):
                 return generate_one_framework_section(
                     s, questions, session.answers, skills, company_context,
-                    prior_context=pc, cancel_event=ce,
+                    prior_context=pc, cancel_event=ce, deadline=dl,
                 )
 
-            try:
-                r, _ = await asyncio.wait_for(
-                    loop.run_in_executor(_executor, _gen_seq),
-                    timeout=180.0,
-                )
-            except asyncio.TimeoutError:
-                cancel_event.set()
-                logger.error("[섹션 타임아웃] %s", sec["id"])
-                r = SectionResult(
-                    section_id=sec["id"],
-                    section_title=sec["title"],
-                    content="",
-                    confidence_level="red",
-                    reasoning="타임아웃: 섹션 생성 180초 초과",
-                    missing_info=["생성 타임아웃 — 재시도 필요"],
-                    completion_score=0,
-                )
-            except Exception as e:
-                logger.error("[섹션 생성 실패] %s: %s", sec["id"], e)
-                r = SectionResult(
-                    section_id=sec["id"],
-                    section_title=sec["title"],
-                    content="",
-                    confidence_level="red",
-                    reasoning=f"생성 실패: {e}",
-                    missing_info=["섹션 생성 오류 — 재시도 필요"],
-                    completion_score=0,
-                )
+            r: SectionResult | None = None
+            async for kind, payload in _run_with_keepalive(loop, _gen_seq, 180.0):
+                if kind == "ping":
+                    yield _KEEPALIVE
+                elif kind == "done":
+                    r, _ = payload
+                elif kind == "error":
+                    logger.error("[섹션 생성 실패] %s: %s", sec["id"], payload)
+                    r = SectionResult(
+                        section_id=sec["id"],
+                        section_title=sec["title"],
+                        content="",
+                        confidence_level="red",
+                        reasoning=f"생성 실패: {payload}",
+                        missing_info=["섹션 생성 오류 — 재시도 필요"],
+                        completion_score=0,
+                    )
+                elif kind == "timeout":
+                    cancel_event.set()
+                    logger.error("[섹션 타임아웃] %s", sec["id"])
+                    r = SectionResult(
+                        section_id=sec["id"],
+                        section_title=sec["title"],
+                        content="",
+                        confidence_level="red",
+                        reasoning="타임아웃: 섹션 생성 180초 초과",
+                        missing_info=["생성 타임아웃 — 재시도 필요"],
+                        completion_score=0,
+                    )
 
             seq_results.append(r)
             all_results.append(r)
@@ -459,11 +509,12 @@ async def generate_framework(session_id: str):
 
             async def _run_par(sec: dict) -> None:
                 cancel_event = threading.Event()
+                deadline = time.monotonic() + _SECTION_INNER_DEADLINE_S
 
                 def _gen():
                     return generate_one_framework_section(
                         sec, questions, session.answers, skills, company_context,
-                        prior_context="", cancel_event=cancel_event,
+                        prior_context="", cancel_event=cancel_event, deadline=deadline,
                     )
                 r = SectionResult(
                     section_id=sec["id"],
@@ -506,8 +557,14 @@ async def generate_framework(session_id: str):
                 await par_queue.put(r)
 
             par_tasks = [asyncio.create_task(_run_par(s)) for s in par_sections]
-            for _ in range(len(par_sections)):
-                r = await par_queue.get()
+            collected = 0
+            while collected < len(par_sections):
+                try:
+                    r = await asyncio.wait_for(par_queue.get(), timeout=_KEEPALIVE_INTERVAL_S)
+                except asyncio.TimeoutError:
+                    yield _KEEPALIVE
+                    continue
+                collected += 1
                 all_results.append(r)
                 yield _sse("section_done", {
                     "section_id": r.section_id,
@@ -564,17 +621,22 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
         def _convert_all():
             return convert_to_form(framework_results, form, skills)
 
-        try:
-            results = await asyncio.wait_for(
-                loop.run_in_executor(_executor, _convert_all),
-                timeout=240.0,
-            )
-        except asyncio.TimeoutError:
-            yield _sse("error", {"message": "양식 변환 시간 초과 (240초). 다시 시도해주세요."})
-            return
-        except Exception as e:
-            logger.error("[양식 변환 실패] %s: %s", session_id, e)
-            yield _sse("error", {"message": f"양식 변환 중 오류: {e}"})
+        # 변환은 단일 장기 작업(최대 240초)이라 침묵 구간이 길다 → keepalive로 프록시 연결 유지
+        results = None
+        errored = False
+        async for kind, payload in _run_with_keepalive(loop, _convert_all, 240.0):
+            if kind == "ping":
+                yield _KEEPALIVE
+            elif kind == "done":
+                results = payload
+            elif kind == "error":
+                logger.error("[양식 변환 실패] %s: %s", session_id, payload)
+                yield _sse("error", {"message": f"양식 변환 중 오류: {payload}"})
+                errored = True
+            elif kind == "timeout":
+                yield _sse("error", {"message": "양식 변환 시간 초과 (240초). 다시 시도해주세요."})
+                errored = True
+        if errored:
             return
 
         save_results(session_id, results)

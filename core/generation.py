@@ -113,6 +113,14 @@ FRAMEWORK_SECTIONS: list[dict] = [
 _SEQUENTIAL_IDS: frozenset[str] = frozenset({"1-1", "1-2", "1-3", "2-1", "2-2", "2-3", "3-1", "3-2"})
 _PARALLEL_IDS: frozenset[str] = frozenset({"4-1"})
 
+# 섹션 내부 시간 예산 (초). 라우터의 180초 타임아웃(안전망)보다 항상 먼저 작동해,
+# 라우터가 섹션을 강제로 끊으면서 이미 성공한 1차 초안까지 버리는 상황을 막는다.
+# deadline = time.monotonic() + _SECTION_INNER_DEADLINE_S 로 각 섹션 시작 시 계산.
+_SECTION_INNER_DEADLINE_S: float = 165.0
+_GATE_MIN_BUDGET_S: float = 85.0   # 검수 게이트 진입 최소 잔여(검수 최악 ~31s + 재생성 최악 ~45s + 여유)
+_REGEN_MIN_BUDGET_S: float = 55.0  # 재생성 진입 최소 잔여(재생성 캡 45s + 여유)
+_REGEN_TIMEOUT_S: float = 45.0     # 재생성 단일 호출 타임아웃(재시도 없음)
+
 # 모듈 레벨 파일 캐시 — 프로세스 재시작 전까지 디스크 재독 없음
 _cache_system_md: str | None = None
 _cache_section_gen: str | None = None
@@ -1067,6 +1075,8 @@ def generate_framework_section(
     company_context: dict | None = None,
     extra_instruction: str = "",
     prior_context: str = "",
+    timeout_s: float = 60.0,
+    retries: int = 1,
 ) -> SectionResult:
     """단일 프레임워크 섹션 생성 (양식 무관).
 
@@ -1078,6 +1088,8 @@ def generate_framework_section(
         company_context: extract_company_context() 결과
         extra_instruction: feedback_agent 검수 미달 시 재작성 지침 (재생성 호출에서만 사용)
         prior_context: 앞서 생성된 섹션들의 ■ 소제목 누적 (중복 방지용)
+        timeout_s: 단일 API 호출 타임아웃(초). 재생성은 45초로 낮춰 총 소요를 확정한다.
+        retries: SDK 재시도 횟수. 재생성은 0으로 주어 재시도 없이 1회만 시도한다.
     """
     section_id = section["id"]
     section_title = section["title"]
@@ -1143,6 +1155,8 @@ def generate_framework_section(
         metadata={"section_id": section_id},
         use_cache=True,
         cached_user_prefix=skills_cache_prefix,
+        timeout_s=timeout_s,
+        retries=retries,
     )
 
     if meta.get("stop_reason") == "max_tokens":
@@ -1221,16 +1235,28 @@ def _apply_feedback_gate(
     company_context: dict | None,
     prior_context: str = "",
     cancel_event: threading.Event | None = None,
+    deadline: float | None = None,
 ) -> SectionResult:
     """feedback_agent 검수 게이트 — 기준 미달 시 retry_instruction으로 1회 재생성.
 
     검수/재생성 실패 시 원본 초안을 그대로 반환 (게이트는 품질 보강용, 차단용 아님).
     cancel_event가 설정되면(상위 호출이 타임아웃으로 이미 포기한 상태) 추가 LLM 호출을
     하지 않고 즉시 반환 — 좀비 스레드의 불필요한 API 소비를 막기 위함.
+    deadline: time.monotonic() 기준 섹션 마감 시각. 잔여 시간이 부족하면 검수·재생성을
+        생략하고 1차 초안을 확정해, 라우터 타임아웃에 걸려 초안이 통째로 버려지는 것을 막는다.
+        None이면 시간 예산 검사를 하지 않음(하위 호환).
     """
     if os.getenv("MOCK_MODE", "0") == "1" or not result.content:
         return result
     if cancel_event is not None and cancel_event.is_set():
+        return result
+
+    # 검수 진입 전 시간 예산 확인 — 잔여가 부족하면 1차 초안 확정
+    if deadline is not None and (deadline - time.monotonic()) < _GATE_MIN_BUDGET_S:
+        logger.info(
+            "[피드백 게이트] %s 잔여 %.0fs < %.0fs → 검수 생략, 1차 초안 확정",
+            section["id"], deadline - time.monotonic(), _GATE_MIN_BUDGET_S,
+        )
         return result
 
     try:
@@ -1264,11 +1290,28 @@ def _apply_feedback_gate(
         "[피드백 게이트] %s 기준 미달 → 재생성 (누락 헤더 %d개, 미충족 기준 %d개)",
         section["id"], len(review.missing_headers), len(review.failed_criteria),
     )
+    # 진단용 — 어떤 기준에서 미달하는지 로그로 남겨 헛돌이(전 섹션 재생성) 원인 분석에 사용
+    if review.missing_headers:
+        logger.info("[피드백 게이트] %s 누락 헤더: %s", section["id"], review.missing_headers)
+    for issue in review.failed_criteria:
+        logger.info("[피드백 게이트] %s 미충족: %s", section["id"], issue.criterion)
+
+    # 재생성 진입 전 시간 예산 확인 — 잔여가 부족하면 1차 초안 확정
+    if deadline is not None and (deadline - time.monotonic()) < _REGEN_MIN_BUDGET_S:
+        logger.info(
+            "[피드백 게이트] %s 잔여 %.0fs < %.0fs → 재생성 생략, 1차 초안 확정",
+            section["id"], deadline - time.monotonic(), _REGEN_MIN_BUDGET_S,
+        )
+        return result
+
     try:
+        # 재생성은 재시도 없이 45초로 캡 — 총 소요 시간을 확정해 라우터 타임아웃 이전에 반드시 종료
         retry = generate_framework_section(
             section, questions, answers, skills, company_context,
             extra_instruction=review.retry_instruction,
             prior_context=prior_context,
+            timeout_s=_REGEN_TIMEOUT_S,
+            retries=0,
         )
         if retry.content:
             return retry
@@ -1285,12 +1328,15 @@ def generate_one_framework_section(
     company_context: dict | None = None,
     prior_context: str = "",
     cancel_event: threading.Event | None = None,
+    deadline: float | None = None,
 ) -> tuple[SectionResult, list[str]]:
     """단일 프레임워크 섹션 생성 + feedback_agent 검수 게이트 + 헤드라인 추출.
 
     라우터에서 섹션별 SSE 스트리밍을 위해 사용.
     cancel_event: 상위(asyncio.wait_for)가 타임아웃으로 이미 포기했음을 알리는 신호.
         설정되면 피드백 게이트의 추가 LLM 호출(검수·재생성)을 생략함.
+    deadline: time.monotonic() 기준 섹션 마감 시각. 검수 게이트로 전달돼, 잔여 시간이
+        부족하면 검수·재생성을 생략하고 1차 초안을 확정한다. None이면 예산 검사 없음.
 
     Returns:
         (result, new_prior_lines) — new_prior_lines는 다음 섹션의 prior_context에 추가할 줄 목록
@@ -1304,6 +1350,7 @@ def generate_one_framework_section(
             section, r, questions, answers, skills, company_context,
             prior_context=prior_context,
             cancel_event=cancel_event,
+            deadline=deadline,
         )
     except Exception as e:
         logger.error("[generate_one_framework_section 실패] %s: %s", section["id"], e)

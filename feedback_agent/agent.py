@@ -111,8 +111,19 @@ _criteria_agent: Agent | None = None
 def _get_criteria_agent() -> Agent:
     global _criteria_agent
     if _criteria_agent is None:
+        # SDK 기본(timeout 600s, retries 2) 대신 명시적 캡을 건 클라이언트를 주입한다.
+        # 검수 게이트가 무한정 늘어져 섹션 생성 전체를 지연시키는 것을 막기 위함.
+        from anthropic import AsyncAnthropic
+        from pydantic_ai.models.anthropic import AnthropicModel
+        from pydantic_ai.providers.anthropic import AnthropicProvider
+
+        client = AsyncAnthropic(timeout=15.0, max_retries=1)
+        model = AnthropicModel(
+            "claude-haiku-4-5-20251001",
+            provider=AnthropicProvider(anthropic_client=client),
+        )
         _criteria_agent = Agent(
-            "anthropic:claude-haiku-4-5-20251001",
+            model,
             output_type=_CriteriaCheckOutput,  # pydantic-ai 1.x: result_type → output_type
             system_prompt=(
                 "당신은 사업계획서 검수 전문가입니다. "

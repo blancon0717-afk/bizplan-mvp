@@ -23,13 +23,13 @@ _DEFAULT_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
 _LOG_PATH = Path("logs/llm_calls.jsonl")
 
 
-def get_client() -> Anthropic:
+def get_client(max_retries: int = 1) -> Anthropic:
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key or api_key.startswith("sk-ant-api-여기"):
         raise RuntimeError(
             "ANTHROPIC_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요."
         )
-    return Anthropic(api_key=api_key, max_retries=1)
+    return Anthropic(api_key=api_key, max_retries=max_retries)
 
 
 def call_claude(
@@ -43,13 +43,17 @@ def call_claude(
     metadata: dict | None = None,
     use_cache: bool = False,
     cached_user_prefix: str | None = None,
+    timeout_s: float = 60.0,
+    retries: int = 1,
 ) -> tuple[str, dict]:
     """Claude 호출. (응답 텍스트, 메타데이터) 반환.
 
     cached_user_prefix: use_cache=True 일 때 user 메시지 앞에 붙이는 캐시 대상 블록.
     Skills처럼 섹션 간 고정된 콘텐츠를 별도 content block으로 분리해 캐시 히트율을 높인다.
+    timeout_s: 단일 API 호출 타임아웃(초). 재생성처럼 짧게 끊어야 하는 경로에서 낮춘다.
+    retries: SDK 자동 재시도 횟수. 0이면 재시도 없이 1회만 시도(총 소요 시간 상한을 확정).
     """
-    client = get_client()
+    client = get_client(max_retries=retries)
     mdl = model or _DEFAULT_MODEL
     call_id = str(uuid.uuid4())[:8]
 
@@ -72,7 +76,7 @@ def call_claude(
     resp = client.messages.create(
         model=mdl,
         max_tokens=max_tokens,
-        timeout=60.0,
+        timeout=timeout_s,
         temperature=temperature,
         system=system_param,
         messages=[{"role": "user", "content": user_content}],
