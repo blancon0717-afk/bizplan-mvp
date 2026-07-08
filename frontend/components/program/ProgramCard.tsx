@@ -8,6 +8,8 @@ const PROGRAM_COLORS: Record<string, { bg: string; accent: string; icon: string 
   jumping_package: { bg: "bg-emerald-50", accent: "border-emerald-400 bg-emerald-600", icon: "📈" },
   comeback_package: { bg: "bg-orange-50", accent: "border-orange-400 bg-orange-600", icon: "🔄" },
   changjungdae: { bg: "bg-teal-50", accent: "border-teal-400 bg-teal-600", icon: "🏛️" },
+  deeptech_academy: { bg: "bg-indigo-50", accent: "border-indigo-400 bg-indigo-600", icon: "🔬" },
+  innovation_voucher: { bg: "bg-rose-50", accent: "border-rose-400 bg-rose-600", icon: "🎫" },
 };
 const DEFAULT_COLOR = { bg: "bg-slate-50", accent: "border-slate-400 bg-slate-600", icon: "📋" };
 

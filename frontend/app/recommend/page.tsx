@@ -4,7 +4,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useRecommendStore } from "@/store/recommendStore";
 import ProgramCard from "@/components/program/ProgramCard";
-import type { SupportProgramMatch } from "@/lib/types";
+import type { Program } from "@/lib/types";
+
+// ── 양식 변환(convert) 화면에서 고정 노출할 3개 지원사업 ──────────────
+const CONVERT_TARGET_CODES = ["initial_package", "deeptech_academy", "innovation_voucher"] as const;
+// 혁신바우처는 선택 시 바우처 서비스(컨설팅/기술지원/마케팅)를 추가로 고른다.
+const VOUCHER_CODE = "innovation_voucher";
+const VOUCHER_SERVICES = ["컨설팅", "기술지원", "마케팅"] as const;
 
 function RecommendPageInner() {
   const router = useRouter();
@@ -17,12 +23,16 @@ function RecommendPageInner() {
   const [error, setError] = useState<string | null>(null);
 
   // convert mode state
-  const [convertPrograms, setConvertPrograms] = useState<SupportProgramMatch[]>([]);
+  const [convertTargets, setConvertTargets] = useState<Program[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [convertingName, setConvertingName] = useState("");
   const [convertDone, setConvertDone] = useState(0);
   const [convertTotal, setConvertTotal] = useState(0);
+
+  // 혁신바우처 서비스 선택 상태
+  const [voucherOpen, setVoucherOpen] = useState(false);
+  const [voucherServices, setVoucherServices] = useState<string[]>([]);
 
   const isConvertMode = mode === "convert";
   const [sessionId] = useState<string>(
@@ -38,15 +48,29 @@ function RecommendPageInner() {
     }
   }, [isConvertMode, storedPrograms, router]);
 
+  // convert 모드: 양식 YAML 목록(getPrograms)에서 고정 3개만 순서대로 노출
   useEffect(() => {
-    if (!isConvertMode || !profile) return;
+    if (!isConvertMode) return;
     setIsLoadingPrograms(true);
     api
-      .recommend(profile)
-      .then((res) => setConvertPrograms(res.programs.filter((p) => p.is_eligible && p.has_form)))
-      .catch(() => setError("지원사업 추천을 불러올 수 없습니다."))
+      .getPrograms()
+      .then((res) => {
+        const byCode = new Map(res.programs.map((p) => [p.code, p]));
+        setConvertTargets(
+          CONVERT_TARGET_CODES.map((c) => byCode.get(c)).filter(
+            (p): p is Program => Boolean(p)
+          )
+        );
+      })
+      .catch(() => setError("지원사업 양식을 불러올 수 없습니다."))
       .finally(() => setIsLoadingPrograms(false));
-  }, [isConvertMode, profile]);
+  }, [isConvertMode]);
+
+  function toggleVoucherService(service: string) {
+    setVoucherServices((prev) =>
+      prev.includes(service) ? prev.filter((s) => s !== service) : [...prev, service]
+    );
+  }
 
   async function handleWrite(programCode: string) {
     setIsStarting(true);
@@ -61,7 +85,11 @@ function RecommendPageInner() {
     }
   }
 
-  async function handleConvert(programCode: string, programName: string) {
+  async function handleConvert(
+    programCode: string,
+    programName: string,
+    voucherOptions?: string[]
+  ) {
     if (!sessionId) {
       setError("세션 ID를 찾을 수 없습니다. 처음부터 다시 시도해주세요.");
       return;
@@ -73,7 +101,7 @@ function RecommendPageInner() {
 
     let response: Response;
     try {
-      response = await api.convertToForm(sessionId, programCode);
+      response = await api.convertToForm(sessionId, programCode, voucherOptions);
     } catch {
       setError("변환 요청에 실패했습니다. 다시 시도해주세요.");
       setIsConverting(false);
@@ -136,7 +164,7 @@ function RecommendPageInner() {
     }
   }
 
-  const eligible = (isConvertMode ? convertPrograms : storedPrograms).filter((p) => p.is_eligible);
+  const eligible = storedPrograms.filter((p) => p.is_eligible);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
@@ -227,45 +255,94 @@ function RecommendPageInner() {
             </section>
           )}
 
-          {isConvertMode && !isLoadingPrograms && convertPrograms.length > 0 && (
+          {isConvertMode && !isLoadingPrograms && convertTargets.length > 0 && (
             <div className="space-y-4">
-              {convertPrograms.map((p) => (
-                <div
-                  key={p.program_code}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 shadow-sm"
-                >
-                  <div>
-                    <h3 className="font-semibold text-slate-900 text-base leading-snug">
-                      {p.name}
-                    </h3>
-                    {p.설명 && (
-                      <p className="text-sm text-slate-600 mt-1 leading-relaxed">{p.설명}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {p.지역 && (
-                      <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-600">
-                        {p.지역}
-                      </span>
-                    )}
-                    {p.최대지원금액_만원 > 0 && (
-                      <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-600">
-                        최대{" "}
-                        {p.최대지원금액_만원 >= 10000
-                          ? `${p.최대지원금액_만원 / 10000}억원`
-                          : `${p.최대지원금액_만원.toLocaleString()}만원`}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleConvert(p.program_code, p.name)}
-                    disabled={isConverting}
-                    className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              {convertTargets.map((p) => {
+                const isVoucher = p.code === VOUCHER_CODE;
+                const expanded = isVoucher && voucherOpen;
+                return (
+                  <div
+                    key={p.code}
+                    className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 shadow-sm"
                   >
-                    이 양식으로 변환하기 →
-                  </button>
-                </div>
-              ))}
+                    <div>
+                      <h3 className="font-semibold text-slate-900 text-base leading-snug">
+                        {p.name}
+                      </h3>
+                      {p.target && (
+                        <p className="text-sm text-slate-600 mt-1 leading-relaxed">{p.target}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.max_funding && (
+                        <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-600">
+                          최대 {p.max_funding}
+                        </span>
+                      )}
+                      <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-600">
+                        {p.section_count}개 섹션
+                      </span>
+                    </div>
+
+                    {/* 혁신바우처: 바우처 서비스 선택 패널 */}
+                    {expanded && (
+                      <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 flex flex-col gap-3">
+                        <p className="text-sm font-medium text-slate-700">
+                          신청할 바우처 서비스를 선택하세요 (복수 선택 가능)
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          {VOUCHER_SERVICES.map((service) => (
+                            <label
+                              key={service}
+                              className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={voucherServices.includes(service)}
+                                onChange={() => toggleVoucherService(service)}
+                                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              {service}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {!isVoucher && (
+                      <button
+                        onClick={() => handleConvert(p.code, p.name)}
+                        disabled={isConverting}
+                        className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        이 양식으로 변환하기 →
+                      </button>
+                    )}
+
+                    {isVoucher && !expanded && (
+                      <button
+                        onClick={() => setVoucherOpen(true)}
+                        disabled={isConverting}
+                        className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        이 양식으로 변환하기 →
+                      </button>
+                    )}
+
+                    {isVoucher && expanded && (
+                      <button
+                        onClick={() => handleConvert(p.code, p.name, voucherServices)}
+                        disabled={isConverting || voucherServices.length === 0}
+                        className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {voucherServices.length === 0
+                          ? "서비스를 1개 이상 선택하세요"
+                          : "선택한 서비스로 변환하기 →"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -273,7 +350,7 @@ function RecommendPageInner() {
             <div className="text-center py-20 text-slate-400">추천 결과가 없습니다.</div>
           )}
 
-          {isConvertMode && !isLoadingPrograms && convertPrograms.length === 0 && !error && (
+          {isConvertMode && !isLoadingPrograms && convertTargets.length === 0 && !error && (
             <div className="text-center py-20 text-slate-400">지원 가능한 양식이 없습니다.</div>
           )}
         </div>

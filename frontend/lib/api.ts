@@ -129,10 +129,18 @@ export const api = {
   getFramework: (sessionId: string) =>
     request<GenerationResults>(`/sessions/${sessionId}/framework`),
 
-  convertToForm: (sessionId: string, program_code: string) =>
+  convertToForm: (
+    sessionId: string,
+    program_code: string,
+    voucher_options?: string[]
+  ) =>
     fetch(`${API_BASE}/sessions/${sessionId}/convert_to_form`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ program_code }),
+      body: JSON.stringify(
+        voucher_options && voucher_options.length > 0
+          ? { program_code, voucher_options }
+          : { program_code }
+      ),
     }),
 };
