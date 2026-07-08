@@ -217,13 +217,24 @@ bizplan-mvp/
 - document_check: 1500 (results.py — 문서 교정)
 - context_extraction: 8192 (context_extraction.py — 인터뷰 컨텍스트 추출)
 
-## 활성 양식 (FORMS_AVAILABLE)
-initial_package, youth_academy, jumping_package, comeback_package, changjungdae
+## 활성 양식
+data/forms/*.yaml에 존재하는 양식: initial_package, initial_package_deeptech, youth_academy,
+jumping_package, jumping_package_deeptech, comeback_package, changjungdae, preliminary_package,
+deeptech_academy, innovation_voucher
+
+### 초안 변환(convert) 화면 노출 양식 — 고정 3개
+초안 생성 후 "지원사업 양식에 맞춰 작성" 화면에서 선택 가능한 양식은 아래 3개로 고정한다.
+(나머지 양식 YAML은 유지하되 이 화면에는 노출하지 않음)
+- initial_package (초기창업패키지)
+- deeptech_academy (딥테크창업사관학교)
+- innovation_voucher (혁신바우처 — 선택 시 컨설팅/기술지원/마케팅 서비스 추가 선택)
 
 ## 새 양식 추가 시 체크리스트
-새 지원사업 양식을 추가할 때 반드시 아래 3곳을 동시에 업데이트해야 한다.
-누락 시 버튼 활성/비활성 상태와 실제 파일 존재 여부가 불일치함.
+새 지원사업 양식을 추가할 때 반드시 아래를 함께 업데이트해야 한다.
+누락 시 화면 노출과 실제 파일 존재 여부가 불일치함.
 
 1. data/forms/{program_code}.yaml — 양식 YAML 파일 추가
-2. frontend/components/program/ProgramCard.tsx — FORMS_AVAILABLE 배열에 program_code 추가
-3. CLAUDE.md 하단 "활성 양식 (FORMS_AVAILABLE)" 목록에 추가
+2. data/programs/support_programs.csv — 해당 program_code 행의 has_form=true 설정
+3. frontend/components/program/ProgramCard.tsx — PROGRAM_COLORS에 program_code 색상/아이콘 추가
+4. (convert 화면에 노출하려면) frontend/app/recommend/page.tsx — CONVERT_TARGET_CODES에 program_code 추가
+5. CLAUDE.md "활성 양식" 목록에 추가
