@@ -122,6 +122,34 @@ FRAMEWORK_SECTIONS: list[dict] = [
 _SEQUENTIAL_IDS: frozenset[str] = frozenset({"1-1", "1-2", "1-3", "2-1", "2-2", "2-3", "3-1", "3-2"})
 _PARALLEL_IDS: frozenset[str] = frozenset({"4-1"})
 
+# 혁신바우처(innovation_voucher) 전용 — 사용자가 선택하는 바우처 서비스.
+# 선택값은 3·4·5·6번 섹션 변환 프롬프트에 주입되어, 선택 서비스만 작성하도록 제한한다.
+_VOUCHER_SERVICES: frozenset[str] = frozenset({"컨설팅", "기술지원", "마케팅"})
+_VOUCHER_LINKED_SECTION_IDS: frozenset[str] = frozenset({"3", "4", "5", "6"})
+
+
+def _build_voucher_note(voucher_options: list[str] | None) -> str:
+    """선택된 바우처 서비스를 변환 프롬프트에 주입할 안내문 생성.
+
+    화이트리스트(_VOUCHER_SERVICES)에 포함된 값만 반영해 프롬프트 인젝션을 차단한다.
+    유효한 선택이 없으면 빈 문자열 반환(→ 섹션 지시사항 원본 그대로, 3개 분야 모두 작성).
+    """
+    if not voucher_options:
+        return ""
+    selected_set = set(voucher_options)
+    order = ("컨설팅", "기술지원", "마케팅")
+    selected = [s for s in order if s in selected_set and s in _VOUCHER_SERVICES]
+    if not selected:
+        return ""
+    excluded = [s for s in order if s not in selected]
+    note = (
+        f"\n\n【사용자가 선택한 혁신바우처 서비스】: {', '.join(selected)}\n"
+        "→ 위 선택된 서비스에 대해서만 작성하고, 표의 경우 선택되지 않은 분야의 행은 삭제할 것."
+    )
+    if excluded:
+        note += f" (제외 대상: {', '.join(excluded)})"
+    return note
+
 # 섹션 내부 시간 예산 (초). 라우터의 180초 타임아웃(안전망)보다 항상 먼저 작동해,
 # 라우터가 섹션을 강제로 끊으면서 이미 성공한 1차 초안까지 버리는 상황을 막는다.
 # deadline = time.monotonic() + _SECTION_INNER_DEADLINE_S 로 각 섹션 시작 시 계산.
@@ -1497,6 +1525,7 @@ def convert_to_form(
     framework_results: list[SectionResult],
     form: Form,
     skills: list[Skill] | None = None,
+    voucher_options: list[str] | None = None,
 ) -> list[SectionResult]:
     """프레임워크 초안 → 선택한 양식 섹션 구조로 변환.
 
@@ -1504,11 +1533,16 @@ def convert_to_form(
         framework_results: generate_framework_draft()가 반환한 SectionResult 목록
         form: 변환 대상 Form (load_form()으로 로드)
         skills: 로드된 스킬 목록 (없으면 빈 리스트)
+        voucher_options: 혁신바우처 전용 — 사용자가 선택한 바우처 서비스
+            (컨설팅/기술지원/마케팅). 3·4·5·6번 섹션에만 주입된다.
+            다른 양식에서는 None(무시).
     """
     import concurrent.futures
 
     if skills is None:
         skills = []
+
+    voucher_note = _build_voucher_note(voucher_options)
 
     # 1. 프레임워크 초안 9개 섹션을 단일 텍스트로 이어붙임
     framework_parts = [
@@ -1532,11 +1566,17 @@ def convert_to_form(
 
         today_date_note = _build_today_date_note(section.tags)
 
+        # 혁신바우처 선택 서비스 안내를 링크된 섹션(3·4·5·6) 지시사항에 주입.
+        # 캐시된 Form.section을 변형하지 않도록 로컬 문자열로만 조립.
+        section_instructions = section.instructions or "(별도 지시 없음)"
+        if voucher_note and section.id in _VOUCHER_LINKED_SECTION_IDS:
+            section_instructions = section_instructions + voucher_note
+
         user = template.format(
             framework_context=framework_context,
             section_id=section.id,
             section_title=section.title,
-            section_instructions=section.instructions or "(별도 지시 없음)",
+            section_instructions=section_instructions,
             skills_block="(→ 위의 캐시 블록에 포함된 Skills 적용)" if skills_block else "(Skills 없음)",
             today_date_note=today_date_note,
         )

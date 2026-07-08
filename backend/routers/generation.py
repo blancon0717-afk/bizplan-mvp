@@ -56,6 +56,9 @@ class GenerateRequest(BaseModel):
 
 class ConvertToFormRequest(BaseModel):
     program_code: str
+    # 혁신바우처 전용 — 사용자가 선택한 바우처 서비스(컨설팅/기술지원/마케팅).
+    # 다른 양식에서는 생략(None). core.generation에서 화이트리스트 검증됨.
+    voucher_options: list[str] | None = None
 
 _ROOT_DIR = Path(__file__).resolve().parent.parent.parent  # bizplan-mvp/
 _INITIAL_Q_PATH = _ROOT_DIR / "data" / "interview" / "initial_questions.json"
@@ -619,7 +622,7 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
         })
 
         def _convert_all():
-            return convert_to_form(framework_results, form, skills)
+            return convert_to_form(framework_results, form, skills, voucher_options=body.voucher_options)
 
         # 변환은 단일 장기 작업(최대 240초)이라 침묵 구간이 길다 → keepalive로 프록시 연결 유지
         results = None
