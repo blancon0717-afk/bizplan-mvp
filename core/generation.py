@@ -56,7 +56,8 @@ def _build_today_date_note(tags: list[str]) -> str:
     return (
         f"\n> ⏰ **작성 기준일 규칙** (사업계획서 작성일: {today})\n"
         f"> - 로드맵·추진일정 등 향후 계획의 연도·시점 표기는 {today} 기준으로 계산\n"
-        f"> - 협약기간(정부지원사업 수행기간)은 **{contract_year}년 5월~12월**로 작성\n"
+        f"> - 협약기간(정부지원사업 수행기간): **양식 작성 지시사항에 협약기간·월 범위가 명시되어 있으면 "
+        f"그 기간을 그대로 따르고**, 명시가 없을 때만 {contract_year}년 5월~12월로 작성\n"
         f"> - 향후 일정에 {today} 이전(작성일 이전) 날짜 사용 금지\n"
         f"> - 단, 이미 일어난 실제 이력(연혁·매출 실적·기등록 특허의 등록일 등)은 실제 과거 날짜를 그대로 사용\n"
         f"> - 본문 내 Good Example의 연도(예: '25, 2025년 등)는 형식 참고용일 뿐, "
@@ -158,13 +159,16 @@ def _build_voucher_note(voucher_options: list[str] | None) -> str:
         f"{s}(최대 {_VOUCHER_SERVICE_MAX_FUNDING[s]})" for s in selected
     )
     note = (
-        f"\n\n【사용자가 선택한 혁신바우처 서비스】: {selected_with_funding}\n"
-        "→ 위 선택된 서비스에 대해서만 작성하고, 표의 경우 선택되지 않은 분야의 행은 삭제할 것.\n"
-        "→ 괄호 안 금액은 각 분야 정부지원금 최대 한도(고정값)이며, 기업별 총 한도는 5,000만원이다. "
-        "예산·성과를 서술할 때 이 한도를 초과하지 않도록 현실적으로 작성할 것."
+        f"\n\n【최우선 규칙 — 사용자가 선택한 혁신바우처 서비스】: {selected_with_funding}\n"
+        "→ 본문(◦/- 서술)과 표 모두 위 선택된 서비스에 대해서만 작성한다.\n"
+        "→ 아래 지시사항·예시 표에 다른 분야가 보여도, 선택되지 않은 분야의 행·문단은 절대 작성하지 말 것."
     )
     if excluded:
-        note += f" (제외 대상: {', '.join(excluded)})"
+        note += f"\n→ 제외 대상(작성 금지): {', '.join(excluded)}"
+    note += (
+        "\n→ 괄호 안 금액은 각 분야 정부지원금 최대 한도(고정값)이며, 기업별 총 한도는 5,000만원이다. "
+        "예산·성과를 서술할 때 이 한도를 초과하지 않도록 현실적으로 작성할 것."
+    )
     return note
 
 # 섹션 내부 시간 예산 (초). 라우터의 180초 타임아웃(안전망)보다 항상 먼저 작동해,
@@ -1638,6 +1642,7 @@ def map_analysis_to_form(draft_analysis: dict, form: Form) -> dict:
 - 각 양식 섹션에 의미상 대응하는 초안 섹션 id를 0~3개 지정 (sources)
 - sufficiency: full(소스로 충분) / partial(일부만 커버) / none(대응 소스 없음 — 새로 작성 필요)
 - 하나의 초안 섹션을 여러 양식 섹션에 배치 가능하나, 남용 금지(같은 내용의 중복 서술 방지)
+- id는 대괄호 없이 원문 그대로 사용 (예: "1-1", "[1-1]" 아님)
 - JSON만 반환
 
 ## 출력 스키마
@@ -1660,6 +1665,11 @@ def map_analysis_to_form(draft_analysis: dict, form: Form) -> dict:
         logger.error("form_mapping 파싱 실패: %s — 전체 초안 폴백", e)
         data = {}
 
+    def _norm(x) -> str:
+        # LLM이 "[1-1]"처럼 대괄호를 붙여 반환하는 경우 정규화
+        return str(x).strip().strip("[]").strip()
+
+    data = {_norm(k): v for k, v in data.items()}
     valid_draft = set(draft_ids)
     result: dict = {}
     for s in form.sections:
@@ -1668,7 +1678,8 @@ def map_analysis_to_form(draft_analysis: dict, form: Form) -> dict:
             # LLM 누락 → 안전 폴백: 전체 초안을 소스로(기존 v1 동작과 동일)
             result[s.id] = {"sources": list(draft_ids), "sufficiency": "partial"}
             continue
-        sources = [d for d in (entry.get("sources") or []) if d in valid_draft]
+        sources = [_norm(d) for d in (entry.get("sources") or [])]
+        sources = [d for d in sources if d in valid_draft]
         suff = entry.get("sufficiency")
         if suff not in ("full", "partial", "none"):
             suff = "partial" if sources else "none"
@@ -1767,9 +1778,11 @@ def convert_to_form(
 
         # 혁신바우처 선택 서비스 안내를 링크된 섹션(3·4·5·6) 지시사항에 주입.
         # 캐시된 Form.section을 변형하지 않도록 로컬 문자열로만 조립.
+        # ※ 지시문 맨 앞에 배치 — 뒤에 붙이면 모델이 예시 표(3개 분야 행)를 우선해
+        #   선택되지 않은 분야까지 작성하는 사례가 실측됨.
         section_instructions = section.instructions or "(별도 지시 없음)"
         if voucher_note and section.id in _VOUCHER_LINKED_SECTION_IDS:
-            section_instructions = section_instructions + voucher_note
+            section_instructions = voucher_note.strip() + "\n\n" + section_instructions
 
         user = template.format(
             framework_context=_context_for(section),
