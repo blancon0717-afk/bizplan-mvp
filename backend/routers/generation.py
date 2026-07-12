@@ -23,6 +23,8 @@ from services.session_store import (
     save_framework_draft,
     load_framework_draft,
     update_program_code,
+    save_draft_analysis,
+    load_draft_analysis,
 )
 from core.context_extraction import extract_company_context
 from core.forms import load_form
@@ -35,6 +37,9 @@ from core.generation import (
     SectionResult,
     convert_to_form,
     convert_to_form_v2,
+    analyze_framework_draft,
+    map_analysis_to_form,
+    compute_draft_hash,
     FRAMEWORK_SECTIONS,
     _SEQUENTIAL_IDS,
     _PARALLEL_IDS,
@@ -623,7 +628,23 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
         })
 
         def _convert_all():
-            return convert_to_form(framework_results, form, skills, voucher_options=body.voucher_options)
+            # v3 파이프라인: (1-a) 초안 분석(캐시) → (1-b) 양식 매핑 → 소스별 변환
+            draft_hash = compute_draft_hash(framework_results)
+            analysis = load_draft_analysis(session_id)
+            if not analysis or analysis.get("_draft_hash") != draft_hash:
+                # 초안이 새로 생성/수정됨 → 재분석 (그 외에는 캐시 재사용 — 재변환 시 중복 분석 없음)
+                analysis = analyze_framework_draft(framework_results)
+                analysis["_draft_hash"] = draft_hash
+                save_draft_analysis(session_id, analysis)
+            mapping = map_analysis_to_form(analysis, form)
+            sess = get_session(session_id)
+            return convert_to_form(
+                framework_results, form, skills,
+                voucher_options=body.voucher_options,
+                section_sources=mapping,
+                company_context=(sess.company_context if sess else None),
+                draft_analysis=analysis,
+            )
 
         # 변환은 단일 장기 작업(최대 240초)이라 침묵 구간이 길다 → keepalive로 프록시 연결 유지
         results = None

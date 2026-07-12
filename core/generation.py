@@ -1538,11 +1538,154 @@ def _load_form_rearrange() -> str:
     return _cache_form_rearrange
 
 
+# ────────────────────────────────────────────────────────────────────
+# 양식 변환 v3 — (1-a) 초안 분석(양식 무관·세션 캐시) + (1-b) 양식별 매핑
+# 프로세스: 초안 분석 → 양식 매핑 → 소스 섹션만으로 렌더링(중복 차단) →
+#           대응 소스 없는 섹션은 기업 컨텍스트+초안 요약으로 신규 생성
+# ────────────────────────────────────────────────────────────────────
+
+
+def compute_draft_hash(framework_results: list["SectionResult"]) -> str:
+    """초안 내용 해시 — 1-a 분석 캐시 무효화 판정용(초안 수정 시 재분석)."""
+    import hashlib
+    joined = "\n\x1e\n".join(
+        f"{r.section_id}\x1f{r.display_content()}" for r in framework_results
+    )
+    return hashlib.sha256(joined.encode("utf-8")).hexdigest()
+
+
+def analyze_framework_draft(framework_results: list["SectionResult"]) -> dict:
+    """(1-a) 초안 섹션별 정보 인벤토리. 양식과 무관 — 세션당 1회 실행 후 캐시.
+
+    Returns: {"sections": [{"id","title","summary","data_assets":[...]}]}
+    """
+    if os.getenv("MOCK_MODE", "0") == "1":
+        return {"sections": [
+            {"id": r.section_id, "title": r.section_title,
+             "summary": (r.display_content() or "")[:200], "data_assets": []}
+            for r in framework_results
+        ]}
+
+    body = "\n\n---\n\n".join(
+        f"[{r.section_id}] {r.section_title}\n{r.display_content()}"
+        for r in framework_results
+    )
+    prompt = f"""아래 사업계획서 초안의 각 섹션에 대해 정보 인벤토리를 만드세요.
+
+## 초안
+{body}
+
+## 출력 규칙
+- 각 섹션마다: summary(2~3문장 요약), data_assets(원문에 있는 정량 수치·고유명사·출처·성과 목록)
+- 원문에 없는 정보 추가 금지. JSON만 반환.
+
+## 출력 스키마
+{{"sections": [{{"id": "1-1", "title": "...", "summary": "...", "data_assets": ["..."]}}]}}
+"""
+    text, _meta = call_claude(
+        system=("당신은 사업계획서 편집 AI입니다. 초안 섹션별 정보 인벤토리를 만듭니다. "
+                "원문에 없는 내용을 추가하지 마세요. JSON만 반환합니다."),
+        user=prompt,
+        model="claude-haiku-4-5-20251001",
+        max_tokens=6144,
+        temperature=0.1,
+        purpose="draft_analysis",
+    )
+    try:
+        data = parse_json_response(text)
+    except Exception as e:  # noqa: BLE001
+        logger.error("draft_analysis 파싱 실패: %s", e)
+        data = {}
+    valid = {r.section_id for r in framework_results}
+    sections = [s for s in data.get("sections", [])
+                if isinstance(s, dict) and s.get("id") in valid]
+    if not sections:
+        # 파싱 실패 폴백 — 원문 앞부분을 요약으로 대체 (파이프라인 중단 방지)
+        sections = [{"id": r.section_id, "title": r.section_title,
+                     "summary": (r.display_content() or "")[:300], "data_assets": []}
+                    for r in framework_results]
+    return {"sections": sections}
+
+
+def map_analysis_to_form(draft_analysis: dict, form: Form) -> dict:
+    """(1-b) 초안 분석 → 양식 섹션 매핑 + 소스 충분성 판정. 양식별 소형 호출 1회.
+
+    Returns: {form_section_id: {"sources": [draft_id...], "sufficiency": "full|partial|none"}}
+    """
+    draft_ids = [s["id"] for s in draft_analysis.get("sections", [])]
+    if os.getenv("MOCK_MODE", "0") == "1":
+        return {s.id: {"sources": draft_ids[:1], "sufficiency": "partial"}
+                for s in form.sections}
+
+    inv = "\n".join(
+        f"- [{s['id']}] {s.get('title', '')}: {s.get('summary', '')}"
+        + (f" | 데이터: {', '.join(s.get('data_assets', [])[:6])}" if s.get("data_assets") else "")
+        for s in draft_analysis.get("sections", [])
+    )
+    form_meta = "\n".join(
+        f"- [{s.id}] {s.title} (지시 요약: {(s.instructions or '')[:150].replace(chr(10), ' ')})"
+        for s in form.sections
+    )
+    prompt = f"""사업계획서 초안 인벤토리를 양식 섹션에 배치하는 매핑을 결정하세요.
+
+## 초안 인벤토리
+{inv}
+
+## 양식 섹션
+{form_meta}
+
+## 규칙
+- 각 양식 섹션에 의미상 대응하는 초안 섹션 id를 0~3개 지정 (sources)
+- sufficiency: full(소스로 충분) / partial(일부만 커버) / none(대응 소스 없음 — 새로 작성 필요)
+- 하나의 초안 섹션을 여러 양식 섹션에 배치 가능하나, 남용 금지(같은 내용의 중복 서술 방지)
+- JSON만 반환
+
+## 출력 스키마
+{{"<양식섹션id>": {{"sources": ["<초안id>"], "sufficiency": "full|partial|none"}}}}
+"""
+    text, _meta = call_claude(
+        system="당신은 사업계획서 편집 AI입니다. JSON만 반환합니다.",
+        user=prompt,
+        model="claude-haiku-4-5-20251001",
+        max_tokens=2048,
+        temperature=0.0,
+        purpose="form_mapping",
+        metadata={"program_code": form.program_code},
+    )
+    try:
+        data = parse_json_response(text)
+        if not isinstance(data, dict):
+            raise ValueError(f"expected dict, got {type(data).__name__}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("form_mapping 파싱 실패: %s — 전체 초안 폴백", e)
+        data = {}
+
+    valid_draft = set(draft_ids)
+    result: dict = {}
+    for s in form.sections:
+        entry = data.get(s.id) if isinstance(data.get(s.id), dict) else None
+        if entry is None:
+            # LLM 누락 → 안전 폴백: 전체 초안을 소스로(기존 v1 동작과 동일)
+            result[s.id] = {"sources": list(draft_ids), "sufficiency": "partial"}
+            continue
+        sources = [d for d in (entry.get("sources") or []) if d in valid_draft]
+        suff = entry.get("sufficiency")
+        if suff not in ("full", "partial", "none"):
+            suff = "partial" if sources else "none"
+        if not sources:
+            suff = "none"
+        result[s.id] = {"sources": sources, "sufficiency": suff}
+    return result
+
+
 def convert_to_form(
     framework_results: list[SectionResult],
     form: Form,
     skills: list[Skill] | None = None,
     voucher_options: list[str] | None = None,
+    section_sources: dict | None = None,
+    company_context: dict | None = None,
+    draft_analysis: dict | None = None,
 ) -> list[SectionResult]:
     """프레임워크 초안 → 선택한 양식 섹션 구조로 변환.
 
@@ -1553,6 +1696,11 @@ def convert_to_form(
         voucher_options: 혁신바우처 전용 — 사용자가 선택한 바우처 서비스
             (컨설팅/기술지원/마케팅). 3·4·5·6번 섹션에만 주입된다.
             다른 양식에서는 None(무시).
+        section_sources: (v3) map_analysis_to_form() 결과. 주어지면 섹션별로
+            매핑된 소스 초안만 컨텍스트로 주입(중복 서술 차단). None이면 기존
+            동작(전체 초안 주입) 유지 — 하위호환.
+        company_context: (v3) 소스 없는(gap) 섹션 신규 생성 시 근거로 사용.
+        draft_analysis: (v3) gap 섹션에 초안 전체 요약을 근거로 제공.
     """
     import concurrent.futures
 
@@ -1561,12 +1709,46 @@ def convert_to_form(
 
     voucher_note = _build_voucher_note(voucher_options)
 
-    # 1. 프레임워크 초안 9개 섹션을 단일 텍스트로 이어붙임
+    # 1. 전체 초안 컨텍스트 (매핑 없을 때의 하위호환 + 폴백)
     framework_parts = [
         f"## {r.section_title}\n\n{r.display_content()}"
         for r in framework_results
     ]
     framework_context = "\n\n---\n\n".join(framework_parts)
+
+    # v3: 섹션별 소스 컨텍스트 구성
+    _by_id = {r.section_id: r for r in framework_results}
+
+    def _context_for(section: FormSection) -> str:
+        if not section_sources or section.id not in section_sources:
+            return framework_context
+        entry = section_sources[section.id] or {}
+        srcs = [_by_id[i] for i in entry.get("sources", []) if i in _by_id]
+        if srcs:
+            return "\n\n---\n\n".join(
+                f"## {r.section_title}\n\n{r.display_content()}" for r in srcs
+            )
+        # 대응 소스 없음(gap) → 기업 컨텍스트 + 초안 요약을 근거로 신규 작성
+        parts = [
+            "(이 섹션에 직접 대응하는 초안 내용이 없습니다. 아래 근거만으로 새로 작성하되, "
+            "근거 없는 정량 수치는 공란으로 두세요.)"
+        ]
+        if company_context:
+            ctx_lines = [
+                f"### {k}\n{str(v).strip()}"
+                for k, v in company_context.items()
+                if k != "_meta" and str(v or "").strip()
+            ]
+            if ctx_lines:
+                parts.append("## 기업 컨텍스트\n\n" + "\n\n".join(ctx_lines))
+        if draft_analysis:
+            summ = "\n".join(
+                f"- [{s['id']}] {s.get('title', '')}: {s.get('summary', '')}"
+                for s in draft_analysis.get("sections", [])
+            )
+            if summ:
+                parts.append("## 초안 전체 요약\n\n" + summ)
+        return "\n\n".join(parts)
 
     system = _load_system_md()
     template = _load_form_conv()
@@ -1590,7 +1772,7 @@ def convert_to_form(
             section_instructions = section_instructions + voucher_note
 
         user = template.format(
-            framework_context=framework_context,
+            framework_context=_context_for(section),
             section_id=section.id,
             section_title=section.title,
             section_instructions=section_instructions,

@@ -176,6 +176,29 @@ def load_results(session_id: str) -> Optional[list[SectionResult]]:
     return [_dict_to_result(d) for d in raw]
 
 
+def save_draft_analysis(session_id: str, analysis: dict) -> None:
+    """(변환 v3) 초안 분석 결과 캐시 저장 — {sid}_draft_analysis.json.
+
+    analysis에는 compute_draft_hash 결과를 "_draft_hash" 키로 포함시켜
+    초안 수정 시 캐시 무효화 판정에 사용한다.
+    """
+    _ensure_dir()
+    path = _SESSIONS_DIR / f"{session_id}_draft_analysis.json"
+    path.write_text(json.dumps(analysis, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_draft_analysis(session_id: str) -> Optional[dict]:
+    """(변환 v3) 초안 분석 캐시 로드. 없거나 손상 시 None."""
+    path = _SESSIONS_DIR / f"{session_id}_draft_analysis.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 — 손상 캐시는 재분석으로 복구
+        logger.warning("draft_analysis 캐시 로드 실패 %s: %s", session_id, e)
+        return None
+
+
 def save_framework_draft(session_id: str, results: list[SectionResult]) -> None:
     """프레임워크 초안(양식 무관)을 {session_id}_framework.json에 저장."""
     _ensure_dir()
