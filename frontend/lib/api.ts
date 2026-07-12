@@ -143,4 +143,33 @@ export const api = {
           : { program_code }
       ),
     }),
+
+  // 기존 사업계획서 PDF 업로드 → 인터뷰 답변 사전 채움.
+  // multipart이므로 Content-Type을 직접 지정하지 않는다(브라우저가 boundary 설정).
+  // ok=false + reason="no_text"이면 스캔본 등 추출 실패 → 일반 인터뷰로 유도.
+  uploadPlan: async (sessionId: string, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/sessions/${sessionId}/upload_plan`, {
+      method: "POST",
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res
+        .json()
+        .catch(() => ({ detail: res.statusText }));
+      throw new Error(
+        typeof err.detail === "string" ? err.detail : "PDF 업로드에 실패했습니다."
+      );
+    }
+    return res.json() as Promise<{
+      ok: boolean;
+      reason?: string;
+      filled_qids?: string[];
+      empty_qids?: string[];
+      filled?: number;
+      total?: number;
+      text_chars?: number;
+    }>;
+  },
 };

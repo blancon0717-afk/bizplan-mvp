@@ -29,6 +29,7 @@ export default function HomePage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planFile, setPlanFile] = useState<File | null>(null);
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
   const [hasCompletedPlan, setHasCompletedPlan] = useState(false);
   const [resumeTarget, setResumeTarget] = useState<"result" | "draft">("draft");
@@ -73,6 +74,27 @@ export default function HomePage() {
       localStorage.setItem("bizplan_session_id", sessionId);
       setResults([], profile);
       setSessionId(sessionId);
+
+      // 보유 사업계획서 PDF 업로드 시: 인터뷰 답변 사전 채움 후 보완 인터뷰로 이동
+      if (planFile) {
+        try {
+          const up = await api.uploadPlan(sessionId, planFile);
+          if (!up.ok) {
+            // 스캔본 등 텍스트 추출 실패 → 파일 없이 일반 인터뷰로 유도
+            setError(
+              "업로드한 PDF에서 텍스트를 인식하지 못했습니다(스캔본일 수 있습니다). 파일 없이 '인터뷰 시작하기'로 진행하거나 텍스트 PDF를 선택해주세요."
+            );
+            setPlanFile(null);
+            setIsLoading(false);
+            return;
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "PDF 업로드에 실패했습니다.");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       router.push(`/interview/${sessionId}`);
     } catch {
       setError("서버 연결에 실패했습니다. 백엔드 서버를 확인해주세요.");
@@ -223,12 +245,39 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* 보유 사업계획서 PDF 업로드 (선택) */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                보유 사업계획서 업로드{" "}
+                <span className="text-slate-400 font-normal">(선택 · PDF)</span>
+              </label>
+              <p className="text-xs text-slate-400 mb-2 leading-relaxed">
+                기존 사업계획서 PDF가 있으면 업로드하세요. 내용을 분석해 인터뷰를 자동으로 채우고,
+                부족한 항목만 질문합니다. (텍스트 추출이 가능한 PDF만 지원)
+              </p>
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(e) => setPlanFile(e.target.files?.[0] ?? null)}
+                className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+              />
+              {planFile && (
+                <p className="mt-1.5 text-xs text-slate-500">선택됨: {planFile.name}</p>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}
               className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed"
             >
-              {isLoading ? "준비 중..." : "인터뷰 시작하기 →"}
+              {isLoading
+                ? planFile
+                  ? "PDF 분석 중..."
+                  : "준비 중..."
+                : planFile
+                ? "PDF 분석 후 계속 →"
+                : "인터뷰 시작하기 →"}
             </button>
           </form>
         </div>

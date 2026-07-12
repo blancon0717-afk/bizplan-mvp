@@ -25,6 +25,8 @@ export default function InterviewPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputHasText, setInputHasText] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // PDF 업로드 등으로 이미 답변이 채워진 질문 — 인터뷰에서 다시 묻지 않고 건너뛴다.
+  const prefilledQids = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     async function init() {
@@ -37,23 +39,33 @@ export default function InterviewPage() {
         setQuestions(questionData.questions);
 
         const qs = questionData.questions;
-        const history: ChatItem[] = [];
-        let lastAnsweredIndex = -1;
+        const isAnswered = (qid: string) => {
+          const a = sessionData.answers[qid];
+          return !!(a?.text && a.text.trim());
+        };
+        // 이미 답변 있는 질문(PDF 사전채움 포함)은 다시 묻지 않을 대상으로 기록
+        prefilledQids.current = new Set(
+          qs.filter((q) => isAnswered(q.qid)).map((q) => q.qid)
+        );
 
+        // 물어봐야 할 첫 번째 미답변 질문
+        const firstIdx = qs.findIndex((q) => !isAnswered(q.qid));
+
+        const history: ChatItem[] = [];
         for (let i = 0; i < qs.length; i++) {
           const q = qs[i];
-          history.push({ type: "ai", question: q });
-          const saved = sessionData.answers[q.qid];
-          if (saved?.text) {
-            history.push({ type: "user", qid: q.qid, text: saved.text });
-            lastAnsweredIndex = i;
-          } else {
-            break;
+          if (isAnswered(q.qid)) {
+            // 채워진 답변은 확인·수정 가능하도록 채팅에 표시
+            history.push({ type: "ai", question: q });
+            history.push({ type: "user", qid: q.qid, text: sessionData.answers[q.qid].text });
+          } else if (i === firstIdx) {
+            // 첫 번째로 물어볼 질문만 프롬프트로 노출
+            history.push({ type: "ai", question: q });
           }
         }
 
         setChatHistory(history);
-        setCurrentIndex(Math.min(lastAnsweredIndex + 1, qs.length));
+        setCurrentIndex(firstIdx === -1 ? qs.length : firstIdx);
         setIsLoaded(true);
       } catch {
         router.push("/");
@@ -61,6 +73,14 @@ export default function InterviewPage() {
     }
     init();
   }, [sessionId]);
+
+  // 다음으로 물어볼 미답변 질문 인덱스(사전채움 질문은 건너뜀).
+  function nextUnansweredIndex(from: number): number {
+    for (let i = from; i < questions.length; i++) {
+      if (!prefilledQids.current.has(questions[i].qid)) return i;
+    }
+    return questions.length;
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,14 +91,15 @@ export default function InterviewPage() {
     const q = questions[currentIndex];
     const capturedIndex = currentIndex;
     saveAnswer(q.qid, text).then(() => {
+      const nextIdx = nextUnansweredIndex(capturedIndex + 1);
       setChatHistory((prev) => {
         const next = [...prev, { type: "user" as const, qid: q.qid, text }];
-        if (capturedIndex + 1 < questions.length) {
-          next.push({ type: "ai" as const, question: questions[capturedIndex + 1] });
+        if (nextIdx < questions.length) {
+          next.push({ type: "ai" as const, question: questions[nextIdx] });
         }
         return next;
       });
-      setCurrentIndex(capturedIndex + 1);
+      setCurrentIndex(nextIdx);
       setInputHasText(false);
     });
   }
@@ -87,14 +108,15 @@ export default function InterviewPage() {
     if (currentIndex >= questions.length) return;
     const q = questions[currentIndex];
     const capturedIndex = currentIndex;
+    const nextIdx = nextUnansweredIndex(capturedIndex + 1);
     setChatHistory((prev) => {
       const next = [...prev, { type: "user" as const, qid: q.qid, text: "(건너뜀)" }];
-      if (capturedIndex + 1 < questions.length) {
-        next.push({ type: "ai" as const, question: questions[capturedIndex + 1] });
+      if (nextIdx < questions.length) {
+        next.push({ type: "ai" as const, question: questions[nextIdx] });
       }
       return next;
     });
-    setCurrentIndex(capturedIndex + 1);
+    setCurrentIndex(nextIdx);
     setInputHasText(false);
   }
 
