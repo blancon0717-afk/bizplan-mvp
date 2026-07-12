@@ -22,6 +22,7 @@ from services.session_store import (
     save_results,
     save_framework_draft,
     load_framework_draft,
+    update_program_code,
 )
 from core.context_extraction import extract_company_context
 from core.forms import load_form
@@ -643,6 +644,9 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
             return
 
         save_results(session_id, results)
+        # 변환 성공 → 세션 program_code를 선택 양식으로 갱신
+        # (결과 화면 양식명 표시·DOCX export의 load_form이 이 값을 사용)
+        update_program_code(session_id, body.program_code)
 
         for result in results:
             yield _sse("section_done", {
@@ -706,6 +710,7 @@ async def convert_to_form_v2_endpoint(session_id: str, body: ConvertToFormReques
             return
 
         save_results(session_id, results)
+        update_program_code(session_id, body.program_code)
 
         for result in results:
             yield _sse("section_done", {

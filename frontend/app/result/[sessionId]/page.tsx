@@ -228,6 +228,11 @@ export default function ResultPage() {
     setIsDownloading(true);
     try {
       const res = await fetch(`/api/sessions/${sessionId}/export/docx?business_name=(미지정)`);
+      if (!res.ok) {
+        // 실패 응답(JSON 에러)을 .docx로 저장하면 Word에서 손상 파일로 열림 → 차단
+        setRegenError("DOCX 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        return;
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -235,6 +240,8 @@ export default function ResultPage() {
       a.download = `사업계획서_${sessionId}.docx`;
       a.click();
       URL.revokeObjectURL(url);
+    } catch {
+      setRegenError("DOCX 다운로드 중 오류가 발생했습니다.");
     } finally {
       setIsDownloading(false);
     }

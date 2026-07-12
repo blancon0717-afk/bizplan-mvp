@@ -519,8 +519,14 @@ def export_docx(session_id: str, business_name: str = "(미지정)", source: str
         results = load_results(session_id)
         if results is None:
             raise HTTPException(status_code=404, detail="Results not found")
-        form = load_form(session.program_code)
-        buf = export_to_docx(form, results, business_name)
+        # 구버전 세션은 program_code가 "none"으로 남아 load_form이 실패할 수 있음
+        # → 일반 제목으로 폴백해 다운로드 자체는 항상 성공시킨다.
+        try:
+            form = load_form(session.program_code)
+            buf = export_to_docx(form, results, business_name)
+        except Exception:
+            logger.warning("[DOCX] 양식 로드 실패(program_code=%s) → 일반 제목 폴백", session.program_code)
+            buf = export_to_docx(None, results, business_name, title="사업계획서")
         filename = f"bizplan_{session_id}.docx"
 
     return StreamingResponse(

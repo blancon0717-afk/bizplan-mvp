@@ -65,6 +65,25 @@ def save_company_context(session_id: str, context: dict) -> Optional[Session]:
     return session
 
 
+def update_program_code(session_id: str, program_code: str) -> bool:
+    """세션의 program_code만 갱신 (양식 변환 성공 시 호출).
+
+    save_session은 dataclass 필드만 직렬화해 created_at·usage_count 등
+    부가 필드가 유실되므로, raw JSON을 읽어 해당 키만 패치한다.
+    """
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if not path.exists():
+        return False
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["program_code"] = program_code
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        return True
+    except Exception as e:  # noqa: BLE001 — 갱신 실패는 치명적이지 않음(로그만)
+        logger.error("update_program_code 실패 %s: %s", session_id, e)
+        return False
+
+
 def cleanup_old_sessions(max_age_days: float = 3.0) -> int:
     """3일(기본값) 초과 세션 파일을 삭제하고 삭제 건수를 반환.
 
