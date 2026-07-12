@@ -202,3 +202,122 @@ def extract_company_context(
         meta.get("input_tokens"), meta.get("output_tokens"), elapsed_ms,
     )
     return result
+
+
+# ────────────────────────────────────────────────────────────────────
+# PDF 업로드 트랙 — 기존 사업계획서 PDF를 인터뷰 답변으로 사전 채움
+#
+# 흐름: PDF 바이트 → extract_text_from_pdf → map_pdf_to_answers(질문 매핑)
+#       → 인터뷰 답변 사전 저장 → 빈 질문만 보완 인터뷰 → 기존 파이프라인
+# 스캔 이미지본 등 텍스트 추출 불가 PDF는 빈 문자열 반환(호출측 no_text 처리).
+# ────────────────────────────────────────────────────────────────────
+
+
+def extract_text_from_pdf(pdf_bytes: bytes, max_chars: int = 60_000) -> str:
+    """PDF 바이트에서 텍스트를 추출한다.
+
+    pdfplumber로 페이지별 텍스트를 이어붙인다. 스캔 이미지본 등 추출 가능한
+    텍스트가 없으면 빈 문자열("")을 반환한다(호출측에서 no_text로 처리).
+    """
+    import io
+
+    try:
+        import pdfplumber
+    except ImportError as e:  # 배포 환경 미설치 시 명확히 로깅
+        logger.error("pdfplumber 미설치: %s", e)
+        return ""
+
+    parts: list[str] = []
+    total = 0
+    try:
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            for page in pdf.pages:
+                try:
+                    t = page.extract_text() or ""
+                except Exception as e:  # noqa: BLE001 — 페이지 단위 실패는 건너뜀
+                    logger.debug("PDF 페이지 텍스트 추출 실패: %s", e)
+                    t = ""
+                if not t:
+                    continue
+                parts.append(t)
+                total += len(t)
+                if total >= max_chars:
+                    break
+    except Exception as e:  # noqa: BLE001 — 손상 PDF·암호화 PDF 등
+        logger.error("PDF 열기/파싱 실패: %s", e)
+        return ""
+    return "\n".join(parts)[:max_chars].strip()
+
+
+_PDF_MAP_SYSTEM = (
+    "당신은 사업계획서 작성 보조 AI입니다. "
+    "사용자가 업로드한 기존 사업계획서(PDF에서 추출한 텍스트)를 읽고, "
+    "주어진 인터뷰 질문 각각에 대해 문서에 근거가 있는 경우에만 답변을 채웁니다. "
+    "문서에 없는 내용은 절대 지어내지 말고 해당 질문을 생략하세요. 반드시 JSON만 반환합니다."
+)
+
+
+def _build_pdf_map_prompt(pdf_text: str, questions: list[Question]) -> str:
+    q_lines = "\n".join(f"- [{q.qid}] {q.text}" for q in questions)
+    return f"""아래는 사용자가 업로드한 기존 사업계획서에서 추출한 텍스트입니다.
+이 문서 내용을 근거로, 아래 인터뷰 질문 중 문서에서 답을 찾을 수 있는 질문에만 답변을 작성하세요.
+
+## 규칙
+- 문서에 근거가 있는 질문만 답변한다. 근거가 없으면 그 질문의 qid를 결과에서 생략한다.
+- 답변은 문서 내용을 요약·정리하되, 문서에 없는 사실을 추가·창작하지 않는다.
+- 정량 수치·고유명사·출처는 문서에 있는 그대로 보존한다.
+- 결과 JSON의 키는 반드시 아래 목록의 qid만 사용한다.
+- 다른 텍스트·코드펜스 없이 JSON 객체만 반환한다.
+
+## 인터뷰 질문 목록
+{q_lines}
+
+## 업로드된 사업계획서 텍스트
+{pdf_text}
+
+## 출력 스키마 (JSON only) — 답변 가능한 qid만 포함
+{{ "<qid>": "<문서 근거 답변>", ... }}
+"""
+
+
+def map_pdf_to_answers(pdf_text: str, questions: list[Question]) -> dict[str, str]:
+    """업로드된 사업계획서 텍스트를 인터뷰 질문 답변으로 매핑.
+
+    Returns:
+        {qid: answer_text} — 문서에서 답을 찾은 질문만 포함(빈 답변·미지원 질문 제외).
+        유효한 qid(questions에 존재)만 반환하여 잘못된 키를 차단한다.
+    """
+    valid_qids = {q.qid for q in questions}
+    if not pdf_text.strip() or not questions:
+        return {}
+
+    if os.getenv("MOCK_MODE", "0") == "1":
+        # MOCK: 앞쪽 절반 질문만 더미 답변 → 보완질문(빈 질문) 흐름 확인용
+        half = max(1, len(questions) // 2)
+        return {q.qid: f"[MOCK] {q.text} — PDF 기반 더미 답변" for q in questions[:half]}
+
+    prompt = _build_pdf_map_prompt(pdf_text, questions)
+    text, meta = call_claude(
+        system=_PDF_MAP_SYSTEM,
+        user=prompt,
+        model="claude-haiku-4-5-20251001",
+        max_tokens=8192,
+        temperature=0.1,
+        purpose="pdf_answer_mapping",
+    )
+    try:
+        data = parse_json_response(text)
+        if not isinstance(data, dict):
+            raise ValueError(f"expected dict, got {type(data).__name__}")
+    except Exception as e:
+        logger.error("map_pdf_to_answers 파싱 실패: %s", e)
+        return {}
+
+    result: dict[str, str] = {}
+    for qid, ans in data.items():
+        if qid in valid_qids:
+            a = str(ans or "").strip()
+            if a:
+                result[qid] = a
+    logger.info("map_pdf_to_answers 완료: filled=%d/%d", len(result), len(questions))
+    return result

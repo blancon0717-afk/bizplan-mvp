@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from services.session_store import (
@@ -9,8 +9,16 @@ from services.session_store import (
     save_company_context,
     update_answer,
 )
-from core.context_extraction import CONTEXT_FIELDS, extract_company_context
+from core.context_extraction import (
+    CONTEXT_FIELDS,
+    extract_company_context,
+    extract_text_from_pdf,
+    map_pdf_to_answers,
+)
 from core.interview import load_initial_questions
+
+# 업로드 PDF 최대 크기(10MB). 메모리에서만 처리하고 디스크 저장하지 않는다.
+_MAX_PDF_BYTES = 10 * 1024 * 1024
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["interview"])
@@ -147,4 +155,61 @@ def get_context_endpoint(session_id: str):
         "session_id": session_id,
         "extracted": True,
         "context": session.company_context,
+    }
+
+
+@router.post("/sessions/{session_id}/upload_plan")
+async def upload_plan(session_id: str, file: UploadFile = File(...)):
+    """기존 사업계획서 PDF 업로드 → 인터뷰 답변 사전 채움.
+
+    - 텍스트 추출 가능한 PDF만 지원. 스캔본 등 추출 불가 시 {ok:false, reason:"no_text"}
+      (프론트가 일반 인터뷰로 유도).
+    - 추출 텍스트를 LLM으로 초기 10문항에 매핑, 근거 있는 질문만 답변 저장.
+    - 반환: filled_qids(채워진 질문), empty_qids(보완 인터뷰 대상).
+    """
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # 확장자 화이트리스트(.pdf만). 파일명은 저장하지 않고 검증에만 사용.
+    filename = (file.filename or "").lower()
+    if not filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="PDF 파일만 업로드할 수 있습니다.")
+
+    pdf_bytes = await file.read()
+    if not pdf_bytes:
+        raise HTTPException(status_code=400, detail="빈 파일입니다.")
+    if len(pdf_bytes) > _MAX_PDF_BYTES:
+        raise HTTPException(status_code=413, detail="파일이 너무 큽니다. (최대 10MB)")
+
+    text = extract_text_from_pdf(pdf_bytes)
+    if not text.strip():
+        # 스캔 이미지본 등 — 프론트가 일반 인터뷰로 유도
+        logger.info(f"[{session_id}] PDF 텍스트 추출 실패(no_text) — 일반 인터뷰 유도")
+        return {"ok": False, "reason": "no_text"}
+
+    try:
+        questions = load_initial_questions(_INITIAL_Q_PATH)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"질문 로드 실패: {e}")
+
+    mapped = map_pdf_to_answers(text, questions)
+    for qid, ans_text in mapped.items():
+        update_answer(session_id, qid, ans_text)
+
+    # 모든 문항이 PDF로 채워졌다면 컨텍스트 추출까지 자동 트리거(기존 로직 재사용)
+    _maybe_trigger_extraction(session_id)
+
+    filled_qids = [q.qid for q in questions if q.qid in mapped]
+    empty_qids = [q.qid for q in questions if q.qid not in mapped]
+    logger.info(
+        f"[{session_id}] PDF 업로드 매핑 완료: filled={len(filled_qids)}/{len(questions)}, chars={len(text)}"
+    )
+    return {
+        "ok": True,
+        "filled_qids": filled_qids,
+        "empty_qids": empty_qids,
+        "filled": len(filled_qids),
+        "total": len(questions),
+        "text_chars": len(text),
     }
