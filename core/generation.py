@@ -127,11 +127,23 @@ _PARALLEL_IDS: frozenset[str] = frozenset({"4-1"})
 _VOUCHER_SERVICES: frozenset[str] = frozenset({"컨설팅", "기술지원", "마케팅"})
 _VOUCHER_LINKED_SECTION_IDS: frozenset[str] = frozenset({"3", "4", "5", "6"})
 
+# 분야별 최대 지원금액(정부지원금 기준, 고정값) — 2026년 1차 공고 [일반 바우처]
+#   컨설팅  : AX·DX 컨설팅 50백만원 = 5,000만원
+#   기술지원: 시제품 제작 30백만원 = 3,000만원
+#   마케팅  : 디자인/홍보 20백만원 = 2,000만원
+# 기업별 정부지원금 총 한도는 5,000만원(50백만원).
+_VOUCHER_SERVICE_MAX_FUNDING: dict[str, str] = {
+    "컨설팅": "5,000만원",
+    "기술지원": "3,000만원",
+    "마케팅": "2,000만원",
+}
+
 
 def _build_voucher_note(voucher_options: list[str] | None) -> str:
     """선택된 바우처 서비스를 변환 프롬프트에 주입할 안내문 생성.
 
     화이트리스트(_VOUCHER_SERVICES)에 포함된 값만 반영해 프롬프트 인젝션을 차단한다.
+    각 서비스의 분야별 최대 지원금액(고정값)을 함께 주입해 현실적인 예산 서술을 돕는다.
     유효한 선택이 없으면 빈 문자열 반환(→ 섹션 지시사항 원본 그대로, 3개 분야 모두 작성).
     """
     if not voucher_options:
@@ -142,9 +154,14 @@ def _build_voucher_note(voucher_options: list[str] | None) -> str:
     if not selected:
         return ""
     excluded = [s for s in order if s not in selected]
+    selected_with_funding = ", ".join(
+        f"{s}(최대 {_VOUCHER_SERVICE_MAX_FUNDING[s]})" for s in selected
+    )
     note = (
-        f"\n\n【사용자가 선택한 혁신바우처 서비스】: {', '.join(selected)}\n"
-        "→ 위 선택된 서비스에 대해서만 작성하고, 표의 경우 선택되지 않은 분야의 행은 삭제할 것."
+        f"\n\n【사용자가 선택한 혁신바우처 서비스】: {selected_with_funding}\n"
+        "→ 위 선택된 서비스에 대해서만 작성하고, 표의 경우 선택되지 않은 분야의 행은 삭제할 것.\n"
+        "→ 괄호 안 금액은 각 분야 정부지원금 최대 한도(고정값)이며, 기업별 총 한도는 5,000만원이다. "
+        "예산·성과를 서술할 때 이 한도를 초과하지 않도록 현실적으로 작성할 것."
     )
     if excluded:
         note += f" (제외 대상: {', '.join(excluded)})"

@@ -9,8 +9,13 @@ import type { Program } from "@/lib/types";
 // ── 양식 변환(convert) 화면에서 고정 노출할 3개 지원사업 ──────────────
 const CONVERT_TARGET_CODES = ["initial_package", "deeptech_academy", "innovation_voucher"] as const;
 // 혁신바우처는 선택 시 바우처 서비스(컨설팅/기술지원/마케팅)를 추가로 고른다.
+// maxFunding은 2026년 1차 공고 [일반 바우처] 분야별 정부지원금 최대 한도(고정값).
 const VOUCHER_CODE = "innovation_voucher";
-const VOUCHER_SERVICES = ["컨설팅", "기술지원", "마케팅"] as const;
+const VOUCHER_SERVICES = [
+  { label: "컨설팅", maxFunding: "5,000만원" },
+  { label: "기술지원", maxFunding: "3,000만원" },
+  { label: "마케팅", maxFunding: "2,000만원" },
+] as const;
 
 function RecommendPageInner() {
   const router = useRouter();
@@ -293,16 +298,19 @@ function RecommendPageInner() {
                         <div className="flex flex-col gap-2">
                           {VOUCHER_SERVICES.map((service) => (
                             <label
-                              key={service}
-                              className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer"
+                              key={service.label}
+                              className="flex items-center justify-between gap-2.5 text-sm text-slate-700 cursor-pointer"
                             >
-                              <input
-                                type="checkbox"
-                                checked={voucherServices.includes(service)}
-                                onChange={() => toggleVoucherService(service)}
-                                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              {service}
+                              <span className="flex items-center gap-2.5">
+                                <input
+                                  type="checkbox"
+                                  checked={voucherServices.includes(service.label)}
+                                  onChange={() => toggleVoucherService(service.label)}
+                                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                {service.label}
+                              </span>
+                              <span className="text-xs text-slate-400">최대 {service.maxFunding}</span>
                             </label>
                           ))}
                         </div>
