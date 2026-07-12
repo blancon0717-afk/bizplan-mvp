@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from services.session_store import get_session, get_usage_count, increment_usage, load_results, save_results, save_action_plan, load_action_plan, load_framework_draft
-from core.docx_export import export_to_docx
+from core.docx_export import export_to_docx, export_to_official_docx
 from core.forms import load_form
 from core.generation import regenerate_section
 from core.interview import load_initial_questions, load_followup_questions
@@ -523,8 +523,14 @@ def export_docx(session_id: str, business_name: str = "(미지정)", source: str
         # → 일반 제목으로 폴백해 다운로드 자체는 항상 성공시킨다.
         try:
             form = load_form(session.program_code)
-            buf = export_to_docx(form, results, business_name)
         except Exception:
+            form = None
+        if form is not None:
+            # 공식 양식 템플릿 우선 (data/templates/{code}.docx), 실패 시 일반 렌더러
+            buf = export_to_official_docx(form, results, business_name)
+            if buf is None:
+                buf = export_to_docx(form, results, business_name)
+        else:
             logger.warning("[DOCX] 양식 로드 실패(program_code=%s) → 일반 제목 폴백", session.program_code)
             buf = export_to_docx(None, results, business_name, title="사업계획서")
         filename = f"bizplan_{session_id}.docx"

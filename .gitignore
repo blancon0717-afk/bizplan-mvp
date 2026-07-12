@@ -8,6 +8,8 @@ data/sessions/
 backend/data/sessions/
 .streamlit/
 *.docx
+# 공식 양식 DOCX 템플릿은 배포(Railway)에 필요 — ignore 예외
+!data/templates/*.docx
 .env.local
 data/feedback/
 .claude/settings.local*.json

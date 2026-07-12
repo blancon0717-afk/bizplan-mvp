@@ -263,3 +263,107 @@ def export_to_docx(
     doc.save(buf)
     buf.seek(0)
     return buf
+
+
+# ────────────────────────────────────────────────────────────────────
+# 공식 양식 템플릿 렌더링 (docxtpl)
+#
+# data/templates/{program_code}.docx — 공식 양식 레이아웃을 재현한 템플릿에
+# 변환 결과를 서브독으로 주입한다. 템플릿·의존성이 없으면 None을 반환해
+# 호출측이 기존 일반 렌더러(export_to_docx)로 폴백한다.
+# ────────────────────────────────────────────────────────────────────
+
+import logging
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "data" / "templates"
+
+# 템플릿에 공식 빈 표로 내장되어 LLM 콘텐츠 주입을 건너뛰는 섹션
+# (scripts/build_form_templates.py의 STATIC_SECTIONS와 반드시 일치)
+TEMPLATE_STATIC_SECTIONS: dict[str, frozenset[str]] = {
+    "deeptech_academy": frozenset({"0-1", "0-2"}),
+    "initial_package": frozenset({"0-1"}),
+    "innovation_voucher": frozenset({"1"}),
+}
+
+# 정적 표의 과제명/아이템명 셀에 넣을 제안값 추출용
+_PROJECT_NAME_RE = re.compile(
+    r"\|\s*(?:사업화 과제명|창업아이템명)[^|]*\|\s*([^|\n]+?)\s*\|"
+)
+
+
+def _extract_project_name(results: list[SectionResult]) -> str:
+    """0-x 섹션 변환 결과에서 과제명/창업아이템명 제안값 추출. 없으면 빈 문자열."""
+    for r in results:
+        if not str(r.section_id).startswith("0"):
+            continue
+        text = r.user_edited_content if r.user_edited_content is not None else (r.content or "")
+        m = _PROJECT_NAME_RE.search(text)
+        if not m:
+            continue
+        val = m.group(1).strip().strip("()").strip()
+        # 가이드 문구가 그대로 남은 경우 제외
+        if not val or "제안" in val or "초안" in val or "기재" in val:
+            continue
+        return val[:80]
+    return ""
+
+
+def export_to_official_docx(
+    form: Form,
+    results: list[SectionResult],
+    business_name: str = "(미지정)",
+) -> BytesIO | None:
+    """공식 양식 템플릿에 변환 결과를 채워 DOCX 생성.
+
+    템플릿 파일이 없거나 docxtpl 미설치·렌더 실패 시 None 반환(호출측 폴백).
+    """
+    try:
+        from docxtpl import DocxTemplate
+    except ImportError:
+        logger.warning("[DOCX] docxtpl 미설치 — 일반 렌더러로 폴백")
+        return None
+
+    tpl_path = _TEMPLATES_DIR / f"{form.program_code}.docx"
+    if not tpl_path.exists():
+        return None
+
+    try:
+        tpl = DocxTemplate(str(tpl_path))
+        static_ids = TEMPLATE_STATIC_SECTIONS.get(form.program_code, frozenset())
+
+        # 누락 섹션은 빈 문자열로 프리필(Jinja undefined 방지)
+        sections: dict[str, object] = {
+            s.id: "" for s in form.sections if s.id not in static_ids
+        }
+        by_id = {r.section_id: r for r in results}
+        for sid in list(sections.keys()):
+            r = by_id.get(sid)
+            if r is None:
+                continue
+            sd = tpl.new_subdoc()
+            if r.user_edited_content is not None:
+                segs = [ContentSegment(text=r.user_edited_content, source="user_answer")]
+            else:
+                segs = r.content_segments or [
+                    ContentSegment(text=r.content or "", source="llm_inferred")
+                ]
+            for seg in segs:
+                if seg.text.strip():
+                    _add_segment(sd, seg)
+            sections[sid] = sd
+
+        tpl.render({
+            "business_name": business_name,
+            "project_name": _extract_project_name(results),
+            "sections": sections,
+        })
+        buf = BytesIO()
+        tpl.save(buf)
+        buf.seek(0)
+        return buf
+    except Exception as e:  # noqa: BLE001 — 템플릿 문제로 다운로드 자체가 막히면 안 됨
+        logger.error("[DOCX] 공식 템플릿 렌더 실패(%s): %s — 일반 렌더러 폴백", form.program_code, e)
+        return None
