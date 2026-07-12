@@ -27,6 +27,28 @@ export default function DraftPage() {
   const [feedbackTotal, setFeedbackTotal] = useState(0);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [usageData, setUsageData] = useState<Record<string, { used: number; max: number }>>({});
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  async function handleDownloadDraft() {
+    setIsDownloading(true);
+    try {
+      const res = await fetch(
+        `/api/sessions/${sessionId}/export/docx?source=framework&business_name=(미지정)`
+      );
+      if (!res.ok) throw new Error("download failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `사업계획서초안_${sessionId}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setFeedbackError("초안 DOCX 다운로드에 실패했습니다.");
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -181,6 +203,20 @@ export default function DraftPage() {
                 </div>
               </div>
             </div>
+            <button
+              onClick={handleDownloadDraft}
+              disabled={isDownloading}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              {isDownloading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                  다운로드 중
+                </>
+              ) : (
+                "초안 DOCX 다운로드"
+              )}
+            </button>
             <button
               onClick={() => router.push(`/recommend?session=${sessionId}&mode=convert`)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"

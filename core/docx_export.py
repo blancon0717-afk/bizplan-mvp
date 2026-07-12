@@ -193,10 +193,16 @@ def _add_segment(doc: Document, seg: ContentSegment) -> None:
 
 
 def export_to_docx(
-    form: Form,
+    form: Form | None,
     results: list[SectionResult],
     business_name: str = "(미지정)",
+    title: str | None = None,
 ) -> BytesIO:
+    """섹션 결과를 DOCX로 변환.
+
+    title이 주어지면 표지 제목으로 사용(양식 없는 초안 export용).
+    없으면 form.program_name을 사용한다.
+    """
     doc = Document()
 
     # 여백 설정 (25mm)
@@ -221,7 +227,8 @@ def export_to_docx(
     title_para = doc.add_paragraph()
     title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title_para.paragraph_format.space_after = Pt(6)
-    run = title_para.add_run(form.program_name)
+    program_name = title or (form.program_name if form else "사업계획서")
+    run = title_para.add_run(program_name)
     _set_font(run, 16, True, _COLOR_BLACK)
 
     # 기업명

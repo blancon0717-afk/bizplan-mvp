@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from services.session_store import get_session, get_usage_count, increment_usage, load_results, save_results, save_action_plan, load_action_plan
+from services.session_store import get_session, get_usage_count, increment_usage, load_results, save_results, save_action_plan, load_action_plan, load_framework_draft
 from core.docx_export import export_to_docx
 from core.forms import load_form
 from core.generation import regenerate_section
@@ -499,19 +499,32 @@ def get_usage(session_id: str):
 
 
 @router.get("/sessions/{session_id}/export/docx")
-def export_docx(session_id: str, business_name: str = "(미지정)"):
+def export_docx(session_id: str, business_name: str = "(미지정)", source: str = "results"):
+    """DOCX 내보내기.
+
+    source="results"(기본): 양식 변환 결과를 해당 양식 제목으로 출력.
+    source="framework": 양식 무관 기본 초안을 "사업계획서 초안" 제목으로 출력.
+    """
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    results = load_results(session_id)
-    if results is None:
-        raise HTTPException(status_code=404, detail="Results not found")
 
-    form = load_form(session.program_code)
-    buf = export_to_docx(form, results, business_name)
+    if source == "framework":
+        results = load_framework_draft(session_id)
+        if results is None:
+            raise HTTPException(status_code=404, detail="Framework draft not found")
+        buf = export_to_docx(None, results, business_name, title="사업계획서 초안")
+        filename = f"draft_{session_id}.docx"
+    else:
+        results = load_results(session_id)
+        if results is None:
+            raise HTTPException(status_code=404, detail="Results not found")
+        form = load_form(session.program_code)
+        buf = export_to_docx(form, results, business_name)
+        filename = f"bizplan_{session_id}.docx"
 
     return StreamingResponse(
         buf,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f'attachment; filename="bizplan_{session_id}.docx"'},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
