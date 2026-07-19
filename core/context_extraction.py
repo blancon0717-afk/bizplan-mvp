@@ -267,6 +267,7 @@ def _build_pdf_map_prompt(pdf_text: str, questions: list[Question]) -> str:
 - 답변은 문서 내용을 요약·정리하되, 문서에 없는 사실을 추가·창작하지 않는다.
 - 정량 수치·고유명사·출처는 문서에 있는 그대로 보존한다.
 - 결과 JSON의 키는 반드시 아래 목록의 qid만 사용한다.
+- qid는 대괄호 없이 원문 그대로 사용 (예: "INIT-Q01", "[INIT-Q01]" 아님).
 - 다른 텍스트·코드펜스 없이 JSON 객체만 반환한다.
 
 ## 인터뷰 질문 목록
@@ -315,9 +316,16 @@ def map_pdf_to_answers(pdf_text: str, questions: list[Question]) -> dict[str, st
 
     result: dict[str, str] = {}
     for qid, ans in data.items():
+        # LLM이 "[INIT-Q01]"처럼 대괄호를 붙여 반환하는 경우 정규화
+        # (form_mapping에서 실측된 것과 동일한 패턴 — 정규화 없으면 매핑 전량 무효)
+        qid = str(qid).strip().strip("[]").strip()
         if qid in valid_qids:
             a = str(ans or "").strip()
             if a:
                 result[qid] = a
+    if not result and data:
+        # 정규화 후에도 전량 무효 — 원인 추적용으로 LLM이 쓴 키 형태를 남긴다
+        logger.warning("map_pdf_to_answers: 유효 qid 0건 — LLM 반환 키 샘플: %s",
+                       list(data.keys())[:5])
     logger.info("map_pdf_to_answers 완료: filled=%d/%d", len(result), len(questions))
     return result
