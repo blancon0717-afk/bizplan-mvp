@@ -1689,6 +1689,60 @@ def map_analysis_to_form(draft_analysis: dict, form: Form) -> dict:
     return result
 
 
+# ── 변환 형식 검수 게이트 — 초안과 동일 수준의 지침 준수 강제 ─────────
+# 프로그램적 검증(비용 0) → 위반 섹션만 재작성 지침을 붙여 1회 재생성.
+
+_CONV_TBL_LINE = re.compile(r"^\s*\|")
+_CONV_FORBIDDEN_TAG = re.compile(r"\[(출처 필요|추정값|수치 필요)\]")
+
+
+def _is_skeleton_section(section: FormSection) -> bool:
+    ins = section.instructions or ""
+    return "공란 유지" in ins or "스켈레톤" in ins
+
+
+def _validate_form_section(result: "SectionResult", section: FormSection) -> list[str]:
+    """양식 변환 결과의 형식 위반 목록 반환(비었으면 통과)."""
+    v: list[str] = []
+    content = result.content or ""
+    if not content.strip():
+        return ["본문이 비어 있음 — 소스 컨텍스트 기반으로 작성 필수"]
+    skeleton = _is_skeleton_section(section)
+    if not skeleton:
+        body = "\n".join(l for l in content.split("\n") if not _CONV_TBL_LINE.match(l)).strip()
+        if len(body) < 200:
+            v.append(f"본문 분량 부족({len(body)}자) — 표 제외 400~900자로 보강")
+        elif len(body) > 1500:
+            v.append(f"본문 과다({len(body)}자) — 표 제외 400~900자로 압축, 중복 서술 제거")
+        if "◦" not in content:
+            v.append("◦ 개조식 헤드라인 부재 — '◦ 상위 항목 / - 세부 항목' 구조로 재작성")
+    if "▶ 표" in (section.instructions or "") and "|" not in content:
+        v.append("지시사항의 표 누락 — 같은 컬럼 구조의 markdown 표를 반드시 포함")
+    if re.search(r"^■", content, re.M):
+        v.append("■ 소제목 사용 금지 — ◦ 개조식으로 교체")
+    if _CONV_FORBIDDEN_TAG.search(content):
+        v.append("[출처 필요]·[추정값]·[수치 필요] 태그 삽입 금지 — 태그 제거")
+    return v
+
+
+def _cross_dup_violations(results: list["SectionResult"]) -> dict[str, list[str]]:
+    """섹션 간 40자 이상 동일 문장 중복 → 뒤 섹션에 재작성 지침."""
+    seen: dict[str, str] = {}
+    out: dict[str, list[str]] = {}
+    for r in results:
+        for line in (r.content or "").split("\n"):
+            t = line.strip()
+            if len(t) < 40 or _CONV_TBL_LINE.match(t):
+                continue
+            if t in seen and seen[t] != r.section_id:
+                out.setdefault(r.section_id, []).append(
+                    f"다음 문장이 [{seen[t]}] 섹션과 중복 — 삭제하거나 이 섹션 관점으로 재서술: \"{t[:40]}...\""
+                )
+            else:
+                seen.setdefault(t, r.section_id)
+    return out
+
+
 def convert_to_form(
     framework_results: list[SectionResult],
     form: Form,
@@ -1766,7 +1820,8 @@ def convert_to_form(
 
     results: list[SectionResult | None] = [None] * len(form.sections)
 
-    def _convert_one(idx: int, section: FormSection) -> tuple[int, SectionResult]:
+    def _convert_one(idx: int, section: FormSection,
+                     extra_instruction: str | None = None) -> tuple[int, SectionResult]:
         if os.getenv("MOCK_MODE", "0") == "1":
             return idx, _mock_section_result(section, [], [])
 
@@ -1792,6 +1847,9 @@ def convert_to_form(
             skills_block="(→ 위의 캐시 블록에 포함된 Skills 적용)" if skills_block else "(Skills 없음)",
             today_date_note=today_date_note,
         )
+        if extra_instruction:
+            user += ("\n\n## ⚠️ 형식 검수 미달 — 아래 위반 사항을 반드시 해결하여 재작성할 것\n"
+                     + extra_instruction)
 
         call_kwargs: dict = dict(
             system=system,
@@ -1900,6 +1958,41 @@ def convert_to_form(
                         missing_info=["섹션 변환 오류 — 재시도 필요"],
                         completion_score=0,
                     )
+
+    # ── 형식 검수 게이트: 위반 섹션만 재작성 지침 첨부 후 1회 재생성 ──
+    if os.getenv("MOCK_MODE", "0") != "1":
+        idx_by_id = {s.id: i for i, s in enumerate(form.sections)}
+        violations: dict[str, list[str]] = {}
+        done = [r for r in results if r is not None]
+        for r in done:
+            sec = form.get_section(r.section_id)
+            if sec is None:
+                continue
+            vs = _validate_form_section(r, sec)
+            if vs:
+                violations[r.section_id] = vs
+        for sid, msgs in _cross_dup_violations(done).items():
+            violations.setdefault(sid, []).extend(msgs)
+        if violations:
+            logger.info("[변환 검수] 위반 %d개 섹션 재생성: %s",
+                        len(violations), {k: len(v) for k, v in violations.items()})
+            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as regen_ex:
+                futures = {
+                    regen_ex.submit(
+                        _convert_one, idx_by_id[sid], form.get_section(sid),
+                        "\n".join(f"- {m}" for m in msgs),
+                    ): sid
+                    for sid, msgs in violations.items() if sid in idx_by_id
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    sid = futures[future]
+                    try:
+                        idx, res = future.result()
+                        # 재생성이 오히려 실패(빈 본문)하면 원본 유지
+                        if (res.content or "").strip():
+                            results[idx] = res
+                    except Exception as e:  # noqa: BLE001
+                        logger.error("[변환 검수 재생성 실패] %s: %s — 원본 유지", sid, e)
 
     return [r for r in results if r is not None]
 
