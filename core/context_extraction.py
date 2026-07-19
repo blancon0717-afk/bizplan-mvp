@@ -213,20 +213,14 @@ def extract_company_context(
 # ────────────────────────────────────────────────────────────────────
 
 
-def extract_text_from_pdf(pdf_bytes: bytes, max_chars: int = 60_000) -> str:
-    """PDF 바이트에서 텍스트를 추출한다.
-
-    pdfplumber로 페이지별 텍스트를 이어붙인다. 스캔 이미지본 등 추출 가능한
-    텍스트가 없으면 빈 문자열("")을 반환한다(호출측에서 no_text로 처리).
-    """
+def _extract_with_pdfplumber(pdf_bytes: bytes, max_chars: int) -> str:
     import io
 
     try:
         import pdfplumber
     except ImportError as e:  # 배포 환경 미설치 시 명확히 로깅
-        logger.error("pdfplumber 미설치: %s", e)
+        logger.error("[PDF] pdfplumber 미설치: %s", e)
         return ""
-
     parts: list[str] = []
     total = 0
     try:
@@ -235,7 +229,7 @@ def extract_text_from_pdf(pdf_bytes: bytes, max_chars: int = 60_000) -> str:
                 try:
                     t = page.extract_text() or ""
                 except Exception as e:  # noqa: BLE001 — 페이지 단위 실패는 건너뜀
-                    logger.debug("PDF 페이지 텍스트 추출 실패: %s", e)
+                    logger.debug("[PDF] pdfplumber 페이지 추출 실패: %s", e)
                     t = ""
                 if not t:
                     continue
@@ -244,9 +238,64 @@ def extract_text_from_pdf(pdf_bytes: bytes, max_chars: int = 60_000) -> str:
                 if total >= max_chars:
                     break
     except Exception as e:  # noqa: BLE001 — 손상 PDF·암호화 PDF 등
-        logger.error("PDF 열기/파싱 실패: %s", e)
+        logger.error("[PDF] pdfplumber 열기/파싱 실패: %s", e)
         return ""
     return "\n".join(parts)[:max_chars].strip()
+
+
+def _extract_with_pypdf(pdf_bytes: bytes, max_chars: int) -> str:
+    """2차 폴백 엔진 — pdfplumber(pdfminer)가 못 읽는 PDF 대응."""
+    import io
+
+    try:
+        from pypdf import PdfReader
+    except ImportError as e:
+        logger.error("[PDF] pypdf 미설치: %s", e)
+        return ""
+    parts: list[str] = []
+    total = 0
+    try:
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        for page in reader.pages:
+            try:
+                t = page.extract_text() or ""
+            except Exception:  # noqa: BLE001
+                t = ""
+            if not t:
+                continue
+            parts.append(t)
+            total += len(t)
+            if total >= max_chars:
+                break
+    except Exception as e:  # noqa: BLE001
+        logger.error("[PDF] pypdf 열기/파싱 실패: %s", e)
+        return ""
+    return "\n".join(parts)[:max_chars].strip()
+
+
+def extract_text_from_pdf(pdf_bytes: bytes, max_chars: int = 60_000) -> str:
+    """PDF 바이트에서 텍스트를 추출한다.
+
+    1차 pdfplumber → 실패/빈 결과 시 2차 pypdf 폴백.
+    스캔 이미지본 등 어떤 엔진으로도 텍스트가 없으면 ""(호출측 no_text 처리).
+    실패 시 서버 로그로 원인을 판별할 수 있게 진단 정보를 남긴다.
+    """
+    if not pdf_bytes.startswith(b"%PDF"):
+        # 업로드/프록시 경유 중 바디가 손상된 경우를 로그로 판별
+        logger.error("[PDF] PDF 매직 바이트 아님 (size=%d, head=%r) — 업로드 바디 손상 의심",
+                     len(pdf_bytes), pdf_bytes[:8])
+        return ""
+
+    text = _extract_with_pdfplumber(pdf_bytes, max_chars)
+    if text:
+        return text
+    logger.warning("[PDF] pdfplumber 결과 없음(size=%d) → pypdf 폴백 시도", len(pdf_bytes))
+    text = _extract_with_pypdf(pdf_bytes, max_chars)
+    if text:
+        logger.info("[PDF] pypdf 폴백으로 추출 성공 (%d자)", len(text))
+    else:
+        logger.error("[PDF] 두 엔진 모두 추출 실패(size=%d) — 스캔본이거나 특수 인코딩", len(pdf_bytes))
+    return text
 
 
 _PDF_MAP_SYSTEM = (

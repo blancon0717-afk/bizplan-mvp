@@ -9,3 +9,10 @@ pydantic-ai>=0.0.14
 fastapi>=0.100.0
 uvicorn>=0.20.0
 httpx>=0.24.0
+# ── backend(FastAPI) 배포 의존성 — Railway가 루트 requirements를 참조하는 경우 대비,
+#    backend/requirements.txt와 동기화 유지할 것
+python-multipart>=0.0.12
+pdfplumber>=0.11
+pypdf>=4.0
+docxtpl>=0.16
+docxcompose>=1.4
