@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -40,6 +41,7 @@ from core.generation import (
     analyze_framework_draft,
     map_analysis_to_form,
     compute_draft_hash,
+    build_parallel_prior_note,
     FRAMEWORK_SECTIONS,
     _SEQUENTIAL_IDS,
     _PARALLEL_IDS,
@@ -450,11 +452,18 @@ async def generate_framework(session_id: str):
                 company_context=company_context,
             )
 
-        # 하이브리드 생성
-        # Phase 1: Problem + Solution + Scale-up (1-1~3-2) — 전체 누적 컨텍스트로 순차 생성
-        # Phase 2: Team (4-1만) — 인터뷰 내용만으로 병렬 생성
-        seq_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _SEQUENTIAL_IDS]
-        par_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _PARALLEL_IDS]
+        # 생성 모드 (DRAFT_PARALLEL, 기본 켬)
+        # - 병렬(기본): 9개 섹션 전체 동시 생성 — 누적 컨텍스트 대신 역할 경계 노트 +
+        #   company_context 앵커로 중복·수치 불일치 차단. 소요 = 최장 섹션 1개분.
+        # - 순차(DRAFT_PARALLEL=0, 롤백용): 기존 하이브리드 그대로
+        #   Phase 1: 1-1~3-2 누적 컨텍스트 순차 / Phase 2: 4-1 병렬
+        parallel_mode = os.getenv("DRAFT_PARALLEL", "1") != "0"
+        if parallel_mode:
+            seq_sections = []
+            par_sections = list(FRAMEWORK_SECTIONS)
+        else:
+            seq_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _SEQUENTIAL_IDS]
+            par_sections = [s for s in FRAMEWORK_SECTIONS if s["id"] in _PARALLEL_IDS]
 
         seq_results: list[SectionResult] = []  # 누적 컨텍스트용
         all_results: list[SectionResult] = []
@@ -523,7 +532,9 @@ async def generate_framework(session_id: str):
                 def _gen():
                     return generate_one_framework_section(
                         sec, questions, session.answers, skills, company_context,
-                        prior_context="", cancel_event=cancel_event, deadline=deadline,
+                        # 병렬 모드: 역할 경계 노트로 섹션 간 중복·침범 차단
+                        prior_context=build_parallel_prior_note(sec) if parallel_mode else "",
+                        cancel_event=cancel_event, deadline=deadline,
                     )
                 r = SectionResult(
                     section_id=sec["id"],

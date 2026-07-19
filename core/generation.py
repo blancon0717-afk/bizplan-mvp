@@ -105,17 +105,44 @@ _FORM_CONV_PATH = _PROMPTS_DIR / "form_conversion.md"
 _FORM_REARRANGE_PATH = _PROMPTS_DIR / "form_rearrange.md"
 
 # 프레임워크 섹션 정의 (양식 무관 기본 구조)
+# role: 병렬 생성 모드에서 섹션 간 중복·침범을 막는 역할 경계 (담당 범위 | 서술 금지 범위)
 FRAMEWORK_SECTIONS: list[dict] = [
-    {"id": "1-1", "title": "외적 동기",                "parent_title": "1. 개발 동기 및 현황", "category": "Problem",  "tags": ["개발동기"]},
-    {"id": "1-2", "title": "내적 동기",                "parent_title": "1. 개발 동기 및 현황", "category": "Problem",  "tags": ["개발동기"]},
-    {"id": "1-3", "title": "필요성",                   "parent_title": "1. 개발 동기 및 현황", "category": "Problem",  "tags": ["개발동기"]},
-    {"id": "2-1", "title": "시장 분석",                "parent_title": "2. 실현가능성",         "category": "Solution", "tags": ["시장분석"]},
-    {"id": "2-2", "title": "아이템 기술 및 고도화 방안", "parent_title": "2. 실현가능성",         "category": "Solution", "tags": ["차별성", "개발준비"]},
-    {"id": "2-3", "title": "추진성과",                 "parent_title": "2. 실현가능성",         "category": "Solution", "tags": ["BM"]},
-    {"id": "3-1", "title": "추진 전략",                "parent_title": "3. 성장 전략",          "category": "Scale-up", "tags": ["사업화전략"]},
-    {"id": "3-2", "title": "자금 계획",                "parent_title": "3. 성장 전략",          "category": "Scale-up", "tags": ["일정자금"]},
-    {"id": "4-1", "title": "기업 구성",                "parent_title": "4. 기업 구성",          "category": "Team",     "tags": ["팀역량"]},
+    {"id": "1-1", "title": "외적 동기",                "parent_title": "1. 개발 동기 및 현황", "category": "Problem",  "tags": ["개발동기"],
+     "role": "사회·경제·기술 관점의 시장 문제점과 기회만 다룬다. 대표자 개인 경험·서사(1-2 담당), 시장 규모 산정(2-1 담당), 솔루션 기능 상세(2-2 담당)는 서술 금지."},
+    {"id": "1-2", "title": "내적 동기",                "parent_title": "1. 개발 동기 및 현황", "category": "Problem",  "tags": ["개발동기"],
+     "role": "대표자·팀의 경험, 역량, 창업 계기 등 내부적 동기만 다룬다. 시장 통계·외부 환경(1-1 담당), 팀 전체 구성 상세(4-1 담당)는 서술 금지."},
+    {"id": "1-3", "title": "필요성",                   "parent_title": "1. 개발 동기 및 현황", "category": "Problem",  "tags": ["개발동기"],
+     "role": "기존 대안(경쟁 제품·서비스)의 한계와 해결 필요성 논증만 다룬다. 자사 솔루션 기능 상세(2-2 담당), 이미 달성한 성과(2-3 담당)는 서술 금지."},
+    {"id": "2-1", "title": "시장 분석",                "parent_title": "2. 실현가능성",         "category": "Solution", "tags": ["시장분석"],
+     "role": "TAM/SAM/SOM 등 시장 규모·성장성·타깃 고객 정의만 다룬다. 문제 서사(1-x 담당), 시장 진입 전략(3-1 담당)은 서술 금지."},
+    {"id": "2-2", "title": "아이템 기술 및 고도화 방안", "parent_title": "2. 실현가능성",         "category": "Solution", "tags": ["차별성", "개발준비"],
+     "role": "제품·서비스의 기능·기술·개발 계획·차별성만 다룬다. 시장 규모 수치(2-1 담당), 매출·자금 계획(3-2 담당)은 서술 금지."},
+    {"id": "2-3", "title": "추진성과",                 "parent_title": "2. 실현가능성",         "category": "Solution", "tags": ["BM"],
+     "role": "이미 달성한 정량·정성 성과(사용자 지표, MOU, 투자 등)만 다룬다. 향후 계획·전략(3-1, 3-2 담당)은 서술 금지."},
+    {"id": "3-1", "title": "추진 전략",                "parent_title": "3. 성장 전략",          "category": "Scale-up", "tags": ["사업화전략"],
+     "role": "향후 시장 진입·확장 전략과 수익모델 실행 계획만 다룬다. 과거 성과(2-3 담당), 자금 수치 상세(3-2 담당)는 서술 금지."},
+    {"id": "3-2", "title": "자금 계획",                "parent_title": "3. 성장 전략",          "category": "Scale-up", "tags": ["일정자금"],
+     "role": "자금 소요·조달·집행 계획과 재무 목표만 다룬다. 마케팅·전략 서사(3-1 담당)는 서술 금지."},
+    {"id": "4-1", "title": "기업 구성",                "parent_title": "4. 기업 구성",          "category": "Team",     "tags": ["팀역량"],
+     "role": "팀 구성·보유 역량·채용 계획만 다룬다. 대표자의 창업 동기 서사(1-2 담당)는 서술 금지."},
 ]
+
+
+def build_parallel_prior_note(section: dict) -> str:
+    """병렬 생성 모드용 역할 경계 노트 — prior_context 슬롯에 주입.
+
+    순차 모드의 누적 컨텍스트를 대체해 섹션 간 중복·침범을 구조적으로 차단한다.
+    (양식 변환 v3의 소스 분리 기법과 동일한 접근 — 중복 0건 실측 검증됨)
+    """
+    role = section.get("role", "")
+    if not role:
+        return ""
+    return (
+        "(병렬 작성 모드 — 다른 섹션들이 동시에 작성되고 있음)\n"
+        f"이 섹션의 담당 범위: {role}\n"
+        "서술 금지로 표시된 내용은 다른 섹션이 다루므로, 필요한 경우에도 한 문장 이내의 "
+        "연결 언급만 허용하고 상세 서술은 절대 하지 않는다."
+    )
 
 # 섹션 생성 순서 분류
 # Problem(1-x) + Solution(2-x) + Scale-up(3-x): 전체 누적 컨텍스트로 순차 생성
