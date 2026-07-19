@@ -65,6 +65,19 @@ def _add_runs(para, text: str, size_pt: float, bold: bool, base_color: RGBColor)
     _set_font(run, size_pt, bold, base_color)
 
 
+def _set_table_borders(tbl) -> None:
+    """모든 변에 단선 테두리 지정 — 'Table Grid' 스타일이 없는 문서용."""
+    tbl_pr = tbl._tbl.tblPr
+    borders = OxmlElement("w:tblBorders")
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        el = OxmlElement(f"w:{edge}")
+        el.set(qn("w:val"), "single")
+        el.set(qn("w:sz"), "4")
+        el.set(qn("w:color"), "000000")
+        borders.append(el)
+    tbl_pr.append(borders)
+
+
 def _parse_md_table(lines: list[str]) -> tuple[list[list[str]], list[list[str]]]:
     def parse_row(line: str) -> list[str]:
         cells = [c.strip() for c in line.split("|")]
@@ -104,7 +117,11 @@ def _add_segment(doc: Document, seg: ContentSegment) -> None:
                 continue
             num_cols = max(len(r) for r in all_rows)
             tbl = doc.add_table(rows=len(all_rows), cols=num_cols)
-            tbl.style = "Table Grid"
+            try:
+                tbl.style = "Table Grid"
+            except KeyError:
+                # 공식 원본 템플릿(한컴 변환)에는 'Table Grid' 스타일이 없음 → 테두리 직접 지정
+                _set_table_borders(tbl)
             for ri, row_cells in enumerate(all_rows):
                 is_header = ri < len(headers)
                 is_caption = not is_header and bool(row_cells) and all(
@@ -280,12 +297,12 @@ logger = logging.getLogger(__name__)
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "data" / "templates"
 
-# 템플릿에 공식 빈 표로 내장되어 LLM 콘텐츠 주입을 건너뛰는 섹션
-# (scripts/build_form_templates.py의 STATIC_SECTIONS와 반드시 일치)
-TEMPLATE_STATIC_SECTIONS: dict[str, frozenset[str]] = {
-    "deeptech_academy": frozenset({"0-1", "0-2"}),
-    "initial_package": frozenset({"0-1"}),
-    "innovation_voucher": frozenset({"1"}),
+# 템플릿이 {{p sections[...] }} 서브독으로 받는 본문 섹션 id
+# (scripts/prepare_official_templates.py 가 심는 태그와 반드시 일치)
+TEMPLATE_SUBDOC_IDS: dict[str, tuple[str, ...]] = {
+    "deeptech_academy": ("1-1", "1-2", "1-3", "1-4", "2-1", "2-2", "2-3", "2-4", "2-5",
+                         "3-1", "3-2", "3-3", "3-4", "4-1", "4-2"),
+    "initial_package": ("1", "2", "3", "4"),
 }
 
 # 정적 표의 과제명/아이템명 셀에 넣을 제안값 추출용
@@ -311,12 +328,160 @@ def _extract_project_name(results: list[SectionResult]) -> str:
     return ""
 
 
+# ── markdown 표 파서 (LLM 출력 → 템플릿 셀 값) ──────────────────────
+
+def _md_tables(text: str) -> list[list[list[str]]]:
+    """markdown 표들을 [표][행][셀] 리스트로 추출 (구분선 행 제외)."""
+    tables: list[list[list[str]]] = []
+    cur: list[list[str]] = []
+    for line in (text or "").split("\n"):
+        if _MD_TABLE_ROW.match(line):
+            cells = [c.strip() for c in line.split("|")]
+            if cells and cells[0] == "":
+                cells = cells[1:]
+            if cells and cells[-1] == "":
+                cells = cells[:-1]
+            if cells and not all(re.match(r"^[-:\s]*$", c) for c in cells):
+                cur.append(cells)
+        elif cur:
+            tables.append(cur)
+            cur = []
+    if cur:
+        tables.append(cur)
+    return tables
+
+
+def _strip_md_tables(text: str) -> str:
+    return "\n".join(l for l in (text or "").split("\n") if not _MD_TABLE_ROW.match(l))
+
+
+def _kv_get(kv: dict[str, str], key: str) -> str:
+    """라벨 매칭 — 정확 일치 우선, 다음 괄호 제거·전방 일치."""
+    if key in kv:
+        return kv[key]
+    nk = key.split("(")[0].strip()
+    for k, v in kv.items():
+        kk = k.split("(")[0].strip()
+        if kk.startswith(nk) or nk.startswith(kk):
+            return v
+    return ""
+
+
+def _section_text(results_by_id: dict, sid: str) -> str:
+    r = results_by_id.get(sid)
+    if r is None:
+        return ""
+    return r.user_edited_content if r.user_edited_content is not None else (r.content or "")
+
+
+def _subdoc_from_text(tpl, text: str):
+    sd = tpl.new_subdoc()
+    if text.strip():
+        _add_segment(sd, ContentSegment(text=text, source="llm_inferred"))
+    return sd
+
+
+def _subdoc_from_result(tpl, r: SectionResult | None):
+    sd = tpl.new_subdoc()
+    if r is None:
+        return sd
+    if r.user_edited_content is not None:
+        segs = [ContentSegment(text=r.user_edited_content, source="user_answer")]
+    else:
+        segs = r.content_segments or [ContentSegment(text=r.content or "", source="llm_inferred")]
+    for seg in segs:
+        if seg.text.strip():
+            _add_segment(sd, seg)
+    return sd
+
+
+# ── 폼별 컨텍스트 빌더 ────────────────────────────────────────────────
+
+def _sections_ctx(tpl, by_id: dict, ids: tuple[str, ...]) -> dict:
+    return {sid: _subdoc_from_result(tpl, by_id.get(sid)) for sid in ids}
+
+
+def _first_kv(text: str) -> dict[str, str]:
+    """첫 번째 2열 이상 markdown 표 → {열0: 열1} (헤더 행 제외)."""
+    for tbl in _md_tables(text):
+        kv = {}
+        for row in tbl:
+            if len(row) >= 2 and row[0] and row[0] not in ("항목", "분야", "구분"):
+                kv[row[0]] = row[1]
+        if kv:
+            return kv
+    return {}
+
+
+def _ctx_deeptech(tpl, by_id: dict) -> dict:
+    kv = _first_kv(_section_text(by_id, "0-3"))
+    ov_keys = ("명칭", "범주", "회사 사이트", "소개", "진출 목표시장",
+               "경쟁사 대비 차별성", "현황 및 구체화 방안")
+    return {
+        "sections": _sections_ctx(tpl, by_id, TEMPLATE_SUBDOC_IDS["deeptech_academy"]),
+        "ov": {k: _kv_get(kv, k) for k in ov_keys},
+    }
+
+
+def _ctx_initial(tpl, by_id: dict) -> dict:
+    kv = _first_kv(_section_text(by_id, "0-2"))
+    ov_keys = ("명칭", "범주", "아이템 개요", "문제 인식", "실현 가능성", "성장전략", "팀 구성")
+    return {
+        "sections": _sections_ctx(tpl, by_id, TEMPLATE_SUBDOC_IDS["initial_package"]),
+        "ov": {k: _kv_get(kv, k) for k in ov_keys},
+    }
+
+
+def _ctx_voucher(tpl, by_id: dict) -> dict:
+    kv2 = _first_kv(_section_text(by_id, "2"))
+    kv4 = _first_kv(_section_text(by_id, "4"))
+    # 간트: '월' 헤더 표에서 {분야: {월숫자: 셀}}
+    g = {f: {str(m): "" for m in range(2, 11)} for f in ("컨설팅", "기술지원", "마케팅")}
+    for tbl in _md_tables(_section_text(by_id, "5")):
+        header = tbl[0]
+        month_cols = {ci: re.sub(r"\D", "", h) for ci, h in enumerate(header) if re.search(r"\d", h)}
+        if not month_cols:
+            continue
+        for row in tbl[1:]:
+            field = row[0].strip()
+            if field in g:
+                for ci, m in month_cols.items():
+                    if ci < len(row) and m in g[field]:
+                        g[field][m] = row[ci].strip()
+        break
+    # KPI: 3열 표(구분|지표|값) → {지표: 값}
+    kpi_src: dict[str, str] = {}
+    for tbl in _md_tables(_section_text(by_id, "6")):
+        for row in tbl:
+            if len(row) >= 3 and row[1] and row[1] != "지표":
+                kpi_src[row[1]] = row[2]
+        if kpi_src:
+            break
+    kpi_keys = ("고용 증가율(%)", "신규 고용인원수(명)", "매출액 증가율(%)", "매출 증가액(천원)")
+    return {
+        "kv2": {k: _kv_get(kv2, k) for k in
+                ("제품용도 및 특성", "제품생산 공정", "시장 상황", "기술품질 경쟁력", "지식재산권 및 인증 보유현황")},
+        "kv4": {k: _kv_get(kv4, k) for k in ("컨설팅", "기술지원", "마케팅")},
+        "g": g,
+        "kpi": {k: _kv_get(kpi_src, k) for k in kpi_keys},
+        "sec3": _subdoc_from_text(tpl, _section_text(by_id, "3")),
+        "sec6": _subdoc_from_text(tpl, _strip_md_tables(_section_text(by_id, "6"))),
+    }
+
+
+_CTX_BUILDERS = {
+    "deeptech_academy": _ctx_deeptech,
+    "initial_package": _ctx_initial,
+    "innovation_voucher": _ctx_voucher,
+}
+
+
 def export_to_official_docx(
     form: Form,
     results: list[SectionResult],
     business_name: str = "(미지정)",
 ) -> BytesIO | None:
-    """공식 양식 템플릿에 변환 결과를 채워 DOCX 생성.
+    """공식 양식 원본 템플릿에 변환 결과를 채워 DOCX 생성.
 
     템플릿 파일이 없거나 docxtpl 미설치·렌더 실패 시 None 반환(호출측 폴백).
     """
@@ -327,39 +492,17 @@ def export_to_official_docx(
         return None
 
     tpl_path = _TEMPLATES_DIR / f"{form.program_code}.docx"
-    if not tpl_path.exists():
+    builder = _CTX_BUILDERS.get(form.program_code)
+    if not tpl_path.exists() or builder is None:
         return None
 
     try:
         tpl = DocxTemplate(str(tpl_path))
-        static_ids = TEMPLATE_STATIC_SECTIONS.get(form.program_code, frozenset())
-
-        # 누락 섹션은 빈 문자열로 프리필(Jinja undefined 방지)
-        sections: dict[str, object] = {
-            s.id: "" for s in form.sections if s.id not in static_ids
-        }
         by_id = {r.section_id: r for r in results}
-        for sid in list(sections.keys()):
-            r = by_id.get(sid)
-            if r is None:
-                continue
-            sd = tpl.new_subdoc()
-            if r.user_edited_content is not None:
-                segs = [ContentSegment(text=r.user_edited_content, source="user_answer")]
-            else:
-                segs = r.content_segments or [
-                    ContentSegment(text=r.content or "", source="llm_inferred")
-                ]
-            for seg in segs:
-                if seg.text.strip():
-                    _add_segment(sd, seg)
-            sections[sid] = sd
-
-        tpl.render({
-            "business_name": business_name,
-            "project_name": _extract_project_name(results),
-            "sections": sections,
-        })
+        ctx = builder(tpl, by_id)
+        ctx.setdefault("business_name", business_name)
+        ctx.setdefault("project_name", _extract_project_name(results))
+        tpl.render(ctx)
         buf = BytesIO()
         tpl.save(buf)
         buf.seek(0)
