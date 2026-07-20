@@ -638,8 +638,16 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
             "total": total,
         })
 
+        # 진행 이벤트 큐 — executor 스레드에서 발생하는 단계·섹션 완료를 실시간 SSE로 중계
+        # (기존에는 전체 변환이 끝난 뒤 section_done을 한꺼번에 쏴서 진행도가 0에 머물렀음)
+        progress_q: asyncio.Queue = asyncio.Queue()
+
+        def _emit(kind: str, payload: dict) -> None:
+            loop.call_soon_threadsafe(progress_q.put_nowait, (kind, payload))
+
         def _convert_all():
             # v3 파이프라인: (1-a) 초안 분석(캐시) → (1-b) 양식 매핑 → 소스별 변환
+            _emit("stage", {"stage": "analyzing"})
             draft_hash = compute_draft_hash(framework_results)
             analysis = load_draft_analysis(session_id)
             if not analysis or analysis.get("_draft_hash") != draft_hash:
@@ -647,30 +655,44 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
                 analysis = analyze_framework_draft(framework_results)
                 analysis["_draft_hash"] = draft_hash
                 save_draft_analysis(session_id, analysis)
+            _emit("stage", {"stage": "mapping"})
             mapping = map_analysis_to_form(analysis, form)
             sess = get_session(session_id)
+            _emit("stage", {"stage": "converting"})
             return convert_to_form(
                 framework_results, form, skills,
                 voucher_options=body.voucher_options,
                 section_sources=mapping,
                 company_context=(sess.company_context if sess else None),
                 draft_analysis=analysis,
+                progress_cb=_emit,
             )
 
-        # 변환은 단일 장기 작업(최대 240초)이라 침묵 구간이 길다 → keepalive로 프록시 연결 유지
+        task = loop.run_in_executor(_executor, _convert_all)
+        deadline = loop.time() + 240.0
         results = None
         errored = False
-        async for kind, payload in _run_with_keepalive(loop, _convert_all, 240.0):
-            if kind == "ping":
-                yield _KEEPALIVE
-            elif kind == "done":
-                results = payload
-            elif kind == "error":
-                logger.error("[양식 변환 실패] %s: %s", session_id, payload)
-                yield _sse("error", {"message": f"양식 변환 중 오류: {payload}"})
-                errored = True
-            elif kind == "timeout":
+        while not (task.done() and progress_q.empty()):
+            remaining = deadline - loop.time()
+            if remaining <= 0:
                 yield _sse("error", {"message": "양식 변환 시간 초과 (240초). 다시 시도해주세요."})
+                errored = True
+                break
+            wait_s = 0.5 if task.done() else min(_KEEPALIVE_INTERVAL_S, remaining)
+            try:
+                kind, payload = await asyncio.wait_for(progress_q.get(), timeout=wait_s)
+            except asyncio.TimeoutError:
+                if not task.done():
+                    yield _KEEPALIVE
+                continue
+            yield _sse("section_done" if kind == "section" else "stage", payload)
+
+        if not errored:
+            try:
+                results = await task
+            except Exception as e:  # noqa: BLE001
+                logger.error("[양식 변환 실패] %s: %s", session_id, e)
+                yield _sse("error", {"message": f"양식 변환 중 오류: {e}"})
                 errored = True
         if errored:
             return
@@ -679,14 +701,6 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
         # 변환 성공 → 세션 program_code를 선택 양식으로 갱신
         # (결과 화면 양식명 표시·DOCX export의 load_form이 이 값을 사용)
         update_program_code(session_id, body.program_code)
-
-        for result in results:
-            yield _sse("section_done", {
-                "section_id": result.section_id,
-                "section_title": result.section_title,
-                "confidence_level": result.confidence_level,
-                "completion_score": result.effective_completion_score(),
-            })
 
         from core.judgment import calculate_overall_completion
         overall = calculate_overall_completion(results)

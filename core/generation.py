@@ -1778,8 +1778,12 @@ def convert_to_form(
     section_sources: dict | None = None,
     company_context: dict | None = None,
     draft_analysis: dict | None = None,
+    progress_cb=None,
 ) -> list[SectionResult]:
     """프레임워크 초안 → 선택한 양식 섹션 구조로 변환.
+
+    progress_cb: 진행 콜백 (kind: str, payload: dict). 섹션 완료 시 ('section', {...}),
+        검수 재생성 진입 시 ('stage', {'stage': 'reviewing'}). 실패해도 변환은 계속된다.
 
     Args:
         framework_results: generate_framework_draft()가 반환한 SectionResult 목록
@@ -1798,6 +1802,22 @@ def convert_to_form(
 
     if skills is None:
         skills = []
+
+    def _notify(kind: str, payload: dict) -> None:
+        if progress_cb is None:
+            return
+        try:
+            progress_cb(kind, payload)
+        except Exception:  # noqa: BLE001 — 진행 알림 실패가 변환을 막으면 안 됨
+            pass
+
+    def _notify_section(r: "SectionResult") -> None:
+        _notify("section", {
+            "section_id": r.section_id,
+            "section_title": r.section_title,
+            "confidence_level": r.confidence_level,
+            "completion_score": r.effective_completion_score(),
+        })
 
     voucher_note = _build_voucher_note(voucher_options)
 
@@ -1961,6 +1981,7 @@ def convert_to_form(
     # 첫 섹션 단독 생성 (캐시 워밍) → 나머지 병렬
     _, first = _convert_one(0, form.sections[0])
     results[0] = first
+    _notify_section(first)
 
     if len(form.sections) > 1:
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
@@ -1985,6 +2006,7 @@ def convert_to_form(
                         missing_info=["섹션 변환 오류 — 재시도 필요"],
                         completion_score=0,
                     )
+                _notify_section(results[idx])
 
     # ── 형식 검수 게이트: 위반 섹션만 재작성 지침 첨부 후 1회 재생성 ──
     if os.getenv("MOCK_MODE", "0") != "1":
@@ -2003,6 +2025,7 @@ def convert_to_form(
         if violations:
             logger.info("[변환 검수] 위반 %d개 섹션 재생성: %s",
                         len(violations), {k: len(v) for k, v in violations.items()})
+            _notify("stage", {"stage": "reviewing", "count": len(violations)})
             with concurrent.futures.ThreadPoolExecutor(max_workers=8) as regen_ex:
                 futures = {
                     regen_ex.submit(

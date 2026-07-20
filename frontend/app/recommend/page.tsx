@@ -34,6 +34,7 @@ function RecommendPageInner() {
   const [convertingName, setConvertingName] = useState("");
   const [convertDone, setConvertDone] = useState(0);
   const [convertTotal, setConvertTotal] = useState(0);
+  const [convertStage, setConvertStage] = useState("");
 
   // 혁신바우처 서비스 선택 상태
   const [voucherOpen, setVoucherOpen] = useState(false);
@@ -103,6 +104,7 @@ function RecommendPageInner() {
     setConvertingName(programName);
     setConvertDone(0);
     setConvertTotal(0);
+    setConvertStage("변환 준비 중");
 
     let response: Response;
     try {
@@ -133,6 +135,14 @@ function RecommendPageInner() {
         const data = JSON.parse(dataLine);
         if (eventType === "init") {
           setConvertTotal((data.sections as { order: number }[]).length);
+        } else if (eventType === "stage") {
+          const stageLabels: Record<string, string> = {
+            analyzing: "초안 내용 분석 중",
+            mapping: "양식 구조에 매핑 중",
+            converting: "섹션별 내용 작성 중",
+            reviewing: "형식 검수·보정 중",
+          };
+          setConvertStage(stageLabels[data.stage as string] ?? "");
         } else if (eventType === "section_done") {
           setConvertDone((c) => c + 1);
         } else if (eventType === "all_done") {
@@ -177,10 +187,21 @@ function RecommendPageInner() {
         <div className="fixed inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
           <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-slate-700 font-semibold text-lg">{convertingName} 양식으로 변환 중</p>
+          {convertStage && (
+            <p className="text-blue-600 text-sm font-medium">{convertStage}</p>
+          )}
           {convertTotal > 0 && (
-            <p className="text-slate-500 text-sm">
-              {convertDone}/{convertTotal} 섹션 완료
-            </p>
+            <div className="w-72">
+              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.round((convertDone / Math.max(convertTotal, 1)) * 100)}%` }}
+                />
+              </div>
+              <p className="text-slate-500 text-sm text-center mt-2">
+                {convertDone}/{convertTotal} 섹션 완료
+              </p>
+            </div>
           )}
         </div>
       )}
