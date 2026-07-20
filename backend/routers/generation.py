@@ -67,6 +67,9 @@ class ConvertToFormRequest(BaseModel):
     # 혁신바우처 전용 — 사용자가 선택한 바우처 서비스(컨설팅/기술지원/마케팅).
     # 다른 양식에서는 생략(None). core.generation에서 화이트리스트 검증됨.
     voucher_options: list[str] | None = None
+    # 갭 보완 인터뷰 답변 {질문id: 답변}. 양식 YAML gap_questions의 고정 5문항에 대한
+    # 사용자 답변 — 생략/빈 답변 허용(해당 질문은 무시).
+    gap_answers: dict[str, str] | None = None
 
 _ROOT_DIR = Path(__file__).resolve().parent.parent.parent  # bizplan-mvp/
 _INITIAL_Q_PATH = _ROOT_DIR / "data" / "interview" / "initial_questions.json"
@@ -610,6 +613,19 @@ async def generate_framework(session_id: str):
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+@router.get("/forms/{program_code}/gap_questions")
+async def get_gap_questions(program_code: str):
+    """양식 변환 전 갭 보완 인터뷰 고정 질문 조회 (양식 YAML gap_questions)."""
+    try:
+        form = load_form(program_code)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Form not found")
+    except Exception as e:  # noqa: BLE001
+        logger.error("[gap_questions 로드 실패] %s: %s", program_code, e)
+        raise HTTPException(status_code=500, detail="양식 로드 실패")
+    return {"program_code": program_code, "questions": form.gap_questions}
+
+
 @router.post("/sessions/{session_id}/convert_to_form")
 async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
     """양식 변환 — 프레임워크 초안을 선택한 양식 섹션 구조로 변환 (SSE 스트리밍)."""
@@ -666,6 +682,7 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
                 company_context=(sess.company_context if sess else None),
                 draft_analysis=analysis,
                 progress_cb=_emit,
+                gap_answers=body.gap_answers,
             )
 
         task = loop.run_in_executor(_executor, _convert_all)

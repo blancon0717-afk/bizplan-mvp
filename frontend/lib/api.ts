@@ -1,6 +1,7 @@
 import type {
   Answer,
   CompanyProfile,
+  GapQuestion,
   GenerationResults,
   Program,
   Question,
@@ -132,17 +133,24 @@ export const api = {
   convertToForm: (
     sessionId: string,
     program_code: string,
-    voucher_options?: string[]
+    voucher_options?: string[],
+    gap_answers?: Record<string, string>
   ) =>
     fetch(`${API_BASE}/sessions/${sessionId}/convert_to_form`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        voucher_options && voucher_options.length > 0
-          ? { program_code, voucher_options }
-          : { program_code }
-      ),
+      body: JSON.stringify({
+        program_code,
+        ...(voucher_options && voucher_options.length > 0 ? { voucher_options } : {}),
+        ...(gap_answers && Object.keys(gap_answers).length > 0 ? { gap_answers } : {}),
+      }),
     }),
+
+  // 양식 변환 전 갭 보완 인터뷰 고정 질문 조회 (양식 YAML gap_questions)
+  getGapQuestions: (programCode: string) =>
+    request<{ program_code: string; questions: GapQuestion[] }>(
+      `/forms/${programCode}/gap_questions`
+    ),
 
   // 기존 사업계획서 PDF 업로드 → 인터뷰 답변 사전 채움.
   // multipart이므로 Content-Type을 직접 지정하지 않는다(브라우저가 boundary 설정).

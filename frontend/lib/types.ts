@@ -31,6 +31,14 @@ export interface Program {
   notes?: string;
 }
 
+// 양식 변환 전 갭 보완 인터뷰 고정 질문 (양식 YAML gap_questions)
+export interface GapQuestion {
+  id: string;
+  question: string;
+  hint: string;
+  target_sections: string[];
+}
+
 export interface Question {
   qid: string;
   section: string;

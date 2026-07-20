@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useRecommendStore } from "@/store/recommendStore";
 import ProgramCard from "@/components/program/ProgramCard";
-import type { Program } from "@/lib/types";
+import type { GapQuestion, Program } from "@/lib/types";
 
 // ── 양식 변환(convert) 화면에서 고정 노출할 3개 지원사업 ──────────────
 const CONVERT_TARGET_CODES = ["initial_package", "deeptech_academy", "innovation_voucher"] as const;
@@ -39,6 +39,16 @@ function RecommendPageInner() {
   // 혁신바우처 서비스 선택 상태
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [voucherServices, setVoucherServices] = useState<string[]>([]);
+
+  // 갭 보완 인터뷰 상태 — 변환 전 고정 5문항 (선택 답변)
+  const [gapTarget, setGapTarget] = useState<{
+    code: string;
+    name: string;
+    voucherOptions?: string[];
+  } | null>(null);
+  const [gapQuestions, setGapQuestions] = useState<GapQuestion[]>([]);
+  const [gapAnswers, setGapAnswers] = useState<Record<string, string>>({});
+  const [isLoadingGap, setIsLoadingGap] = useState(false);
 
   const isConvertMode = mode === "convert";
   const [sessionId] = useState<string>(
@@ -91,24 +101,61 @@ function RecommendPageInner() {
     }
   }
 
-  async function handleConvert(
+  // 변환 버튼 → 갭 보완 인터뷰(고정 5문항) 모달을 먼저 연다.
+  // 질문이 없거나 조회에 실패하면 인터뷰 없이 바로 변환 진행(변환 자체를 막지 않음).
+  async function openGapInterview(
     programCode: string,
     programName: string,
     voucherOptions?: string[]
+  ) {
+    setError(null);
+    setIsLoadingGap(true);
+    try {
+      const res = await api.getGapQuestions(programCode);
+      if (!res.questions || res.questions.length === 0) {
+        await handleConvert(programCode, programName, voucherOptions);
+        return;
+      }
+      setGapQuestions(res.questions);
+      setGapAnswers({});
+      setGapTarget({ code: programCode, name: programName, voucherOptions });
+    } catch {
+      await handleConvert(programCode, programName, voucherOptions);
+    } finally {
+      setIsLoadingGap(false);
+    }
+  }
+
+  async function handleConvert(
+    programCode: string,
+    programName: string,
+    voucherOptions?: string[],
+    answers?: Record<string, string>
   ) {
     if (!sessionId) {
       setError("세션 ID를 찾을 수 없습니다. 처음부터 다시 시도해주세요.");
       return;
     }
+    setGapTarget(null);
     setIsConverting(true);
     setConvertingName(programName);
     setConvertDone(0);
     setConvertTotal(0);
     setConvertStage("변환 준비 중");
 
+    // 공백 답변 제거 — 빈 인터뷰는 보내지 않는다
+    const filledAnswers = Object.fromEntries(
+      Object.entries(answers ?? {}).filter(([, v]) => v.trim() !== "")
+    );
+
     let response: Response;
     try {
-      response = await api.convertToForm(sessionId, programCode, voucherOptions);
+      response = await api.convertToForm(
+        sessionId,
+        programCode,
+        voucherOptions,
+        filledAnswers
+      );
     } catch {
       setError("변환 요청에 실패했습니다. 다시 시도해주세요.");
       setIsConverting(false);
@@ -203,6 +250,66 @@ function RecommendPageInner() {
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 갭 보완 인터뷰 모달 — 변환 전 고정 5문항 (모두 선택 답변) */}
+      {gapTarget && !isConverting && (
+        <div className="fixed inset-0 z-40 bg-slate-900/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] flex flex-col">
+            <div className="px-6 pt-5 pb-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-lg">추가 인터뷰</h3>
+              <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+                {gapTarget.name} 양식에 필요하지만 초안에 없는 정보입니다.
+                아는 항목만 답해도 되고, 건너뛰어도 변환됩니다.
+              </p>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
+              {gapQuestions.map((q, qi) => (
+                <div key={q.id}>
+                  <label
+                    htmlFor={`gap-${q.id}`}
+                    className="block text-sm font-medium text-slate-800 mb-1.5"
+                  >
+                    {qi + 1}. {q.question}
+                  </label>
+                  <textarea
+                    id={`gap-${q.id}`}
+                    rows={2}
+                    value={gapAnswers[q.id] ?? ""}
+                    onChange={(e) =>
+                      setGapAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                    }
+                    placeholder={q.hint}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 flex gap-2">
+              <button
+                onClick={() =>
+                  handleConvert(gapTarget.code, gapTarget.name, gapTarget.voucherOptions)
+                }
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
+              >
+                건너뛰고 변환
+              </button>
+              <button
+                onClick={() =>
+                  handleConvert(
+                    gapTarget.code,
+                    gapTarget.name,
+                    gapTarget.voucherOptions,
+                    gapAnswers
+                  )
+                }
+                className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+              >
+                답변 반영하여 변환 →
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -340,8 +447,8 @@ function RecommendPageInner() {
 
                     {!isVoucher && (
                       <button
-                        onClick={() => handleConvert(p.code, p.name)}
-                        disabled={isConverting}
+                        onClick={() => openGapInterview(p.code, p.name)}
+                        disabled={isConverting || isLoadingGap}
                         className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         이 양식으로 변환하기 →
@@ -360,8 +467,8 @@ function RecommendPageInner() {
 
                     {isVoucher && expanded && (
                       <button
-                        onClick={() => handleConvert(p.code, p.name, voucherServices)}
-                        disabled={isConverting || voucherServices.length === 0}
+                        onClick={() => openGapInterview(p.code, p.name, voucherServices)}
+                        disabled={isConverting || isLoadingGap || voucherServices.length === 0}
                         className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         {voucherServices.length === 0

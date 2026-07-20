@@ -1779,6 +1779,7 @@ def convert_to_form(
     company_context: dict | None = None,
     draft_analysis: dict | None = None,
     progress_cb=None,
+    gap_answers: dict[str, str] | None = None,
 ) -> list[SectionResult]:
     """프레임워크 초안 → 선택한 양식 섹션 구조로 변환.
 
@@ -1797,6 +1798,8 @@ def convert_to_form(
             동작(전체 초안 주입) 유지 — 하위호환.
         company_context: (v3) 소스 없는(gap) 섹션 신규 생성 시 근거로 사용.
         draft_analysis: (v3) gap 섹션에 초안 전체 요약을 근거로 제공.
+        gap_answers: 갭 보완 인터뷰 답변 {질문id: 답변}. form.gap_questions의
+            target_sections에 해당하는 섹션 컨텍스트에만 주입. None/빈 답변은 무시.
     """
     import concurrent.futures
 
@@ -1820,6 +1823,17 @@ def convert_to_form(
         })
 
     voucher_note = _build_voucher_note(voucher_options)
+
+    # 갭 보완 인터뷰 답변 → target_sections별 주입 블록 (섹션id → ["- Q...\n  A...", ...])
+    gap_notes_by_section: dict[str, list[str]] = {}
+    if gap_answers:
+        for q in getattr(form, "gap_questions", []) or []:
+            ans = (gap_answers.get(str(q.get("id", ""))) or "").strip()
+            if not ans:
+                continue
+            block = f"- Q. {str(q.get('question', '')).strip()}\n  A. {ans}"
+            for sid in q.get("target_sections", []) or []:
+                gap_notes_by_section.setdefault(str(sid), []).append(block)
 
     # 1. 전체 초안 컨텍스트 (매핑 없을 때의 하위호환 + 폴백)
     framework_parts = [
@@ -1886,8 +1900,16 @@ def convert_to_form(
         if voucher_note and section.id in _VOUCHER_LINKED_SECTION_IDS:
             section_instructions = voucher_note.strip() + "\n\n" + section_instructions
 
+        section_context = _context_for(section)
+        gap_notes = gap_notes_by_section.get(section.id)
+        if gap_notes:
+            section_context += (
+                "\n\n---\n\n## 추가 인터뷰 답변 (사용자가 직접 보완한 정보 — 이 섹션 작성에 우선 반영)\n\n"
+                + "\n".join(gap_notes)
+            )
+
         user = template.format(
-            framework_context=_context_for(section),
+            framework_context=section_context,
             section_id=section.id,
             section_title=section.title,
             section_instructions=section_instructions,

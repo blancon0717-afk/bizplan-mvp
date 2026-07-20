@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
@@ -28,6 +28,9 @@ class Form:
     page_limit: int
     notes: Optional[str]
     sections: list[FormSection]
+    # 양식 변환 전 갭 보완 인터뷰용 고정 질문 (YAML gap_questions 키, 없으면 빈 리스트)
+    # 항목: {id, question, hint, target_sections: [섹션id]}
+    gap_questions: list[dict] = field(default_factory=list)
 
     def get_section(self, section_id: str) -> Optional[FormSection]:
         for s in self.sections:
@@ -66,6 +69,7 @@ def load_form(program_code: str, forms_dir: str | Path = _DEFAULT_FORMS_DIR) -> 
         page_limit=data.get("page_limit", 10),
         notes=data.get("notes"),
         sections=sections,
+        gap_questions=list(data.get("gap_questions", []) or []),
     )
     _form_cache[cache_key] = form
     return form
