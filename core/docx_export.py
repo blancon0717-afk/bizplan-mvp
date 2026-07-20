@@ -78,6 +78,23 @@ def _set_table_borders(tbl) -> None:
     tbl_pr.append(borders)
 
 
+def _normalize_md_tables(text: str) -> str:
+    """표 행 사이에 낀 빈 줄 제거 — 빈 줄이 있으면 1행짜리 표로 쪼개져 렌더링됨.
+
+    ponytail: 빈 줄만으로 구분된 두 표는 하나로 합쳐짐. 표 사이에는 제목/본문
+    줄이 오는 것이 정상 출력이므로 실사용에서 문제없음.
+    """
+    lines = (text or "").split("\n")
+    out: list[str] = []
+    for idx, line in enumerate(lines):
+        if line.strip() == "" and out and _MD_TABLE_ROW.match(out[-1]):
+            nxt = next((l for l in lines[idx + 1:] if l.strip() != ""), None)
+            if nxt is not None and _MD_TABLE_ROW.match(nxt):
+                continue  # 표 행 사이의 빈 줄 → 버림
+        out.append(line)
+    return "\n".join(out)
+
+
 def _parse_md_table(lines: list[str]) -> tuple[list[list[str]], list[list[str]]]:
     def parse_row(line: str) -> list[str]:
         cells = [c.strip() for c in line.split("|")]
@@ -99,7 +116,7 @@ def _parse_md_table(lines: list[str]) -> tuple[list[list[str]], list[list[str]]]
 
 def _add_segment(doc: Document, seg: ContentSegment) -> None:
     base_color = _COLOR_BLACK
-    lines = seg.text.split("\n")
+    lines = _normalize_md_tables(seg.text).split("\n")
     i = 0
 
     while i < len(lines):
@@ -270,9 +287,11 @@ def export_to_docx(
             segments = r.content_segments or [
                 ContentSegment(text=r.content or "", source="llm_inferred")
             ]
-            for seg in segments:
-                if seg.text.strip():
-                    _add_segment(doc, seg)
+            # 세그먼트를 합쳐 한 번에 렌더링 — 세그먼트 경계에서 표가 쪼개지는 것 방지
+            # (색상은 source와 무관하게 전부 _COLOR_BLACK이므로 병합해도 손실 없음)
+            merged = "\n".join(s.text for s in segments if s.text.strip())
+            if merged.strip():
+                _add_segment(doc, ContentSegment(text=merged, source="llm_inferred"))
 
         doc.add_paragraph()  # 섹션 간 여백
 
@@ -334,7 +353,7 @@ def _md_tables(text: str) -> list[list[list[str]]]:
     """markdown 표들을 [표][행][셀] 리스트로 추출 (구분선 행 제외)."""
     tables: list[list[list[str]]] = []
     cur: list[list[str]] = []
-    for line in (text or "").split("\n"):
+    for line in _normalize_md_tables(text).split("\n"):
         if _MD_TABLE_ROW.match(line):
             cells = [c.strip() for c in line.split("|")]
             if cells and cells[0] == "":
