@@ -1716,6 +1716,34 @@ def map_analysis_to_form(draft_analysis: dict, form: Form) -> dict:
     return result
 
 
+def filter_gap_questions(gap_questions: list[dict], mapping: dict | None) -> list[dict]:
+    """갭 인터뷰 질문 중 '초안이 이미 커버하는' 것을 제거(방안 A).
+
+    각 질문의 target_sections를 map_analysis_to_form 결과(mapping)와 대조한다.
+    - 대상 섹션이 하나라도 sufficiency == 'none'(초안에 대응 소스 없음)이면 → 질문 유지
+    - 모든 대상 섹션이 소스를 가지면(full/partial) → 초안이 이미 다룸 → 질문 숨김
+    mapping이 없으면(분석 실패·초안 없음) 필터 없이 전체 질문 반환(안전 폴백).
+
+    한계(방안 A): '언급됨'과 '충분히 상세함'을 구분하지 못한다(있냐/없냐 수준).
+    """
+    if not mapping:
+        return list(gap_questions)
+
+    def _covered(sid: str) -> bool:
+        entry = mapping.get(str(sid))
+        if not entry:
+            return False  # 매핑에 없음 → 갭으로 간주(질문 유지)
+        return entry.get("sufficiency") != "none" and bool(entry.get("sources"))
+
+    kept = []
+    for q in gap_questions:
+        targets = [str(t) for t in (q.get("target_sections") or [])]
+        # 대상이 없으면 판단 불가 → 유지. 하나라도 미커버면 유지.
+        if not targets or not all(_covered(t) for t in targets):
+            kept.append(q)
+    return kept
+
+
 # ── 변환 형식 검수 게이트 — 초안과 동일 수준의 지침 준수 강제 ─────────
 # 프로그램적 검증(비용 0) → 위반 섹션만 재작성 지침을 붙여 1회 재생성.
 

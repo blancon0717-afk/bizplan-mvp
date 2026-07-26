@@ -199,6 +199,40 @@ def load_draft_analysis(session_id: str) -> Optional[dict]:
         return None
 
 
+def save_form_mapping(session_id: str, program_code: str, draft_hash: str, mapping: dict) -> None:
+    """(변환 v3) 양식별 초안→섹션 매핑 캐시 — {sid}_form_mapping.json.
+
+    갭 인터뷰 질문 필터와 변환이 같은 매핑을 공유하도록(LLM 호출 순증 0회) 저장한다.
+    program_code별로 저장하며 draft_hash로 초안 수정 시 무효화한다.
+    """
+    _ensure_dir()
+    path = _SESSIONS_DIR / f"{session_id}_form_mapping.json"
+    store = {}
+    if path.exists():
+        try:
+            store = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001 — 손상 캐시는 덮어쓴다
+            store = {}
+    store[program_code] = {"_draft_hash": draft_hash, "mapping": mapping}
+    path.write_text(json.dumps(store, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_form_mapping(session_id: str, program_code: str, draft_hash: str) -> Optional[dict]:
+    """(변환 v3) 양식 매핑 캐시 로드. draft_hash 불일치·손상·미존재 시 None."""
+    path = _SESSIONS_DIR / f"{session_id}_form_mapping.json"
+    if not path.exists():
+        return None
+    try:
+        store = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001
+        logger.warning("form_mapping 캐시 로드 실패 %s: %s", session_id, e)
+        return None
+    entry = store.get(program_code)
+    if not entry or entry.get("_draft_hash") != draft_hash:
+        return None
+    return entry.get("mapping")
+
+
 def save_framework_draft(session_id: str, results: list[SectionResult]) -> None:
     """프레임워크 초안(양식 무관)을 {session_id}_framework.json에 저장."""
     _ensure_dir()

@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from fastapi import APIRouter, Body, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -26,6 +27,8 @@ from services.session_store import (
     update_program_code,
     save_draft_analysis,
     load_draft_analysis,
+    save_form_mapping,
+    load_form_mapping,
 )
 from core.context_extraction import extract_company_context
 from core.forms import load_form
@@ -41,6 +44,7 @@ from core.generation import (
     analyze_framework_draft,
     map_analysis_to_form,
     compute_draft_hash,
+    filter_gap_questions,
     build_parallel_prior_note,
     FRAMEWORK_SECTIONS,
     _SEQUENTIAL_IDS,
@@ -613,9 +617,35 @@ async def generate_framework(session_id: str):
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+def _get_draft_analysis(session_id: str, framework_results, draft_hash: str) -> dict:
+    """초안 분석 로드 or 재분석(초안 수정 시). draft_hash를 결과에 태깅."""
+    analysis = load_draft_analysis(session_id)
+    if not analysis or analysis.get("_draft_hash") != draft_hash:
+        analysis = analyze_framework_draft(framework_results)
+        analysis["_draft_hash"] = draft_hash
+        save_draft_analysis(session_id, analysis)
+    return analysis
+
+
+def _get_form_mapping(session_id: str, framework_results, form, draft_hash: str) -> dict:
+    """양식 매핑 로드 or 생성 후 캐시. 갭 질문 필터와 변환이 공유(LLM 호출 순증 0회)."""
+    mapping = load_form_mapping(session_id, form.program_code, draft_hash)
+    if mapping is not None:
+        return mapping
+    analysis = _get_draft_analysis(session_id, framework_results, draft_hash)
+    mapping = map_analysis_to_form(analysis, form)
+    save_form_mapping(session_id, form.program_code, draft_hash, mapping)
+    return mapping
+
+
 @router.get("/forms/{program_code}/gap_questions")
-async def get_gap_questions(program_code: str):
-    """양식 변환 전 갭 보완 인터뷰 고정 질문 조회 (양식 YAML gap_questions)."""
+async def get_gap_questions(program_code: str, session_id: str | None = None):
+    """양식 변환 전 갭 보완 인터뷰 질문 조회.
+
+    session_id가 주어지고 초안이 있으면 방안 A 필터를 적용해 '초안이 이미 커버하는'
+    질문은 제외한다(초안↔양식 매핑 재사용, LLM 호출 순증 0). session_id 없거나 초안·
+    분석 실패 시 고정 5문항 전체를 반환(안전 폴백).
+    """
     try:
         form = load_form(program_code)
     except FileNotFoundError:
@@ -623,7 +653,20 @@ async def get_gap_questions(program_code: str):
     except Exception as e:  # noqa: BLE001
         logger.error("[gap_questions 로드 실패] %s: %s", program_code, e)
         raise HTTPException(status_code=500, detail="양식 로드 실패")
-    return {"program_code": program_code, "questions": form.gap_questions}
+
+    questions = form.gap_questions
+    if session_id:
+        framework_results = load_framework_draft(session_id)
+        if framework_results:
+            try:
+                draft_hash = compute_draft_hash(framework_results)
+                mapping = await run_in_threadpool(
+                    _get_form_mapping, session_id, framework_results, form, draft_hash
+                )
+                questions = filter_gap_questions(form.gap_questions, mapping)
+            except Exception as e:  # noqa: BLE001 — 필터 실패는 변환을 막지 않음(전체 질문 반환)
+                logger.warning("[gap_questions 필터 실패] %s/%s: %s", session_id, program_code, e)
+    return {"program_code": program_code, "questions": questions}
 
 
 @router.post("/sessions/{session_id}/convert_to_form")
@@ -662,17 +705,13 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
             loop.call_soon_threadsafe(progress_q.put_nowait, (kind, payload))
 
         def _convert_all():
-            # v3 파이프라인: (1-a) 초안 분석(캐시) → (1-b) 양식 매핑 → 소스별 변환
+            # v3 파이프라인: (1-a) 초안 분석(캐시) → (1-b) 양식 매핑(캐시) → 소스별 변환
+            # 매핑·분석은 갭 질문 조회 시 이미 캐시됐으면 재사용 → LLM 호출 순증 없음
             _emit("stage", {"stage": "analyzing"})
             draft_hash = compute_draft_hash(framework_results)
-            analysis = load_draft_analysis(session_id)
-            if not analysis or analysis.get("_draft_hash") != draft_hash:
-                # 초안이 새로 생성/수정됨 → 재분석 (그 외에는 캐시 재사용 — 재변환 시 중복 분석 없음)
-                analysis = analyze_framework_draft(framework_results)
-                analysis["_draft_hash"] = draft_hash
-                save_draft_analysis(session_id, analysis)
+            analysis = _get_draft_analysis(session_id, framework_results, draft_hash)
             _emit("stage", {"stage": "mapping"})
-            mapping = map_analysis_to_form(analysis, form)
+            mapping = _get_form_mapping(session_id, framework_results, form, draft_hash)
             sess = get_session(session_id)
             _emit("stage", {"stage": "converting"})
             return convert_to_form(

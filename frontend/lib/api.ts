@@ -146,10 +146,12 @@ export const api = {
       }),
     }),
 
-  // 양식 변환 전 갭 보완 인터뷰 고정 질문 조회 (양식 YAML gap_questions)
-  getGapQuestions: (programCode: string) =>
+  // 양식 변환 전 갭 보완 인터뷰 질문 조회.
+  // sessionId를 넘기면 초안이 이미 커버하는 질문은 서버에서 제외(방안 A 필터).
+  getGapQuestions: (programCode: string, sessionId?: string) =>
     request<{ program_code: string; questions: GapQuestion[] }>(
-      `/forms/${programCode}/gap_questions`
+      `/forms/${programCode}/gap_questions` +
+        (sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : "")
     ),
 
   // 기존 사업계획서 PDF 업로드 → 인터뷰 답변 사전 채움.

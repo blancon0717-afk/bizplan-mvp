@@ -111,7 +111,7 @@ function RecommendPageInner() {
     setError(null);
     setIsLoadingGap(true);
     try {
-      const res = await api.getGapQuestions(programCode);
+      const res = await api.getGapQuestions(programCode, sessionId || undefined);
       if (!res.questions || res.questions.length === 0) {
         await handleConvert(programCode, programName, voucherOptions);
         return;
