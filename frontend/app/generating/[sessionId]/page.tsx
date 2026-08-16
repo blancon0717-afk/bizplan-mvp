@@ -25,6 +25,8 @@ export default function GeneratingPage() {
   const [timeProgress, setTimeProgress] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const startedRef = useRef(false);
+  // 자동 재시도로 같은 섹션이 두 번 done 될 수 있어, 최초 완료만 카운트하기 위한 집합
+  const doneIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -83,6 +85,13 @@ export default function GeneratingPage() {
                 status: "generating" as const,
               }))
             );
+          } else if (eventType === "section_retrying") {
+            // 빈 섹션 자동 재시도 — 완료 표시됐던 섹션이 다시 생성 중으로 돌아간다
+            setSections((prev) =>
+              prev.map((s) =>
+                s.id === data.section_id ? { ...s, status: "generating" as const } : s
+              )
+            );
           } else if (eventType === "section_done") {
             setSections((prev) =>
               prev.map((s) =>
@@ -96,7 +105,11 @@ export default function GeneratingPage() {
                   : s
               )
             );
-            setDoneCount((c) => c + 1);
+            // 재시도로 같은 섹션이 다시 done 되어도 진행도가 총계를 넘지 않도록 최초 1회만 증가
+            if (!doneIdsRef.current.has(data.section_id)) {
+              doneIdsRef.current.add(data.section_id);
+              setDoneCount((c) => c + 1);
+            }
           } else if (eventType === "all_done") {
             setPhase("done");
             completed = true;

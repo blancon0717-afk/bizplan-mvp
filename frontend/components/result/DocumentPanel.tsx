@@ -42,6 +42,12 @@ interface DocumentPanelProps {
   onAnchorClick: (sectionId: string, memoIndex: number) => void;
   /** 잠긴 섹션의 "전체 내용 보기" CTA 클릭 — 결제 안내 모달 열기 */
   onUnlockClick?: () => void;
+  /** 생성 실패(빈 내용) 섹션의 "다시 생성" 클릭 */
+  onRegenerateEmpty?: (sectionId: string) => void;
+  /** 섹션별 재생성 진행 상태 */
+  regeneratingEmpty?: Record<string, boolean>;
+  /** 섹션별 재생성 실패 메시지 */
+  regenerateError?: Record<string, string>;
   onRegenerate?: (sectionId: string) => void;
   isRegenerating?: Record<string, boolean>;
   usageData?: Record<string, { used: number; max: number }>;
@@ -93,6 +99,9 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
   onSectionClick,
   onAnchorClick,
   onUnlockClick,
+  onRegenerateEmpty,
+  regeneratingEmpty,
+  regenerateError,
   onRegenerate,
   isRegenerating = {},
   usageData,
@@ -267,6 +276,13 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
                 const dot = CONFIDENCE_DOT[section.confidence_level] ?? CONFIDENCE_DOT.red;
                 const isActive = activeSectionId === section.section_id;
                 const isEditing = editingSectionId === section.section_id;
+                // 생성 실패 판정 — 잠긴 섹션도 content가 비므로 locked를 먼저 배제해야 한다
+                const isFailed =
+                  !section.locked &&
+                  !(section.content || "").trim() &&
+                  (section.content_segments ?? []).length === 0 &&
+                  section.user_edited_content === null;
+                const isRetrying = !!regeneratingEmpty?.[section.section_id];
                 const resolvedCount = section.resolved_memo_count ?? 0;
                 const totalMemos = section.inline_suggestions.length;
 
@@ -354,6 +370,45 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
                             전체 내용 보기
                           </button>
                         </div>
+                      </div>
+                    ) : isFailed ? (
+                      /* 생성 실패 섹션 — 빈 화면 대신 사유와 복구 수단을 제시 */
+                      <div
+                        className="rounded-lg border border-amber-200 bg-amber-50/60 px-5 py-6 flex flex-col items-center gap-3 text-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <p className="text-sm font-semibold text-slate-700">
+                          이 섹션은 생성이 완료되지 못했습니다
+                        </p>
+                        <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
+                          {section.reasoning?.trim()
+                            ? section.reasoning
+                            : "생성 중 오류가 발생했습니다."}
+                          {onRegenerateEmpty && (
+                            <>
+                              <br />
+                              아래 버튼으로 이 섹션만 다시 생성할 수 있습니다.
+                            </>
+                          )}
+                        </p>
+                        {regenerateError?.[section.section_id] && (
+                          <p className="text-xs text-red-600">
+                            {regenerateError[section.section_id]}
+                          </p>
+                        )}
+                        {/* 재생성 경로가 있는 화면(초안)에서만 버튼 노출 — 양식 변환 결과 화면은 안내만 */}
+                        {onRegenerateEmpty && (
+                          <button
+                            onClick={() => onRegenerateEmpty(section.section_id)}
+                            disabled={isRetrying}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-medium hover:bg-slate-900 disabled:opacity-50 transition-colors"
+                          >
+                            {isRetrying && (
+                              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            )}
+                            {isRetrying ? "다시 생성 중... (최대 2분)" : "이 섹션 다시 생성"}
+                          </button>
+                        )}
                       </div>
                     ) : isEditing ? (
                       <div onClick={(e) => e.stopPropagation()}>

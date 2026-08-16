@@ -14,7 +14,7 @@ export default function DraftPage() {
   const router = useRouter();
   const sessionId = params.sessionId as string;
 
-  const { sections, activeSectionId, init, setActiveSectionId, updateSectionSuggestions } =
+  const { sections, activeSectionId, init, setActiveSectionId, updateSectionSuggestions, replaceSection } =
     useResultStore();
 
   const documentPanelRef = useRef<DocumentPanelHandle>(null);
@@ -32,6 +32,8 @@ export default function DraftPage() {
   const [showEmailGate, setShowEmailGate] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [regeneratingEmpty, setRegeneratingEmpty] = useState<Record<string, boolean>>({});
+  const [regenerateError, setRegenerateError] = useState<Record<string, string>>({});
 
   function handleDownloadDraft() {
     // DOCX는 유료 산출물 — 미결제면 결제 안내 (서버도 403으로 차단)
@@ -99,6 +101,26 @@ export default function DraftPage() {
     }
     load();
   }, [sessionId]);
+
+  async function handleRegenerateEmpty(sectionId: string) {
+    setRegeneratingEmpty((m) => ({ ...m, [sectionId]: true }));
+    setRegenerateError((m) => {
+      const next = { ...m };
+      delete next[sectionId];
+      return next;
+    });
+    try {
+      const section = await api.regenerateEmptySection(sessionId, sectionId);
+      replaceSection(section);
+    } catch (e) {
+      setRegenerateError((m) => ({
+        ...m,
+        [sectionId]: e instanceof Error ? e.message : "재생성에 실패했습니다.",
+      }));
+    } finally {
+      setRegeneratingEmpty((m) => ({ ...m, [sectionId]: false }));
+    }
+  }
 
   function handleAnchorClick(sectionId: string, memoIndex: number) {
     setActiveSectionId(sectionId);
@@ -222,18 +244,23 @@ export default function DraftPage() {
                 "초안 DOCX 다운로드"
               )}
             </button>
-            <button
-              onClick={() => {
-                if (!isUnlocked) {
-                  setShowUnlockModal(true);
-                  return;
-                }
-                router.push(`/recommend?session=${sessionId}&mode=convert`);
-              }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              지원사업 선택하기 →
-            </button>
+            {/* 양식 변환 준비 중 — 버튼은 노출하되 비활성 */}
+            <div className="relative group">
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm opacity-50 cursor-not-allowed pointer-events-none"
+              >
+                지원사업 선택하기 →
+              </button>
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute right-0 top-full mt-2 z-20 whitespace-nowrap rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-white shadow-lg opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                업데이트 예정이에요.
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -272,6 +299,9 @@ export default function DraftPage() {
             onSectionClick={setActiveSectionId}
             onAnchorClick={handleAnchorClick}
             onUnlockClick={() => setShowUnlockModal(true)}
+            onRegenerateEmpty={handleRegenerateEmpty}
+            regeneratingEmpty={regeneratingEmpty}
+            regenerateError={regenerateError}
           />
         </div>
 

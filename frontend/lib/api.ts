@@ -130,6 +130,60 @@ export const api = {
   getFramework: (sessionId: string) =>
     request<GenerationResults>(`/sessions/${sessionId}/framework`),
 
+  /** 생성 실패(빈 내용) 섹션 단건 재생성. 내용이 있는 섹션은 서버가 400으로 거부한다.
+   *
+   *  재생성은 40~120초가 걸려 단일 응답으로는 프록시에 끊기므로 서버가 SSE로 응답한다.
+   *  keepalive를 흘려보내다 마지막에 done(섹션) 또는 error(메시지) 이벤트를 보낸다. */
+  regenerateEmptySection: async (
+    sessionId: string,
+    sectionId: string
+  ): Promise<SectionResult> => {
+    const res = await fetch(
+      `${API_BASE}/sessions/${sessionId}/framework/regenerate/${sectionId}`,
+      { method: "POST" }
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(
+        typeof err.detail === "string" ? err.detail : "재생성 요청에 실패했습니다."
+      );
+    }
+
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let section: SectionResult | null = null;
+    let errorMessage: string | null = null;
+
+    function handleChunk(chunk: string) {
+      const lines = chunk.split("\n");
+      const eventType = lines.find((l) => l.startsWith("event:"))?.slice(6).trim();
+      const dataLine = lines.find((l) => l.startsWith("data:"))?.slice(5).trim();
+      if (!eventType || !dataLine) return; // keepalive 주석 등은 무시
+      try {
+        const data = JSON.parse(dataLine);
+        if (eventType === "done") section = data as SectionResult;
+        else if (eventType === "error") errorMessage = data.message ?? "재생성에 실패했습니다.";
+      } catch {
+        // malformed event — 무시
+      }
+    }
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split("\n\n");
+      buffer = chunks.pop() ?? "";
+      for (const chunk of chunks) handleChunk(chunk);
+    }
+    if (buffer.trim()) handleChunk(buffer);
+
+    if (errorMessage) throw new Error(errorMessage);
+    if (!section) throw new Error("재생성 응답이 중단됐습니다. 다시 시도해주세요.");
+    return section;
+  },
+
   convertToForm: (
     sessionId: string,
     program_code: string,

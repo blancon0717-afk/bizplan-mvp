@@ -19,6 +19,8 @@ interface ResultState {
     response: string
   ) => Promise<void>;
   updateSectionAfterRegen: (section: SectionResult, overall: number) => void;
+  /** 섹션 전체 교체 — 생성 실패 섹션 복구용(새 피드백까지 그대로 반영) */
+  replaceSection: (section: SectionResult) => void;
   updateSectionSuggestions: (sectionId: string, suggestions: InlineSuggestion[]) => void;
   editSection: (sessionId: string, sectionId: string, content: string) => Promise<void>;
   regenerateSection: (sessionId: string, sectionId: string, memoResponse?: string, memoIndex?: number) => Promise<void>;
@@ -89,6 +91,20 @@ export const useResultStore = create<ResultState>((set, get) => ({
       overallCompletion: overall,
       localProbPct: computeLocalProbPct(overall),
     }));
+  },
+
+  replaceSection: (section) => {
+    set((state) => {
+      const sections = state.sections.map((s) =>
+        s.section_id === section.section_id ? section : s
+      );
+      const overall = computeOverall(sections);
+      return {
+        sections,
+        overallCompletion: overall,
+        localProbPct: computeLocalProbPct(overall),
+      };
+    });
   },
 
   updateSectionSuggestions: (sectionId, suggestions) => {
