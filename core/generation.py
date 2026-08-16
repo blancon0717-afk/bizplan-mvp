@@ -1160,8 +1160,8 @@ def generate_framework_section(
     company_context: dict | None = None,
     extra_instruction: str = "",
     prior_context: str = "",
-    timeout_s: float = 60.0,
-    retries: int = 1,
+    timeout_s: float = 110.0,
+    retries: int = 0,
 ) -> SectionResult:
     """단일 프레임워크 섹션 생성 (양식 무관).
 
@@ -1175,6 +1175,14 @@ def generate_framework_section(
         prior_context: 앞서 생성된 섹션들의 ■ 소제목 누적 (중복 방지용)
         timeout_s: 단일 API 호출 타임아웃(초). 재생성은 45초로 낮춰 총 소요를 확정한다.
         retries: SDK 재시도 횟수. 재생성은 0으로 주어 재시도 없이 1회만 시도한다.
+
+    타임아웃 예산 배분(60s×2회 → 110s×1회):
+        표가 많은 무거운 섹션(2-2 아이템 기술, 3-1 추진 전략, 3-2 자금 계획)은 실측 소요가
+        37~50초로 60초 상한에 근접한다. 상한이 낮으면 조금만 느려져도 1회차가 끊기고
+        재시도도 같은 조건이라 또 끊겨, 총 120초를 쓰고도 빈 섹션이 되는 구조였다.
+        같은 예산을 1회 호출에 몰아주면 70~100초 걸리는 날에도 정상 완료된다.
+        상한 근거: 110초 + 검수 게이트 진입 최소 예산 85초 판정 → 잔여 부족으로 게이트가
+        생략되므로, 최악의 경우에도 라우터 안전망 180초 이전에 반드시 종료된다.
     """
     section_id = section["id"]
     section_title = section["title"]

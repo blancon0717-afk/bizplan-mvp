@@ -39,6 +39,7 @@ from core.generation import (
     generate_section,
     generate_framework_draft,
     generate_one_framework_section,
+    generate_framework_section,
     SectionResult,
     convert_to_form,
     convert_to_form_v2,
@@ -61,6 +62,13 @@ router = APIRouter(tags=["generation"])
 logger = logging.getLogger(__name__)
 
 _SEVERITY_ORDER: dict[str, int] = {"critical": 0, "warning": 1, "info": 2}
+
+# 빈 섹션 자동 재시도 설정 (초안 생성 배치 종료 직후 1회)
+# 상한을 두는 이유: 다수가 비면 개별 섹션 문제가 아니라 API 장애이므로,
+# 재시도에 매달리기보다 초안을 확정하고 사용자에게 단건 재생성 경로를 남긴다.
+_MAX_AUTO_RETRY = 3
+# 재시도는 프롬프트 캐시가 이미 따뜻해 실측 16~45초. 마지막 기회이므로 상한을 넉넉히 준다.
+_AUTO_RETRY_TIMEOUT_S = 120.0
 
 
 class GenerateRequest(BaseModel):
@@ -620,7 +628,62 @@ async def generate_framework(session_id: str):
         section_order = {s["id"]: i for i, s in enumerate(FRAMEWORK_SECTIONS)}
         results = sorted(all_results, key=lambda r: section_order.get(r.section_id, 999))
 
+        # 1차 결과 선저장 — 아래 재시도 도중 사용자가 이탈해도 여기까지는 보존된다.
         save_framework_draft(session_id, results)
+
+        # 빈 섹션 자동 재시도 — 타임아웃·일시 장애로 비어버린 섹션만 1회씩 다시 생성.
+        # 검수 게이트는 건너뛰고(시간 초과 재발 방지) 생성 자체에만 예산을 쓴다.
+        empty_idx = [i for i, r in enumerate(results) if not (r.content or "").strip()]
+        if len(empty_idx) > _MAX_AUTO_RETRY:
+            # 다수가 비었다면 개별 섹션 문제가 아니라 API 장애 — 재시도는 낭비이므로 생략
+            logger.error(
+                "[초안 자동 재시도] 빈 섹션 %d개 > 상한 %d개 — API 장애로 판단해 재시도 생략",
+                len(empty_idx), _MAX_AUTO_RETRY,
+            )
+        elif empty_idx:
+            logger.info("[초안 자동 재시도] 빈 섹션 %d개 재생성 시작", len(empty_idx))
+            for i in empty_idx:
+                sec = next((s for s in FRAMEWORK_SECTIONS if s["id"] == results[i].section_id), None)
+                if sec is None:
+                    continue
+                yield _sse("section_retrying", {
+                    "section_id": results[i].section_id,
+                    "section_title": results[i].section_title,
+                })
+
+                def _retry(s=sec):
+                    return generate_framework_section(
+                        s, questions, session.answers, skills, company_context,
+                        prior_context=build_parallel_prior_note(s) if parallel_mode else "",
+                        timeout_s=_AUTO_RETRY_TIMEOUT_S,
+                        retries=0,
+                    )
+
+                retried: SectionResult | None = None
+                async for kind, payload in _run_with_keepalive(
+                    loop, _retry, _AUTO_RETRY_TIMEOUT_S + 15.0
+                ):
+                    if kind == "ping":
+                        yield _KEEPALIVE
+                    elif kind == "done":
+                        retried = payload
+                    elif kind == "error":
+                        logger.error("[초안 자동 재시도 실패] %s: %s", sec["id"], payload)
+                    elif kind == "timeout":
+                        logger.error("[초안 자동 재시도 타임아웃] %s", sec["id"])
+
+                # 재시도 결과가 비어 있으면 원본(실패 사유 보존)을 그대로 둔다
+                if retried is not None and (retried.content or "").strip():
+                    results[i] = retried
+                    logger.info("[초안 자동 재시도] %s 복구 성공", sec["id"])
+                    yield _sse("section_done", {
+                        "section_id": retried.section_id,
+                        "section_title": retried.section_title,
+                        "confidence_level": retried.confidence_level,
+                        "completion_score": retried.effective_completion_score(),
+                    })
+
+            save_framework_draft(session_id, results)
 
         from core.judgment import calculate_overall_completion
         overall = calculate_overall_completion(results)
@@ -882,59 +945,141 @@ def get_framework_draft(session_id: str):
     unlocked = is_unlocked(session_id)
     locked_ids = set() if unlocked else _locked_section_ids()
 
-    def _section_payload(r) -> dict:
-        locked = r.section_id in locked_ids
-        base = {
-            "section_id": r.section_id,
-            "section_title": r.section_title,
-            "confidence_level": r.confidence_level,
-            "completion_score": r.effective_completion_score(),
-            "effective_completion_score": r.effective_completion_score(),
-            "resolved_memo_count": r.resolved_memo_count(),
-            "category": _SECTION_CATEGORY.get(r.section_id, ""),
-            "truncated": bool(r.llm_meta.get("truncated", False)),
-            "locked": locked,
-        }
-        if locked:
-            # 원문·세그먼트·피드백 전부 미포함 — 티저만
-            preview = r.display_content()[:_LOCKED_PREVIEW_CHARS]
-            return {
-                **base,
-                "content": "",
-                "preview": preview,
-                "reasoning": "",
-                "used_answer_ids": [],
-                "missing_info": [],
-                "user_edited_content": None,
-                "rubric_check": {},
-                "llm_meta": {},
-                "completion_reasoning": "",
-                "content_segments": [],
-                "inline_suggestions": [],
-            }
-        return {
-            **base,
-            "content": r.display_content(),
-            "preview": "",
-            "reasoning": r.reasoning,
-            "used_answer_ids": r.used_answer_ids,
-            "missing_info": r.missing_info,
-            "user_edited_content": r.user_edited_content,
-            "rubric_check": r.rubric_check,
-            "llm_meta": r.llm_meta,
-            "completion_reasoning": r.completion_reasoning,
-            "content_segments": [
-                {"text": s.text, "source": s.source, "source_qids": s.source_qids}
-                for s in r.content_segments
-            ],
-            "inline_suggestions": [
-                {"anchor_text": s.anchor_text, "note": s.note, "severity": s.severity, "response": s.response}
-                for s in r.inline_suggestions
-            ],
-        }
-
     return {
         "overall_completion": overall,
         "unlocked": unlocked,
-        "sections": [_section_payload(r) for r in results],
+        "sections": [
+            _framework_section_payload(r, r.section_id in locked_ids) for r in results
+        ],
     }
+
+
+def _framework_section_payload(r, locked: bool) -> dict:
+    """프레임워크 섹션 1개의 API 응답 형태. 목록 조회와 단건 재생성이 공유한다."""
+    base = {
+        "section_id": r.section_id,
+        "section_title": r.section_title,
+        "confidence_level": r.confidence_level,
+        "completion_score": r.effective_completion_score(),
+        "effective_completion_score": r.effective_completion_score(),
+        "resolved_memo_count": r.resolved_memo_count(),
+        "category": _SECTION_CATEGORY.get(r.section_id, ""),
+        "truncated": bool(r.llm_meta.get("truncated", False)),
+        "locked": locked,
+    }
+    if locked:
+        # 원문·세그먼트·피드백 전부 미포함 — 티저만
+        return {
+            **base,
+            "content": "",
+            "preview": r.display_content()[:_LOCKED_PREVIEW_CHARS],
+            "reasoning": "",
+            "used_answer_ids": [],
+            "missing_info": [],
+            "user_edited_content": None,
+            "rubric_check": {},
+            "llm_meta": {},
+            "completion_reasoning": "",
+            "content_segments": [],
+            "inline_suggestions": [],
+        }
+    return {
+        **base,
+        "content": r.display_content(),
+        "preview": "",
+        "reasoning": r.reasoning,
+        "used_answer_ids": r.used_answer_ids,
+        "missing_info": r.missing_info,
+        "user_edited_content": r.user_edited_content,
+        "rubric_check": r.rubric_check,
+        "llm_meta": r.llm_meta,
+        "completion_reasoning": r.completion_reasoning,
+        "content_segments": [
+            {"text": s.text, "source": s.source, "source_qids": s.source_qids}
+            for s in r.content_segments
+        ],
+        "inline_suggestions": [
+            {"anchor_text": s.anchor_text, "note": s.note, "severity": s.severity, "response": s.response}
+            for s in r.inline_suggestions
+        ],
+    }
+
+
+@router.post("/sessions/{session_id}/framework/regenerate/{section_id}")
+async def regenerate_empty_framework_section(session_id: str, section_id: str):
+    """생성 실패(빈 내용) 섹션 단건 재생성 — 최후 복구 경로.
+
+    내용이 있는 섹션은 400으로 거부한다. 실패 복구 전용이므로 사용량(usage)을 차감하지
+    않으며, 정상 섹션을 무한 재생성하는 우회 경로로 쓰일 수 없다.
+    """
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    results = load_framework_draft(session_id)
+    if not results:
+        raise HTTPException(status_code=404, detail="프레임워크 초안이 없습니다.")
+
+    idx = next((i for i, r in enumerate(results) if r.section_id == section_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail=f"Section '{section_id}' not found")
+    if (results[idx].content or "").strip():
+        raise HTTPException(status_code=400, detail="생성에 실패한 섹션만 재생성할 수 있습니다.")
+
+    sec = next((s for s in FRAMEWORK_SECTIONS if s["id"] == section_id), None)
+    if sec is None:
+        raise HTTPException(status_code=404, detail=f"Section '{section_id}' not in framework")
+
+    try:
+        questions = load_initial_questions(_INITIAL_Q_PATH)
+        skills = load_skills(_SKILLS_DIR) if _SKILLS_DIR.exists() else []
+    except Exception as e:
+        logger.error("[단건 재생성] 초기화 실패 %s: %s", section_id, e)
+        raise HTTPException(status_code=500, detail="재생성 초기화에 실패했습니다.")
+
+    company_context = session.company_context
+
+    def _regen():
+        return generate_framework_section(
+            sec, questions, session.answers, skills, company_context,
+            prior_context=build_parallel_prior_note(sec),
+            timeout_s=_AUTO_RETRY_TIMEOUT_S,
+            retries=0,
+        )
+
+    # SSE로 응답하는 이유: 재생성은 40~120초가 걸리는데, 그동안 아무 바이트도 흐르지 않는
+    # 단일 POST는 Next.js·Railway 프록시가 끊어버린다(실측: 프록시 경유 시 37초에 500).
+    # 15초마다 keepalive를 흘려보내 연결을 유지하고, 마지막에 done/error 이벤트를 보낸다.
+    async def event_generator():
+        loop = asyncio.get_event_loop()
+        regenerated: SectionResult | None = None
+
+        async for kind, payload in _run_with_keepalive(
+            loop, _regen, _AUTO_RETRY_TIMEOUT_S + 15.0
+        ):
+            if kind == "ping":
+                yield _KEEPALIVE
+            elif kind == "done":
+                regenerated = payload
+            elif kind == "error":
+                logger.error("[단건 재생성 실패] %s: %s", section_id, payload)
+                yield _sse("error", {"message": "재생성 중 오류가 발생했습니다. 다시 시도해주세요."})
+                return
+            elif kind == "timeout":
+                logger.error("[단건 재생성 타임아웃] %s", section_id)
+                yield _sse("error", {"message": "재생성이 시간 내에 완료되지 않았습니다. 다시 시도해주세요."})
+                return
+
+        if regenerated is None or not (regenerated.content or "").strip():
+            yield _sse("error", {"message": "재생성 결과가 비어 있습니다. 다시 시도해주세요."})
+            return
+
+        results[idx] = regenerated
+        save_framework_draft(session_id, results)
+        logger.info("[단건 재생성] %s 복구 성공", section_id)
+
+        # 잠금 상태 반영 — 미결제 세션의 잠긴 섹션은 원문 대신 티저만 내려간다
+        locked_ids = set() if is_unlocked(session_id) else _locked_section_ids()
+        yield _sse("done", _framework_section_payload(regenerated, section_id in locked_ids))
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
