@@ -257,11 +257,11 @@ export default function DraftPage() {
         {/* 좌: 문서 패널 (60%) — 읽기전용 */}
         <div className="w-3/5 border-r border-slate-200 flex flex-col overflow-hidden">
           <div className="flex-shrink-0 px-4 py-1.5 border-b border-slate-100 bg-white">
-            <div className="flex items-center gap-4 text-xs text-slate-400">
-              <span>🟢 완성 {greenCount}</span>
-              <span>🟡 보완 필요 {yellowCount}</span>
-              <span>🔴 미흡 {redCount}</span>
-              {showAnchors && <span>⚖️ 피드백 {totalFeedbacks}건</span>}
+            <div className="flex items-center gap-4 text-xs text-slate-500">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />완성 {greenCount}</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />보완 필요 {yellowCount}</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />미흡 {redCount}</span>
+              {showAnchors && <span className="text-slate-400">피드백 {totalFeedbacks}건</span>}
             </div>
           </div>
           <DocumentPanel
@@ -283,6 +283,12 @@ export default function DraftPage() {
             activeSectionId={activeSectionId}
             showAnchors={showAnchors}
             onMemoTitleClick={handleMemoTitleClick}
+            onSectionSelect={setActiveSectionId}
+            onRequestFeedback={handleFeedback}
+            isFeedbackRunning={isFeedbackRunning}
+            onMemoHover={(anchorText) => {
+              if (activeSectionId) documentPanelRef.current?.setHoverAnchor(activeSectionId, anchorText);
+            }}
           />
         </div>
       </div>

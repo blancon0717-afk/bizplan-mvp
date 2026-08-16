@@ -64,30 +64,40 @@ body {
   border-radius: 2px;
 }
 
-/* 섹션 컨텐츠 타이포그래피 */
-.section-content h1, .section-content h2, .section-content h3 {
-  font-weight: 600;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-}
-.section-content p {
-  margin-bottom: 0.75em;
-  line-height: 1.7;
-}
+/* 섹션 컨텐츠 타이포그래피 — 표 조판 */
 .section-content table {
   width: 100%;
   border-collapse: collapse;
-  margin: 0.75em 0;
-  font-size: 0.875rem;
+  margin: 0.875em 0;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
 }
 .section-content th, .section-content td {
   border: 1px solid #e2e8f0;
-  padding: 6px 12px;
+  padding: 8px 12px;
   text-align: left;
+  vertical-align: top;
 }
 .section-content th {
-  background: #f1f5f9;
+  background: #f8fafc;
   font-weight: 600;
+  color: #334155;
+}
+.section-content td {
+  border-color: #e9eef5;
+}
+
+/* AI 추론 세그먼트 — 점선 밑줄 (토글로 표시/숨김) */
+.ai-inferred {
+  text-decoration: underline dotted #34d399;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+
+/* 피드백 카드 호버 시 문서 앵커 하이라이트 */
+.anchor-hover {
+  background-color: #fef3c7;
+  border-radius: 2px;
 }
 
 /* 앵커 클릭 시 펄스 하이라이트 */

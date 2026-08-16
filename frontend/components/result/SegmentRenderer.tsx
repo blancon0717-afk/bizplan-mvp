@@ -36,7 +36,7 @@ function renderVisualCell(text: string, anchorFn?: (t: string) => React.ReactNod
   const t = text.trim();
   if (CAPTION_CELL_RE.test(t)) {
     return {
-      tdClass: "border border-slate-200 px-3 py-2 text-center",
+      tdClass: "text-center",
       content: <span className="text-xs text-slate-500">{t}</span>,
     };
   }
@@ -48,7 +48,7 @@ function renderVisualCell(text: string, anchorFn?: (t: string) => React.ReactNod
       const before = rest.slice(0, rest.indexOf(url));
       const after = rest.slice(rest.indexOf(url) + url.length);
       return {
-        tdClass: "border border-slate-200 px-3 py-2",
+        tdClass: "",
         content: (
           <span className="text-xs">
             출처: {before}
@@ -59,18 +59,18 @@ function renderVisualCell(text: string, anchorFn?: (t: string) => React.ReactNod
       };
     }
     return {
-      tdClass: "border border-slate-200 px-3 py-2",
+      tdClass: "",
       content: <span className="text-xs text-blue-500">{t}</span>,
     };
   }
   if (DESCRIPTION_CELL_RE.test(t)) {
     return {
-      tdClass: "border border-slate-200 px-3 py-2 bg-blue-50",
+      tdClass: "bg-blue-50",
       content: <span className="text-blue-700 italic">{t}</span>,
     };
   }
   return {
-    tdClass: "border border-slate-200 px-2 py-1.5 align-top text-slate-600",
+    tdClass: "text-slate-600",
     content: anchorFn ? <>{anchorFn(t)}</> : <span>{t}</span>,
   };
 }
@@ -80,6 +80,7 @@ function renderSegmentContent(
   suggestions: InlineSuggestion[],
   sortedSuggestions: InlineSuggestion[],
   isInferred: boolean,
+  highlightInferred: boolean,
   segKey: number,
   showAnchors: boolean,
   onAnchorClick?: (index: number) => void
@@ -91,7 +92,7 @@ function renderSegmentContent(
   let blockKey = 0;
 
   const anchor = (t: string) =>
-    renderTextWithAnchors(t, suggestions, sortedSuggestions, isInferred, showAnchors, onAnchorClick);
+    renderTextWithAnchors(t, suggestions, sortedSuggestions, isInferred, highlightInferred, showAnchors, onAnchorClick);
 
   while (i < lines.length) {
     const line = lines[i];
@@ -111,15 +112,13 @@ function renderSegmentContent(
       renderedTableKeys.add(tableKey);
       const numCols = Math.max(...allRows.map((r) => r.length), 1);
       nodes.push(
-        <table key={`seg${segKey}-tbl${blockKey++}`} className="w-full border-collapse my-2 text-xs">
+        <table key={`seg${segKey}-tbl${blockKey++}`}>
           {headers.length > 0 && (
             <thead>
               {headers.map((row, ri) => (
                 <tr key={ri}>
                   {Array.from({ length: numCols }).map((_, ci) => (
-                    <th key={ci} className="border border-slate-200 px-3 py-2 bg-slate-50 font-semibold text-left text-slate-700">
-                      {row[ci] ?? ""}
-                    </th>
+                    <th key={ci}>{row[ci] ?? ""}</th>
                   ))}
                 </tr>
               ))}
@@ -130,7 +129,7 @@ function renderSegmentContent(
               <tr key={ri}>
                 {Array.from({ length: numCols }).map((_, ci) => {
                   const { tdClass, content } = renderVisualCell(row[ci] ?? "", anchor);
-                  return <td key={ci} className={tdClass}>{content}</td>;
+                  return <td key={ci} className={tdClass || undefined}>{content}</td>;
                 })}
               </tr>
             ))}
@@ -143,16 +142,19 @@ function renderSegmentContent(
       nodes.push(<div key={`seg${segKey}-sp${blockKey++}`} className="h-3" />);
       i++;
     }
-    // ■ 중제목
+    // ■ 중제목 — 기호는 화면에서 제거하고 실제 헤딩 스타일로 (DOCX 출력은 별도 경로라 불변)
     else if (HEADING_LINE.test(line)) {
       nodes.push(
-        <div key={`seg${segKey}-h${blockKey++}`} className="font-semibold text-slate-800 leading-snug">
-          {anchor(line)}
+        <div
+          key={`seg${segKey}-h${blockKey++}`}
+          className="mt-4 mb-1.5 font-semibold text-[15px] text-slate-900 leading-snug"
+        >
+          {anchor(line.replace(/^■\s*/, ""))}
         </div>
       );
       i++;
     }
-    // 세부항목 ( - ) — 연속된 불릿을 빈 줄 없이 묶음
+    // 세부항목 ( - ) — 대시 기호 제거, 실제 불릿 + 내어쓰기
     else if (BULLET_LINE.test(line)) {
       const bulletLines: string[] = [];
       while (i < lines.length && BULLET_LINE.test(lines[i])) {
@@ -160,10 +162,11 @@ function renderSegmentContent(
         i++;
       }
       nodes.push(
-        <div key={`seg${segKey}-ul${blockKey++}`}>
+        <div key={`seg${segKey}-ul${blockKey++}`} className="my-1 space-y-1">
           {bulletLines.map((bl, bi) => (
-            <div key={bi} className="leading-relaxed">
-              {anchor(bl)}
+            <div key={bi} className="flex gap-2.5 leading-[1.8]">
+              <span className="mt-[0.72em] w-1 h-1 rounded-full bg-slate-400 flex-shrink-0" aria-hidden />
+              <span className="flex-1 min-w-0">{anchor(bl.replace(/^\s*-\s/, ""))}</span>
             </div>
           ))}
         </div>
@@ -185,7 +188,7 @@ function renderSegmentContent(
       const joined = textLines.join("\n").trim();
       if (joined) {
         nodes.push(
-          <p key={`seg${segKey}-txt${blockKey++}`} className="mb-2">
+          <p key={`seg${segKey}-txt${blockKey++}`} className="mb-2.5">
             {anchor(joined)}
           </p>
         );
@@ -199,6 +202,8 @@ interface SegmentRendererProps {
   segments: ContentSegment[];
   suggestions: InlineSuggestion[];
   showAnchors?: boolean;
+  /** AI 추론 세그먼트 점선 밑줄 표시 여부 (기본 켜짐) */
+  highlightInferred?: boolean;
   onAnchorClick?: (index: number) => void;
 }
 
@@ -207,13 +212,15 @@ function renderTextWithAnchors(
   suggestions: InlineSuggestion[],
   sortedSuggestions: InlineSuggestion[],
   isInferred: boolean,
+  highlightInferred: boolean,
   showAnchors: boolean,
   onAnchorClick?: (index: number) => void
 ): React.ReactNode[] {
-  const colorClass = isInferred ? "text-emerald-700" : "text-slate-800";
+  // 본문 색은 컨테이너에서 상속 (검정 통일) — AI 추론은 점선 밑줄로만 구분
+  const inferredClass = isInferred && highlightInferred ? "ai-inferred" : undefined;
 
   if (!showAnchors) {
-    return [<span key={0} className={colorClass}>{text}</span>];
+    return [<span key={0} className={inferredClass}>{text}</span>];
   }
 
   const nodes: React.ReactNode[] = [];
@@ -238,7 +245,7 @@ function renderTextWithAnchors(
 
     if (!match) {
       nodes.push(
-        <span key={keyIdx++} className={isInferred ? "text-emerald-700" : "text-slate-800"}>
+        <span key={keyIdx++} className={inferredClass}>
           {remaining}
         </span>
       );
@@ -247,7 +254,7 @@ function renderTextWithAnchors(
 
     if (earliest > 0) {
       nodes.push(
-        <span key={keyIdx++} className={isInferred ? "text-emerald-700" : "text-slate-800"}>
+        <span key={keyIdx++} className={inferredClass}>
           {remaining.slice(0, earliest)}
         </span>
       );
@@ -283,7 +290,7 @@ function renderTextWithAnchors(
 }
 
 const SegmentRenderer = forwardRef<SegmentRendererHandle, SegmentRendererProps>(
-  function SegmentRenderer({ segments, suggestions, showAnchors = true, onAnchorClick }, ref) {
+  function SegmentRenderer({ segments, suggestions, showAnchors = true, highlightInferred = true, onAnchorClick }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
 
     useImperativeHandle(ref, () => ({
@@ -309,7 +316,10 @@ const SegmentRenderer = forwardRef<SegmentRendererHandle, SegmentRendererProps>(
     });
 
     return (
-      <div ref={containerRef} className="section-content text-sm leading-relaxed">
+      <div
+        ref={containerRef}
+        className="section-content text-[15px] leading-[1.8] text-slate-800 tracking-[-0.003em]"
+      >
         {segments.map((seg, i) => (
           <div key={i} className="mb-1">
             {renderSegmentContent(
@@ -317,6 +327,7 @@ const SegmentRenderer = forwardRef<SegmentRendererHandle, SegmentRendererProps>(
               suggestions,
               sortedSuggestions,
               seg.source === "llm_inferred",
+              highlightInferred,
               i,
               showAnchors,
               onAnchorClick
