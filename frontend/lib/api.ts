@@ -161,6 +161,13 @@ export const api = {
       body: JSON.stringify({ email }),
     }),
 
+  // 결제 후 언락 코드 검증 — 성공 시 전문 열람·양식 변환·DOCX 해제
+  unlockSession: (sessionId: string, code: string) =>
+    request<{ ok: boolean; unlocked: boolean }>(`/sessions/${sessionId}/unlock`, {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+
   // 기존 사업계획서 PDF 업로드 → 인터뷰 답변 사전 채움.
   // multipart이므로 Content-Type을 직접 지정하지 않는다(브라우저가 boundary 설정).
   // ok=false + reason="no_text"이면 스캔본 등 추출 실패 → 일반 인터뷰로 유도.

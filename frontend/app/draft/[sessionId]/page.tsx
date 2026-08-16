@@ -5,7 +5,7 @@ import DocumentPanel, { type DocumentPanelHandle } from "@/components/result/Doc
 import MemoPanel, { type MemoPanelHandle } from "@/components/result/MemoPanel";
 import { useResultStore } from "@/store/resultStore";
 import { api } from "@/lib/api";
-import EmailGateModal, { hasLeadEmail } from "@/components/EmailGateModal";
+import EmailGateModal, { hasLeadEmail, UnlockModal } from "@/components/EmailGateModal";
 
 /** 기본 초안 검토 화면 — 읽기전용 초안 + 심사위원 피드백.
  *  양식 변환 후에도 이 URL로 초안을 다시 열람할 수 있다. */
@@ -30,14 +30,27 @@ export default function DraftPage() {
   const [usageData, setUsageData] = useState<Record<string, { used: number; max: number }>>({});
   const [isDownloading, setIsDownloading] = useState(false);
   const [showEmailGate, setShowEmailGate] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
 
   function handleDownloadDraft() {
-    // 초안 열람까지 무료 — DOCX 다운로드 직전에만 이메일 수집 (최초 1회)
+    // DOCX는 유료 산출물 — 미결제면 결제 안내 (서버도 403으로 차단)
+    if (!isUnlocked) {
+      setShowUnlockModal(true);
+      return;
+    }
+    // 결제 후에도 리드 이메일은 최초 1회 수집
     if (!hasLeadEmail()) {
       setShowEmailGate(true);
       return;
     }
     void doDownloadDraft();
+  }
+
+  async function reloadFramework() {
+    const framework = await api.getFramework(sessionId);
+    init(sessionId, framework.sections, Number(framework.overall_completion) || 0);
+    setIsUnlocked(Boolean(framework.unlocked));
   }
 
   async function doDownloadDraft() {
@@ -67,6 +80,7 @@ export default function DraftPage() {
       try {
         const framework = await api.getFramework(sessionId);
         init(sessionId, framework.sections, Number(framework.overall_completion) || 0);
+        setIsUnlocked(Boolean(framework.unlocked));
         localStorage.setItem("bizplan_session_id", sessionId);
         api.getUsage(sessionId).then(setUsageData).catch(() => {});
         // 피드백을 이미 받았던 초안이면 앵커 바로 표시
@@ -194,27 +208,6 @@ export default function DraftPage() {
           </div>
 
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="relative group">
-              <button
-                onClick={handleFeedback}
-                disabled={isFeedbackRunning}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 text-blue-600 text-sm font-medium hover:bg-blue-50 disabled:opacity-50 transition-colors"
-              >
-                {isFeedbackRunning ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                    피드백 생성 중 {feedbackDoneCount > 0 && feedbackTotal > 0 ? `(${feedbackDoneCount}/${feedbackTotal})` : ""}
-                  </>
-                ) : (
-                  <>피드백 확인하기 <span className={(usageData.feedback?.used ?? 0) >= (usageData.feedback?.max ?? 1) ? "text-xs text-gray-400" : "text-xs text-blue-500"}>({usageData.feedback?.used ?? 0}/{usageData.feedback?.max ?? 1})</span></>
-                )}
-              </button>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block z-50">
-                <div className="bg-white text-slate-700 text-xs rounded-xl px-3 py-2 whitespace-nowrap shadow-xl border border-slate-200 font-medium">
-                  심사위원 관점에서 초안을 검토하고 피드백을 제시합니다
-                </div>
-              </div>
-            </div>
             <button
               onClick={handleDownloadDraft}
               disabled={isDownloading}
@@ -230,7 +223,13 @@ export default function DraftPage() {
               )}
             </button>
             <button
-              onClick={() => router.push(`/recommend?session=${sessionId}&mode=convert`)}
+              onClick={() => {
+                if (!isUnlocked) {
+                  setShowUnlockModal(true);
+                  return;
+                }
+                router.push(`/recommend?session=${sessionId}&mode=convert`);
+              }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
             >
               지원사업 선택하기 →
@@ -272,6 +271,7 @@ export default function DraftPage() {
             readOnly
             onSectionClick={setActiveSectionId}
             onAnchorClick={handleAnchorClick}
+            onUnlockClick={() => setShowUnlockModal(true)}
           />
         </div>
 
@@ -300,6 +300,17 @@ export default function DraftPage() {
         onDone={() => {
           setShowEmailGate(false);
           void doDownloadDraft();
+        }}
+      />
+
+      <UnlockModal
+        sessionId={sessionId}
+        open={showUnlockModal}
+        onClose={() => setShowUnlockModal(false)}
+        onUnlocked={() => {
+          setShowUnlockModal(false);
+          // 잠긴 섹션 원문 포함 재조회 — 서버가 unlocked 세션엔 전문을 내려줌
+          void reloadFramework().catch(() => {});
         }}
       />
     </div>

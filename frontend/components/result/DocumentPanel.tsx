@@ -40,6 +40,8 @@ interface DocumentPanelProps {
   readOnly?: boolean;
   onSectionClick: (id: string) => void;
   onAnchorClick: (sectionId: string, memoIndex: number) => void;
+  /** 잠긴 섹션의 "전체 내용 보기" CTA 클릭 — 결제 안내 모달 열기 */
+  onUnlockClick?: () => void;
   onRegenerate?: (sectionId: string) => void;
   isRegenerating?: Record<string, boolean>;
   usageData?: Record<string, { used: number; max: number }>;
@@ -90,6 +92,7 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
   readOnly = false,
   onSectionClick,
   onAnchorClick,
+  onUnlockClick,
   onRegenerate,
   isRegenerating = {},
   usageData,
@@ -331,8 +334,28 @@ const DocumentPanel = forwardRef<DocumentPanelHandle, DocumentPanelProps>(functi
                       </div>
                     </div>
 
-                    {/* 본문 */}
-                    {isEditing ? (
+                    {/* 본문 — 잠긴 섹션: 티저 + 블러 + 결제 CTA (원문은 서버에서 미전송) */}
+                    {section.locked ? (
+                      <div className="relative overflow-hidden rounded-lg" aria-label="결제 후 열람 가능한 섹션">
+                        <div className="text-[15px] text-slate-800 leading-[1.8] whitespace-pre-wrap blur-[4px] select-none pointer-events-none" aria-hidden="true">
+                          {(section.preview || "이 섹션의 내용은 결제 후 열람할 수 있습니다.") + "\n"}
+                          {/* 실제 분량감을 주는 장식용 반복 줄 — 원문 아님 */}
+                          {"내용을 보호하기 위해 일부만 표시됩니다. 전체 내용은 결제 후 확인하실 수 있습니다. ".repeat(6)}
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/60 to-white flex flex-col items-center justify-center gap-3">
+                          <span className="text-2xl" aria-hidden="true">🔒</span>
+                          <p className="text-sm text-slate-600 font-medium text-center px-6">
+                            성장 전략·자금 계획·기업 구성은<br />결제 후 열람할 수 있습니다
+                          </p>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onUnlockClick?.(); }}
+                            className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+                          >
+                            전체 내용 보기
+                          </button>
+                        </div>
+                      </div>
+                    ) : isEditing ? (
                       <div onClick={(e) => e.stopPropagation()}>
                         <textarea
                           value={editContent}

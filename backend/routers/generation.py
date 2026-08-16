@@ -19,6 +19,7 @@ from services.session_store import (
     get_session,
     get_usage_count,
     increment_usage,
+    is_unlocked,
     load_results,
     save_company_context,
     save_results,
@@ -306,6 +307,15 @@ async def generate_feedback(session_id: str):
         total = len(results)
         yield _sse("init", {"total": total})
 
+        # 미결제 세션은 잠긴 섹션의 피드백을 스트림에 싣지 않는다
+        # (anchor_text가 원문을 인용하므로 그대로 내리면 잠금이 뚫림).
+        # 평가·저장은 정상 수행 → 결제 후 재조회 시 피드백까지 함께 열림.
+        hidden_ids = (
+            _locked_section_ids()
+            if source == "framework" and not is_unlocked(session_id)
+            else set()
+        )
+
         loop = asyncio.get_event_loop()
 
         def _to_suggestion(s) -> dict:
@@ -319,11 +329,13 @@ async def generate_feedback(session_id: str):
             await loop.run_in_executor(_executor, _eval)
             result.inline_suggestions.sort(key=lambda s: _SEVERITY_ORDER.get(s.severity, 1))
             result.inline_suggestions = result.inline_suggestions[:5]
+            hidden = result.section_id in hidden_ids
             yield _sse("section_feedback_done", {
                 "section_id": result.section_id,
                 "confidence_level": result.confidence_level,
                 "completion_score": result.effective_completion_score(),
-                "inline_suggestions": [_to_suggestion(s) for s in result.inline_suggestions],
+                "locked": hidden,
+                "inline_suggestions": [] if hidden else [_to_suggestion(s) for s in result.inline_suggestions],
             })
 
         # 전략 평가
@@ -359,7 +371,10 @@ async def generate_feedback(session_id: str):
             "sections": [
                 {
                     "section_id": r.section_id,
-                    "inline_suggestions": [_to_suggestion(s) for s in r.inline_suggestions],
+                    "inline_suggestions": (
+                        [] if r.section_id in hidden_ids
+                        else [_to_suggestion(s) for s in r.inline_suggestions]
+                    ),
                 }
                 for r in ordered
             ],
@@ -675,6 +690,8 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    if not is_unlocked(session_id):
+        raise HTTPException(status_code=403, detail="결제 후 이용할 수 있습니다.")
 
     async def event_generator():
         loop = asyncio.get_event_loop()
@@ -774,6 +791,8 @@ async def convert_to_form_v2_endpoint(session_id: str, body: ConvertToFormReques
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    if not is_unlocked(session_id):
+        raise HTTPException(status_code=403, detail="결제 후 이용할 수 있습니다.")
 
     async def event_generator():
         loop = asyncio.get_event_loop()
@@ -832,9 +851,27 @@ async def convert_to_form_v2_endpoint(session_id: str, body: ConvertToFormReques
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+# 무료 열람 게이트: PSST 중 Problem·Solution만 공개, Scale-up·Team은 결제 후 열람.
+# CSS 블러가 아니라 서버에서 원문 자체를 내려주지 않는다(F12 열람 차단).
+_FREE_CATEGORIES = {"Problem", "Solution"}
+_LOCKED_PREVIEW_CHARS = 120
+
+
+def _locked_section_ids() -> set[str]:
+    """미결제 세션에서 잠글 섹션 ID (Scale-up·Team 카테고리)."""
+    return {s["id"] for s in FRAMEWORK_SECTIONS if s.get("category") not in _FREE_CATEGORIES}
+
+
+_SECTION_CATEGORY: dict[str, str] = {s["id"]: s.get("category", "") for s in FRAMEWORK_SECTIONS}
+
+
 @router.get("/sessions/{session_id}/framework")
 def get_framework_draft(session_id: str):
-    """저장된 프레임워크 초안 반환."""
+    """저장된 프레임워크 초안 반환.
+
+    미결제(unlocked=false) 세션은 Scale-up·Team 섹션의 원문을 제거하고
+    preview(앞 120자)+locked=true만 내려준다 — 결제 유도 블러 화면용.
+    """
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -842,35 +879,62 @@ def get_framework_draft(session_id: str):
     if not results:
         raise HTTPException(status_code=404, detail="프레임워크 초안이 없습니다. 먼저 생성해주세요.")
     overall = calculate_overall_completion(results)
+    unlocked = is_unlocked(session_id)
+    locked_ids = set() if unlocked else _locked_section_ids()
+
+    def _section_payload(r) -> dict:
+        locked = r.section_id in locked_ids
+        base = {
+            "section_id": r.section_id,
+            "section_title": r.section_title,
+            "confidence_level": r.confidence_level,
+            "completion_score": r.effective_completion_score(),
+            "effective_completion_score": r.effective_completion_score(),
+            "resolved_memo_count": r.resolved_memo_count(),
+            "category": _SECTION_CATEGORY.get(r.section_id, ""),
+            "truncated": bool(r.llm_meta.get("truncated", False)),
+            "locked": locked,
+        }
+        if locked:
+            # 원문·세그먼트·피드백 전부 미포함 — 티저만
+            preview = r.display_content()[:_LOCKED_PREVIEW_CHARS]
+            return {
+                **base,
+                "content": "",
+                "preview": preview,
+                "reasoning": "",
+                "used_answer_ids": [],
+                "missing_info": [],
+                "user_edited_content": None,
+                "rubric_check": {},
+                "llm_meta": {},
+                "completion_reasoning": "",
+                "content_segments": [],
+                "inline_suggestions": [],
+            }
+        return {
+            **base,
+            "content": r.display_content(),
+            "preview": "",
+            "reasoning": r.reasoning,
+            "used_answer_ids": r.used_answer_ids,
+            "missing_info": r.missing_info,
+            "user_edited_content": r.user_edited_content,
+            "rubric_check": r.rubric_check,
+            "llm_meta": r.llm_meta,
+            "completion_reasoning": r.completion_reasoning,
+            "content_segments": [
+                {"text": s.text, "source": s.source, "source_qids": s.source_qids}
+                for s in r.content_segments
+            ],
+            "inline_suggestions": [
+                {"anchor_text": s.anchor_text, "note": s.note, "severity": s.severity, "response": s.response}
+                for s in r.inline_suggestions
+            ],
+        }
+
     return {
         "overall_completion": overall,
-        "sections": [
-            {
-                "section_id": r.section_id,
-                "section_title": r.section_title,
-                "content": r.display_content(),
-                "confidence_level": r.confidence_level,
-                "completion_score": r.effective_completion_score(),
-                "effective_completion_score": r.effective_completion_score(),
-                "resolved_memo_count": r.resolved_memo_count(),
-                "reasoning": r.reasoning,
-                "used_answer_ids": r.used_answer_ids,
-                "missing_info": r.missing_info,
-                "user_edited_content": r.user_edited_content,
-                "rubric_check": r.rubric_check,
-                "llm_meta": r.llm_meta,
-                "completion_reasoning": r.completion_reasoning,
-                "category": "",
-                "truncated": bool(r.llm_meta.get("truncated", False)),
-                "content_segments": [
-                    {"text": s.text, "source": s.source, "source_qids": s.source_qids}
-                    for s in r.content_segments
-                ],
-                "inline_suggestions": [
-                    {"anchor_text": s.anchor_text, "note": s.note, "severity": s.severity, "response": s.response}
-                    for s in r.inline_suggestions
-                ],
-            }
-            for r in results
-        ]
+        "unlocked": unlocked,
+        "sections": [_section_payload(r) for r in results],
     }

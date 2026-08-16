@@ -85,7 +85,10 @@ Mock 모드(API 키 없이 UI 테스트): `MOCK_MODE=1 streamlit run app.py`
 ## 기술 스택
 - 백엔드: FastAPI (Python), 포트 8000
 - 프론트엔드: Next.js, 포트 3000
-- LLM: Claude Haiku (claude-haiku-4-5-20251001)
+- LLM: Claude Sonnet (claude-sonnet-4-6) — 전 구간 Sonnet 단일화 (2026-08 결정, Haiku 사용 안 함)
+- 결제 게이트: 무료는 P·S 섹션(1-x, 2-x)만 열람, Scale-up·Team(3-1·3-2·4-1)은 서버에서 content 미전송(블러+티저).
+  언락 = HMAC 코드 수동 발급(scripts/issue_unlock_code.py, UNLOCK_SECRET 환경변수 필요). 가격 129,000원.
+  DOCX·양식 변환도 미결제 403 (backend/routers/results.py, generation.py)
 - 세션: data/sessions/*.json (파일 기반)
 - 백엔드 실행: start_backend.ps1 (단일 인스턴스 보장)
 - 배포: Railway — backend/Procfile (`cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT`)

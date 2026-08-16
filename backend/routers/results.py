@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from services.session_store import get_session, get_usage_count, increment_usage, load_results, save_results, save_action_plan, load_action_plan, load_framework_draft
+from services.session_store import get_session, get_usage_count, increment_usage, is_unlocked, load_results, save_results, save_action_plan, load_action_plan, load_framework_draft
 from core.docx_export import export_to_docx, export_to_official_docx
 from core.forms import load_form
 from core.generation import regenerate_section
@@ -508,6 +508,9 @@ def export_docx(session_id: str, business_name: str = "(미지정)", source: str
     session = get_session(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    # DOCX는 전문 산출물 — 화면 블러만 막고 이 API가 열려 있으면 잠금이 무의미
+    if not is_unlocked(session_id):
+        raise HTTPException(status_code=403, detail="결제 후 다운로드할 수 있습니다.")
 
     if source == "framework":
         results = load_framework_draft(session_id)

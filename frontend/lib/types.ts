@@ -87,11 +87,17 @@ export interface SectionResult {
   resolved_memo_count: number;
   category: string;
   truncated: boolean;
+  /** 미결제 세션의 잠긴 섹션 — content 대신 preview만 내려옴 */
+  locked?: boolean;
+  /** 잠긴 섹션의 티저 텍스트 (앞 ~120자) */
+  preview?: string;
 }
 
 export interface GenerationResults {
   overall_completion: number;
   sections: SectionResult[];
+  /** 결제(언락) 완료 여부 — framework 응답에만 존재 */
+  unlocked?: boolean;
 }
 
 export interface RubricFeature {

@@ -187,6 +187,69 @@ def save_lead(session_id: str, email: str) -> None:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
+def is_unlocked(session_id: str) -> bool:
+    """결제(언락 코드) 완료 여부. 세션 없음/손상 시 False."""
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if not path.exists():
+        return False
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return bool(raw.get("unlocked"))
+    except Exception:  # noqa: BLE001 — 판독 불가면 잠금 상태로 취급
+        return False
+
+
+def set_unlocked(session_id: str) -> bool:
+    """언락 코드 검증 성공 시 호출 — unlocked=true 저장."""
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if not path.exists():
+        return False
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["unlocked"] = True
+    raw["unlocked_at"] = datetime.now(timezone.utc).isoformat()
+    raw.pop("unlock_failures", None)
+    path.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
+    return True
+
+
+def record_unlock_failure(session_id: str, max_failures: int, lock_minutes: int) -> tuple[int, Optional[str]]:
+    """언락 코드 오입력 기록. (누적 실패 수, 잠금 해제 시각 ISO)을 반환.
+
+    max_failures 도달 시 lock_minutes 동안 시도를 차단한다(무차별 대입 방지).
+    """
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if not path.exists():
+        return 0, None
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    failures = raw.get("unlock_failures", {"count": 0, "locked_until": None})
+    failures["count"] = failures.get("count", 0) + 1
+    if failures["count"] >= max_failures:
+        locked_until = datetime.now(timezone.utc) + timedelta(minutes=lock_minutes)
+        failures["locked_until"] = locked_until.isoformat()
+        failures["count"] = 0  # 잠금 만료 후 재시도 카운트는 0부터
+    raw["unlock_failures"] = failures
+    path.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
+    return failures["count"], failures.get("locked_until")
+
+
+def get_unlock_locked_until(session_id: str) -> Optional[datetime]:
+    """무차별 대입 잠금 상태면 잠금 해제 시각을 반환, 아니면 None."""
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        locked_str = (raw.get("unlock_failures") or {}).get("locked_until")
+        if not locked_str:
+            return None
+        locked_until = datetime.fromisoformat(locked_str)
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
+        return locked_until if locked_until > datetime.now(timezone.utc) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def save_results(session_id: str, results: list[SectionResult]) -> None:
     _ensure_dir()
     path = _SESSIONS_DIR / f"{session_id}_results.json"
