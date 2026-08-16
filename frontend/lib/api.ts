@@ -154,6 +154,13 @@ export const api = {
         (sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : "")
     ),
 
+  // DOCX 다운로드 전 리드 이메일 수집
+  submitLead: (sessionId: string, email: string) =>
+    request<{ ok: boolean }>(`/sessions/${sessionId}/lead`, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
   // 기존 사업계획서 PDF 업로드 → 인터뷰 답변 사전 채움.
   // multipart이므로 Content-Type을 직접 지정하지 않는다(브라우저가 boundary 설정).
   // ok=false + reason="no_text"이면 스캔본 등 추출 실패 → 일반 인터뷰로 유도.

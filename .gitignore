@@ -6,6 +6,9 @@ __pycache__/
 logs/
 data/sessions/
 backend/data/sessions/
+# 리드 이메일(개인정보) — 커밋 금지
+data/leads.jsonl
+backend/data/leads.jsonl
 .streamlit/
 *.docx
 # 공식 양식 DOCX 템플릿은 배포(Railway)에 필요 — ignore 예외

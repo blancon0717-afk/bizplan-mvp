@@ -13,6 +13,7 @@ import MemoPanel, { type MemoPanelHandle } from "@/components/result/MemoPanel";
 import { useResultStore } from "@/store/resultStore";
 import { api } from "@/lib/api";
 import type { RubricScoreResult } from "@/lib/types";
+import EmailGateModal, { hasLeadEmail } from "@/components/EmailGateModal";
 
 export default function ResultPage() {
   const params = useParams();
@@ -28,6 +29,7 @@ export default function ResultPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showEmailGate, setShowEmailGate] = useState(false);
   const [programName, setProgramName] = useState("");
   const [rubricScore, setRubricScore] = useState<RubricScoreResult | null>(null);
   const [isLoadingScore, setIsLoadingScore] = useState(false);
@@ -224,7 +226,16 @@ export default function ResultPage() {
     }
   }
 
-  async function handleDownload() {
+  function handleDownload() {
+    // 열람까지 무료 — DOCX 다운로드 직전에만 이메일 수집 (최초 1회)
+    if (!hasLeadEmail()) {
+      setShowEmailGate(true);
+      return;
+    }
+    void doDownload();
+  }
+
+  async function doDownload() {
     setIsDownloading(true);
     try {
       const res = await fetch(`/api/sessions/${sessionId}/export/docx?business_name=(미지정)`);
@@ -240,6 +251,7 @@ export default function ResultPage() {
       a.download = `사업계획서_${sessionId}.docx`;
       a.click();
       URL.revokeObjectURL(url);
+      (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag?.("event", "docx_download", { source: "result" });
     } catch {
       setRegenError("DOCX 다운로드 중 오류가 발생했습니다.");
     } finally {
@@ -533,6 +545,16 @@ export default function ResultPage() {
           </div>
         </div>
       )}
+
+      <EmailGateModal
+        sessionId={sessionId}
+        open={showEmailGate}
+        onClose={() => setShowEmailGate(false)}
+        onDone={() => {
+          setShowEmailGate(false);
+          void doDownload();
+        }}
+      />
     </div>
   );
 }

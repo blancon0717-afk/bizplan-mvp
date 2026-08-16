@@ -161,6 +161,32 @@ def load_action_plan(session_id: str) -> Optional[str]:
     return raw.get("action_plan") or None
 
 
+def save_lead(session_id: str, email: str) -> None:
+    """DOCX 다운로드 전 수집한 리드 이메일 저장.
+
+    세션 JSON에 lead_email 키를 패치하고, 세션이 3일 후 정리돼도 리드가
+    보존되도록 data/leads.jsonl에 append한다.
+    """
+    _ensure_dir()
+    path = _SESSIONS_DIR / f"{session_id}.json"
+    if path.exists():
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            raw["lead_email"] = email
+            path.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as e:  # noqa: BLE001 — 세션 패치 실패해도 leads.jsonl에는 기록
+            logger.error("save_lead 세션 패치 실패 %s: %s", session_id, e)
+    leads_path = Path("data/leads.jsonl")
+    leads_path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "session_id": session_id,
+        "email": email,
+        "at": datetime.now(timezone.utc).isoformat(),
+    }
+    with leads_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
 def save_results(session_id: str, results: list[SectionResult]) -> None:
     _ensure_dir()
     path = _SESSIONS_DIR / f"{session_id}_results.json"

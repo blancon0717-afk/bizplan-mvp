@@ -5,6 +5,7 @@ import DocumentPanel, { type DocumentPanelHandle } from "@/components/result/Doc
 import MemoPanel, { type MemoPanelHandle } from "@/components/result/MemoPanel";
 import { useResultStore } from "@/store/resultStore";
 import { api } from "@/lib/api";
+import EmailGateModal, { hasLeadEmail } from "@/components/EmailGateModal";
 
 /** 기본 초안 검토 화면 — 읽기전용 초안 + 심사위원 피드백.
  *  양식 변환 후에도 이 URL로 초안을 다시 열람할 수 있다. */
@@ -28,8 +29,18 @@ export default function DraftPage() {
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [usageData, setUsageData] = useState<Record<string, { used: number; max: number }>>({});
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showEmailGate, setShowEmailGate] = useState(false);
 
-  async function handleDownloadDraft() {
+  function handleDownloadDraft() {
+    // 초안 열람까지 무료 — DOCX 다운로드 직전에만 이메일 수집 (최초 1회)
+    if (!hasLeadEmail()) {
+      setShowEmailGate(true);
+      return;
+    }
+    void doDownloadDraft();
+  }
+
+  async function doDownloadDraft() {
     setIsDownloading(true);
     try {
       const res = await fetch(
@@ -43,6 +54,7 @@ export default function DraftPage() {
       a.download = `사업계획서초안_${sessionId}.docx`;
       a.click();
       URL.revokeObjectURL(url);
+      (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag?.("event", "docx_download", { source: "draft" });
     } catch {
       setFeedbackError("초안 DOCX 다운로드에 실패했습니다.");
     } finally {
@@ -274,6 +286,16 @@ export default function DraftPage() {
           />
         </div>
       </div>
+
+      <EmailGateModal
+        sessionId={sessionId}
+        open={showEmailGate}
+        onClose={() => setShowEmailGate(false)}
+        onDone={() => {
+          setShowEmailGate(false);
+          void doDownloadDraft();
+        }}
+      />
     </div>
   );
 }
