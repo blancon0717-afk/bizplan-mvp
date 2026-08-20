@@ -201,6 +201,52 @@ cd backend && uvicorn main:app --host 0.0.0.0 --port 8000
 
 ---
 
+## 8-1. 원 개발자와 "같은 상태"로 맞추기
+
+세션 파일·계정 DB를 공유받지 않아도 동일한 개발 상태를 만들 수 있다. 방법은 아래와 같다.
+
+### 동일한 입력의 세션 만들기 (핵심)
+
+저장소에 이포에이 60문항 실답변 세트(`data/test/eporei_answers.json`)가 들어 있고,
+그것을 새 세션에 주입하는 개발 전용 엔드포인트가 있다 (`backend/routers/dev.py`).
+
+```bash
+curl -X POST http://localhost:8000/api/dev/load-test-session \
+  -H "Content-Type: application/json" \
+  -d '{"program_code":"initial_package"}'
+# → {"session_id":"a1b2c3d4","program_code":"initial_package","answers_loaded":60}
+```
+
+반환된 `session_id`로 `http://localhost:3000/result/{session_id}` 에 접속하면
+원 개발자와 **동일한 입력**에서 출발한 세션을 볼 수 있다.
+인터뷰 화면에서는 `frontend/lib/exampleAnswers.ts`의 예시 답변(런맵 기준)도 쓸 수 있다.
+
+### ⚠️ 출력까지 똑같지는 않다 — LLM 비결정성
+
+같은 입력이라도 Claude 응답은 매번 다르다. 이건 환경 차이가 아니라 LLM의 근본 특성이라
+세션을 공유받아도 해결되지 않는다.
+
+따라서 **"초안 품질이 좋아졌는가" 같은 비교 작업은 각자 돌린 결과를 비교하면 안 된다.**
+비교 기준이 되는 결과물 JSON 자체를 상대에게 받아서 나란히 놓고 봐야 한다.
+
+### 원 개발자의 세션 파일을 받아도 열리지 않는다
+
+`data/sessions/`에 남아 있는 파일은 전부 `*_framework.json` 같은 **파생 파일**이고,
+세션 본체인 `{session_id}.json`이 없다. `session_store.py`는 본체를 읽어야 세션을 복원하므로
+이 파일들만 받아서 넣어도 결과 화면은 404가 난다. 요청하지 말 것.
+
+### 그래도 개별 전달이 필요한 경우 2가지
+
+| 상황 | 받아야 할 것 | 주의 |
+|---|---|---|
+| 특정 세션에서만 재현되는 버그 추적 | 해당 세션의 `{id}.json` **본체 1개** (+ 있으면 `{id}_results.json`) | 고객 실데이터면 회사명·인명·연락처 마스킹 후 전달 |
+| Phase 3 지도학습 데이터 작업 인계 | `logs/llm_calls.jsonl` | 프롬프트에 고객 실데이터가 그대로 들어 있음. 마스킹 필수 |
+
+받은 파일은 `data/sessions/`(또는 백엔드 실행 위치 기준 `backend/data/sessions/`)에 넣으면
+바로 조회된다. 저장소에 커밋하지 말 것 — `.gitignore` 대상이다.
+
+---
+
 ## 9. 코드 작성 전 반드시 알아야 할 규칙 4가지
 
 전체 규칙은 `CLAUDE.md`에 있다. 그중 모르면 바로 사고 나는 것만 추린다.
