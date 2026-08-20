@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -11,13 +12,47 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 from core.generation import ContentSegment, InlineSuggestion, SectionResult
-from core.interview import Answer, Session, load_session, save_session
+from core.interview import Answer, Session, load_session
 
-_SESSIONS_DIR = Path("data/sessions")
+# 계정에 귀속된 문서는 영구 보관되므로 배포 시 초기화되지 않는 경로를 써야 한다.
+# Railway에서는 계정 DB(DB_PATH)와 같은 Volume 하위를 지정할 것 — 예: SESSIONS_DIR=/data/sessions
+_SESSIONS_DIR = Path(os.getenv("SESSIONS_DIR", "data/sessions"))
+
+# 세션 ID에서 파생된 부속 파일 — 문서 목록 조회 시 세션 본체와 구분한다.
+_DERIVED_SUFFIXES = (
+    "_results.json",
+    "_framework.json",
+    "_draft_analysis.json",
+    "_form_mapping.json",
+)
 
 
 def _ensure_dir() -> None:
     _SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _raw_path(session_id: str) -> Path:
+    return _SESSIONS_DIR / f"{session_id}.json"
+
+
+def _read_raw(session_id: str) -> Optional[dict]:
+    """세션 JSON 원본을 dict로 읽는다. 없거나 손상 시 None."""
+    path = _raw_path(session_id)
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 — 손상 파일은 없는 것으로 취급(로그만)
+        logger.error("세션 JSON 손상 %s: %s", session_id, e)
+        return None
+    return raw if isinstance(raw, dict) else None
+
+
+def _write_raw(session_id: str, raw: dict) -> None:
+    _ensure_dir()
+    _raw_path(session_id).write_text(
+        json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 def create_session(session_id: str, program_code: str) -> Session:
@@ -45,24 +80,33 @@ def get_session(session_id: str) -> Optional[Session]:
 
 
 def update_answer(session_id: str, qid: str, text: str) -> Optional[Answer]:
-    from datetime import datetime, timezone
-    session = get_session(session_id)
-    if session is None:
+    """답변 1건 저장.
+
+    Session.to_json은 4개 필드(session_id·program_code·answers·company_context)만
+    직렬화하므로, save_session으로 저장하면 user_id·created_at·unlocked·usage_count·
+    lead_email이 통째로 유실된다. 그래서 raw JSON의 해당 키만 패치한다.
+    """
+    raw = _read_raw(session_id)
+    if raw is None:
         return None
     answer = Answer(qid=qid, text=text, updated_at=datetime.now(timezone.utc).isoformat())
-    session.answers[qid] = answer
-    save_session(session, _SESSIONS_DIR)
+    answers = raw.get("answers")
+    if not isinstance(answers, dict):
+        answers = {}
+    answers[qid] = asdict(answer)
+    raw["answers"] = answers
+    _write_raw(session_id, raw)
     return answer
 
 
 def save_company_context(session_id: str, context: dict) -> Optional[Session]:
-    """전처리된 기업 컨텍스트를 세션에 저장."""
-    session = get_session(session_id)
-    if session is None:
+    """전처리된 기업 컨텍스트를 세션에 저장 (부가 필드 보존 — update_answer 주석 참조)."""
+    raw = _read_raw(session_id)
+    if raw is None:
         return None
-    session.company_context = context
-    save_session(session, _SESSIONS_DIR)
-    return session
+    raw["company_context"] = context
+    _write_raw(session_id, raw)
+    return get_session(session_id)
 
 
 def update_program_code(session_id: str, program_code: str) -> bool:
@@ -84,11 +128,84 @@ def update_program_code(session_id: str, program_code: str) -> bool:
         return False
 
 
+def get_session_owner(session_id: str) -> Optional[int]:
+    """문서 소유자 user_id. 익명 문서·없는 문서는 None."""
+    raw = _read_raw(session_id)
+    if raw is None:
+        return None
+    owner = raw.get("user_id")
+    return owner if isinstance(owner, int) else None
+
+
+def set_session_owner(session_id: str, user_id: int) -> bool:
+    """문서를 계정에 귀속. 이미 다른 계정 소유면 False(가로채기 방지).
+
+    같은 소유자로 다시 호출하는 것은 성공으로 취급한다(로그인마다 호출돼도 무해).
+    """
+    raw = _read_raw(session_id)
+    if raw is None:
+        return False
+    owner = raw.get("user_id")
+    if isinstance(owner, int) and owner != user_id:
+        logger.warning("[문서 귀속 거부] session=%s owner=%s 요청=%s", session_id, owner, user_id)
+        return False
+    raw["user_id"] = user_id
+    _write_raw(session_id, raw)
+    return True
+
+
+_TITLE_MAX = 30
+
+
+def _document_title(raw: dict) -> str:
+    """목록 표시용 제목 — 첫 인터뷰 답변의 앞부분. 답변 전이면 대체 문구."""
+    answers = raw.get("answers")
+    if isinstance(answers, dict):
+        for answer in answers.values():
+            text = " ".join((answer or {}).get("text", "").split())
+            if text:
+                return text[:_TITLE_MAX] + ("…" if len(text) > _TITLE_MAX else "")
+    return "제목 없는 문서"
+
+
+def list_sessions_by_owner(user_id: int) -> list[dict]:
+    """계정이 소유한 문서 목록을 최신순으로 반환 — 목록 표시에 필요한 요약만.
+
+    ponytail: 세션 디렉토리 전수 스캔. 세션이 수천 개를 넘으면 소유자 인덱스 파일로 교체.
+    """
+    if not _SESSIONS_DIR.exists():
+        return []
+
+    documents: list[dict] = []
+    for path in _SESSIONS_DIR.glob("*.json"):
+        if path.name.endswith(_DERIVED_SUFFIXES):
+            continue
+        raw = _read_raw(path.stem)
+        if raw is None or raw.get("user_id") != user_id:
+            continue
+        session_id = raw.get("session_id") or path.stem
+        documents.append(
+            {
+                "session_id": session_id,
+                "title": _document_title(raw),
+                "program_code": raw.get("program_code") or "none",
+                "created_at": raw.get("created_at") or "",
+                "unlocked": bool(raw.get("unlocked")),
+                "has_framework": (_SESSIONS_DIR / f"{session_id}_framework.json").exists(),
+                "has_results": (_SESSIONS_DIR / f"{session_id}_results.json").exists(),
+            }
+        )
+
+    documents.sort(key=lambda d: d["created_at"], reverse=True)
+    return documents
+
+
 def cleanup_old_sessions(max_age_days: float = 3.0) -> int:
     """3일(기본값) 초과 세션 파일을 삭제하고 삭제 건수를 반환.
 
     created_at 필드가 있으면 그 기준, 없으면 파일 mtime 기준.
     세션 파일 삭제 시 대응하는 _results.json도 함께 삭제.
+    단, 계정에 귀속된 문서(user_id)는 '내 문서보기'에서 계속 열람해야 하므로 삭제하지 않는다.
     """
     if not _SESSIONS_DIR.exists():
         return 0
@@ -101,6 +218,8 @@ def cleanup_old_sessions(max_age_days: float = 3.0) -> int:
             continue
         try:
             raw = json.loads(session_file.read_text(encoding="utf-8"))
+            if raw.get("user_id") is not None:
+                continue  # 계정 귀속 문서는 보관
             created_str = raw.get("created_at")
             if created_str:
                 created_at = datetime.fromisoformat(created_str)
@@ -362,3 +481,66 @@ def _dict_to_result(d: dict) -> SectionResult:
         completion_score=d.get("completion_score", 0),
         completion_reasoning=d.get("completion_reasoning", ""),
     )
+
+
+def demo() -> None:
+    """소유권·문서 목록·보관 정책 자체 점검.
+
+    실행(프로젝트 루트에서):
+      python -c "import sys;sys.path[:0]=['backend','.'];from services.session_store import demo;demo()"
+    """
+    global _SESSIONS_DIR
+    import tempfile
+
+    original_dir = _SESSIONS_DIR
+    with tempfile.TemporaryDirectory() as tmp:
+        _SESSIONS_DIR = Path(tmp)
+        try:
+            create_session("anon", "none")
+            create_session("mine", "none")
+
+            # 소유권: 귀속 → 가로채기 거부 → 같은 소유자는 멱등
+            assert get_session_owner("mine") is None
+            assert set_session_owner("mine", 7) is True
+            assert get_session_owner("mine") == 7
+            assert set_session_owner("mine", 8) is False, "남의 문서를 가로챌 수 없어야 한다"
+            assert get_session_owner("mine") == 7
+            assert set_session_owner("mine", 7) is True, "같은 소유자면 멱등"
+            assert set_session_owner("없는문서", 7) is False
+
+            # 답변 저장이 소유권·결제 언락을 지우지 않아야 한다 (save_session 전체 덮어쓰기 방지)
+            set_unlocked("mine")
+            update_answer("mine", "q1", "  탄소포집 기술로   산업용 CO2를 줄이는 서비스입니다  ")
+            save_company_context("mine", {"지역": "수도권"})
+            assert get_session_owner("mine") == 7, "답변 저장 후 소유권이 유지돼야 한다"
+            assert is_unlocked("mine") is True, "답변 저장 후 결제 언락이 유지돼야 한다"
+            assert get_session("mine").company_context == {"지역": "수도권"}
+
+            # 목록: 내 문서만, 제목은 첫 답변 앞부분(공백 정규화)
+            documents = list_sessions_by_owner(7)
+            assert [d["session_id"] for d in documents] == ["mine"]
+            assert documents[0]["title"] == "탄소포집 기술로 산업용 CO2를 줄이는 서비스입니다"
+            assert _document_title({"answers": {"q1": {"text": "가" * 40}}}) == "가" * _TITLE_MAX + "…"
+            assert _document_title({"answers": {}}) == "제목 없는 문서"
+            assert documents[0]["has_framework"] is False
+            assert list_sessions_by_owner(8) == [], "남의 문서가 보이면 안 된다"
+
+            # 부속 파일(_framework 등)이 문서로 잡히면 안 된다
+            save_framework_draft("mine", [])
+            documents = list_sessions_by_owner(7)
+            assert len(documents) == 1, "부속 파일이 문서 목록에 섞였다"
+            assert documents[0]["has_framework"] is True
+
+            # 보관 정책: 만료시켜도 계정 문서는 남고 익명 문서만 지워진다
+            expired = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+            for session_id in ("anon", "mine"):
+                raw = _read_raw(session_id)
+                raw["created_at"] = expired
+                _write_raw(session_id, raw)
+            assert cleanup_old_sessions() == 1
+            assert not _raw_path("anon").exists(), "만료된 익명 문서는 삭제돼야 한다"
+            assert _raw_path("mine").exists(), "계정 문서는 만료돼도 보관돼야 한다"
+        finally:
+            _SESSIONS_DIR = original_dir
+
+    print("session_store demo OK")

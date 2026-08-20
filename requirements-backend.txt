@@ -11,3 +11,6 @@ pdfplumber>=0.11
 pypdf>=4.0
 docxtpl>=0.16
 docxcompose>=1.4
+# ── 회원 인증 ──
+bcrypt>=4.2            # 비밀번호 해시
+httpx>=0.24            # Resend 메일 발송 (anthropic의 전이 의존성이지만 직접 쓰므로 명시)

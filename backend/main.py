@@ -35,12 +35,17 @@ logging.basicConfig(
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import programs, sessions, interview, generation, results, matching, dev
+from auth import require_auth_secret
+from routers import auth, programs, sessions, interview, generation, results, matching, dev
 from services.session_store import cleanup_old_sessions
+from services.user_store import init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 시크릿·계정 DB는 기동 시 검증한다 — 런타임에 처음 발견되면 가입/로그인이 통째로 실패한다
+    require_auth_secret()
+    init_db()
     cleanup_old_sessions()
 
     async def _daily_cleanup():
@@ -86,6 +91,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/api")
 app.include_router(programs.router, prefix="/api")
 app.include_router(sessions.router, prefix="/api")
 app.include_router(interview.router, prefix="/api")

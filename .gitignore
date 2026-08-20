@@ -9,6 +9,11 @@ backend/data/sessions/
 # 리드 이메일(개인정보) — 커밋 금지
 data/leads.jsonl
 backend/data/leads.jsonl
+
+# 회원 계정 DB (개인정보 — 절대 커밋 금지)
+*.db
+*.db-wal
+*.db-shm
 .streamlit/
 *.docx
 # 공식 양식 DOCX 템플릿은 배포(Railway)에 필요 — ignore 예외
