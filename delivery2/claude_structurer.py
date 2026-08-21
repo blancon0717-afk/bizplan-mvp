@@ -30,16 +30,16 @@ SECTION_HINTS: dict[str, str] = {
     "대표자 해당 아이템 산업 경험/기술 보유 여부": "대표자 이력 섹션에 해당 산업 종사 경력/관련 학위가 명시되면 Y.",
     "대표자 사업 경험 여부 (매출 1억 이상)": "대표자가 이전 사업에서 매출 1억 이상 달성 명시한 경우만 Y.",
     "아이템 관련 경력 증빙": "대표자/팀의 관련 경력이 구체적 회사명·직위·기간으로 명시되면 Y.",
-    "개발인력(sw) 보유(팀원 기준)": "팀 구성 표/조직도에서 개발자(SW) 인원수. 본문에 명시 없으면 0.",
+    "개발인력(sw) 보유(팀원 기준)": "팀 구성 표/조직도에서 개발자(SW) 인원수. 재직/채용완료만 집계, '채용 예정'은 제외. 본문에 명시 없으면 0.",
     "제조 전문 인력 (기술자) 보유(팀원 기준)": "팀 구성에서 제조/기술자 인원수.",
     "R&D 인력 보유(팀원 기준)": "팀 구성에서 연구개발 인력 인원수.",
-    "영업 & 유통 마케팅 인력 보유 (팀원 기준)": "팀 구성에서 영업/유통/마케팅 담당 인원수.",
+    "영업 & 유통 마케팅 인력 보유 (팀원 기준)": "팀 구성에서 영업/유통/마케팅 담당 인원수. 재직/채용완료만 집계, '채용 예정'은 제외.",
     "디자인 인력 보유 (팀원 기준)": "팀 구성에서 디자인 담당 인원수.",
     "해당 시장 전문가(팀원 기준)": "자문위원/멘토 중 해당 시장 전문가 수.",
     "개발(S/W) 네트워크 보유": "'네트워크 현황', '협력사', '파트너' 섹션에 외부 개발 협력처 명시되면 Y.",
     "제조 전문 네트워크 (기술자) 보유": "외부 제조사·기술협력처 명시되면 Y.",
     "R&D 인력 or 자체 학습 데이터 네트워크 보유": "외부 R&D 협력 기관/학교 또는 자체 학습 데이터 보유 명시되면 Y.",
-    "영업 및 마케팅 네트워크 보유": "외부 마케팅·유통 협력처 명시되면 Y.",
+    "영업 및 마케팅 네트워크 보유": "외부 마케팅·유통·판매 협력처가 구체적 실명(회사/기관명)으로 명시되면 Y. 일반적 계획 서술만 있으면 N.",
     "디자인 네트워크 보유": "외부 디자인 협력처 명시되면 Y.",
     "해당 시장 전문 자문 네트워크 보유 위원": "자문위원/멘토단 명단/표가 있으면 Y.",
     "수요처 네트워크 보유": "잠재 수요처/고객사 명단·로고가 명시되면 Y.",
@@ -55,11 +55,11 @@ SECTION_HINTS: dict[str, str] = {
     "아이템관련 특허 출원 여부 (출원상태 YNLY)": "출원중인 특허가 1건이라도 있으면 Y.",
     "아이템 관련 인증 & 디자인 특허 & 상표 등록 개수 -> 기업 인증 아님 주의": "디자인특허+상표등록+제품인증 합계. 기업인증(벤처/이노비즈)은 제외.",
     "비즈니스 모델 다양화": "수익 모델(BM)이 몇 가지 명시됐는지 정수.",
-    "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)": "구체적 마케팅 채널·협력처가 즉시 실행 수준으로 명시되면 Y.",
+    "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)": "협력처/채널 실명과 셋팅 완료 상태가 함께 명시된 경우만 Y. 계획·예정 단계는 N.",
     "투자의향서 확보 여부": "투자의향서/LOI 명시되면 Y.",
     "견적서 보유 개수": "확보한 견적서 개수.",
     "기대출 및 보증 금액 (최근 1년)": "최근 1년 내 대출·보증 금액(원 단위 정수). 명시 없으면 0.",
-    "MOU 보유 개수": "MOU/협약서 개수.",
+    "MOU 보유 개수": "체결 완료된 MOU·업무협약·파트너쉽·입점 협약의 개수. '체결 예정/논의 중/제휴 추진'은 제외. '제휴 완료'는 협약 체결 근거가 함께 있을 때만 포함.",
     "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등": "자체 보유 고객·아이템·학습 데이터 명시되면 Y.",
     "대표자/팀원 관련 자격증서": "대표자/팀원 자격증·면허 명시되면 Y.",
     "납품 확정 계약서 보유 여부": "확정 납품 계약서 명시되면 Y.",
@@ -84,7 +84,8 @@ SYSTEM = """너는 한국 정부지원사업 사업계획서(PDF)를 객관적 �
 3. 출력은 유효한 JSON 객체 하나. 그 외 어떤 설명도 금지.
 4. Y/N 타입은 정확히 "Y" 또는 "N" 문자열로, 숫자 타입은 **정수**로 응답.
 5. **숫자 단위는 반드시 따른다**: 금액=원(예: 5억→500000000), 인원=명, 개수=정수개.
-6. 각 피처별 가이드(어디를 보고 무엇을 찾는지)를 따른다."""
+6. 각 피처별 가이드(어디를 보고 무엇을 찾는지)를 따른다.
+7. **'예정·계획·추진 중·논의 중' 상태는 보유로 인정하지 않는다** (피처 가이드가 계획 인정을 명시한 경우만 예외)."""
 
 USER_TMPL = """다음 피처들을 PDF 사업계획서 본문 근거로 판정하라.
 
@@ -123,10 +124,21 @@ def _compact_schema(features: list[dict], 주관기관: str | None) -> str:
 
 
 class Structurer:
-    def __init__(self, api_key: str, model: str = MODEL, max_input_chars: int = 45_000):
+    def __init__(
+        self,
+        api_key: str,
+        model: str = MODEL,
+        max_input_chars: int = 45_000,
+        max_tokens: int = 2200,
+        thinking: dict | None = None,
+    ):
+        # thinking 기본 활성 모델(Sonnet 5 등)은 max_tokens를 사고에 소모해 JSON이 잘린다.
+        # 그런 모델엔 thinking={"type": "disabled"} + 여유 max_tokens를 넘길 것.
         self.client = Anthropic(api_key=api_key)
         self.model = model
         self.max_input_chars = max_input_chars
+        self.max_tokens = max_tokens
+        self.thinking = thinking
         self.features = _load_schema()
         self.haiku_features = [f for f in self.features if f["name"] not in META_HANDLED]
         # Cumulative usage tracker (thread-safe enough for our additive use)
@@ -151,9 +163,13 @@ class Structurer:
             return self._empty()
         snippet = text[: self.max_input_chars]
         schema_str = _compact_schema(self.features, 주관기관)
+        extra: dict[str, Any] = {}
+        if self.thinking is not None:
+            extra["thinking"] = self.thinking
         msg = self.client.messages.create(
             model=self.model,
-            max_tokens=2200,
+            max_tokens=self.max_tokens,
+            **extra,
             system=SYSTEM,
             messages=[{
                 "role": "user",
@@ -169,8 +185,17 @@ class Structurer:
         self.calls += 1
         self.input_tokens += msg.usage.input_tokens
         self.output_tokens += msg.usage.output_tokens
+        # 잘린 응답은 데이터로 취급하지 않는다 — 기본값(N/0)으로 위장되면
+        # 오염 행과 정상 행을 사후 구분할 수 없다 (agent-design §1).
+        if msg.stop_reason == "max_tokens":
+            raise RuntimeError(
+                f"응답 잘림(max_tokens={self.max_tokens}, model={self.model}) — "
+                "max_tokens 상향 또는 thinking 비활성 후 재시도"
+            )
         raw = "".join(getattr(b, "text", "") for b in msg.content)
         parsed = _parse_json(raw)
+        if not parsed:
+            raise RuntimeError(f"루브릭 JSON 파싱 실패 (raw len={len(raw)})")
         return self._normalize(parsed)
 
     def _empty(self) -> dict[str, Any]:
