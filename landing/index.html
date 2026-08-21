@@ -1,0 +1,768 @@
+<title>합격 사업계획서 AI</title>
+<meta name="description" content="합격·불합격 데이터를 분석해 정부지원사업 사업계획서를 대신 써주는 AI — BIZPLAN 상세페이지" />
+<style>
+  /* ============================================================
+     BIZPLAN — 블랜 회사소개서 톤앤매너 (다크 프리미엄 단일 테마)
+     ============================================================ */
+  :root {
+    --bg: #05080F;
+    --bg-2: #070C16;
+    --surface: rgba(255, 255, 255, 0.03);
+    --surface-2: rgba(255, 255, 255, 0.055);
+    --line: rgba(255, 255, 255, 0.085);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --white: #F2F5FA;
+    --muted: #8C97AB;
+    --faint: #5A6478;
+    --blue: #3D7FFF;
+    --blue-hi: #6EA8FF;
+    --cyan: #38D6E8;
+    --grad: linear-gradient(93deg, #6EA8FF 0%, #3D7FFF 46%, #38D6E8 100%);
+    --danger: #FF6B5E;
+    --gold: #F0B35C;
+    --r-lg: 22px;
+    --r-md: 16px;
+    --font: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--font);
+    font-size: 17px;
+    line-height: 1.65;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4 { margin: 0; line-height: 1.16; letter-spacing: -0.035em; font-weight: 800; text-wrap: balance; }
+  p { margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; }
+  .wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+  .tnum { font-variant-numeric: tabular-nums lining-nums; }
+
+  ::selection { background: rgba(61, 127, 255, 0.35); }
+
+  /* ---------- eyebrow: 소개서식 영문 대문자 라벨 ---------- */
+  .eb {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.34em; text-transform: uppercase;
+    color: var(--blue-hi);
+  }
+  .eb::before { content: ""; width: 34px; height: 1px; background: var(--blue); flex: 0 0 auto; }
+  .eb.center::after { content: ""; width: 34px; height: 1px; background: var(--blue); flex: 0 0 auto; }
+
+  .grad-text {
+    background: var(--grad);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+    font-family: inherit; font-weight: 700; font-size: 16.5px; letter-spacing: -0.01em;
+    padding: 17px 34px; border-radius: 999px; cursor: pointer; border: 1px solid transparent;
+    transition: transform .22s cubic-bezier(.16,1,.3,1), box-shadow .22s, background .22s, border-color .22s;
+    white-space: nowrap; position: relative;
+  }
+  .btn-fill {
+    background: var(--grad); color: #04101E;
+    box-shadow: 0 12px 40px -10px rgba(61, 127, 255, 0.55);
+  }
+  .btn-fill:hover { transform: translateY(-2px); box-shadow: 0 20px 52px -12px rgba(61, 127, 255, 0.7); }
+  .btn-fill .ar { transition: transform .22s; }
+  .btn-fill:hover .ar { transform: translateX(5px); }
+  .btn-line { background: transparent; color: var(--white); border-color: var(--line-strong); }
+  .btn-line:hover { border-color: var(--blue-hi); color: var(--blue-hi); }
+  .btn-sm { padding: 11px 22px; font-size: 14px; }
+  .btn:focus-visible, a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--blue-hi); outline-offset: 3px; border-radius: 6px;
+  }
+  .cta-sub { margin-top: 16px; font-size: 13.5px; color: var(--faint); letter-spacing: 0.02em; }
+  .cta-sub b { color: var(--blue-hi); font-weight: 700; }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(5, 8, 15, 0.72);
+    backdrop-filter: saturate(160%) blur(18px);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-in { display: flex; align-items: center; justify-content: space-between; height: 74px; }
+  .logo { display: flex; align-items: baseline; gap: 11px; }
+  .logo .word { font-size: 19px; font-weight: 850; letter-spacing: 0.045em; }
+  .logo .word i { font-style: normal; color: var(--blue-hi); }
+  .logo .by { font-size: 11px; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase; color: var(--faint); }
+
+  /* ---------- section scaffolding ---------- */
+  section { position: relative; padding: clamp(96px, 12vw, 176px) 0; }
+  .sec-head { max-width: 780px; }
+  .sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+  .sec-head h2 { font-size: clamp(34px, 4.6vw, 56px); margin-top: 26px; }
+  .sec-head .lead { margin-top: 24px; font-size: clamp(16.5px, 1.6vw, 19px); color: var(--muted); line-height: 1.75; max-width: 62ch; }
+  .sec-head.center .lead { margin-left: auto; margin-right: auto; }
+  .hairline { border: none; border-top: 1px solid var(--line); margin: 0; }
+
+  /* ============ HERO ============ */
+  .hero {
+    min-height: 92vh; display: flex; align-items: center;
+    padding: clamp(80px, 10vw, 140px) 0 clamp(80px, 9vw, 120px);
+    position: relative; isolation: isolate; overflow: hidden;
+  }
+  .hero-glow {
+    position: absolute; z-index: -1; pointer-events: none;
+    width: 1400px; height: 1400px; left: 50%; top: -46%;
+    transform: translateX(-50%);
+    background: radial-gradient(circle at 50% 50%,
+      rgba(61, 127, 255, 0.22) 0%, rgba(56, 214, 232, 0.07) 34%, transparent 62%);
+    filter: blur(6px);
+  }
+  .hero-grid-lines {
+    position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .5;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+    background-size: 88px 88px;
+    mask-image: radial-gradient(75% 62% at 50% 34%, #000 30%, transparent 100%);
+    -webkit-mask-image: radial-gradient(75% 62% at 50% 34%, #000 30%, transparent 100%);
+  }
+  .hero-in { text-align: center; max-width: 1020px; margin: 0 auto; }
+  .hero .badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 9px 20px; border-radius: 999px;
+    border: 1px solid rgba(110, 168, 255, 0.3);
+    background: rgba(61, 127, 255, 0.09);
+    font-size: 13.5px; font-weight: 600; color: var(--blue-hi); letter-spacing: 0.02em;
+  }
+  .hero .badge .pulse {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); flex: 0 0 auto;
+    box-shadow: 0 0 0 0 rgba(56, 214, 232, 0.6); animation: pulse 2.4s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(56, 214, 232, 0.55); }
+    70% { box-shadow: 0 0 0 9px rgba(56, 214, 232, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(56, 214, 232, 0); }
+  }
+  .hero h1 {
+    margin-top: 34px;
+    font-size: clamp(42px, 7.2vw, 84px);
+    font-weight: 850; line-height: 1.08;
+  }
+  .hero .sub {
+    margin: 30px auto 0; max-width: 46ch;
+    font-size: clamp(17px, 2vw, 20.5px); color: var(--muted); line-height: 1.75;
+  }
+  .hero .sub b { color: var(--white); font-weight: 700; }
+  .hero-cta { margin-top: 44px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .hero .btn-fill { padding: 19px 42px; font-size: 17.5px; }
+
+  /* hero stats */
+  .hero-stats {
+    margin: clamp(64px, 8vw, 96px) auto 0; max-width: 1020px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+  }
+  .hstat { padding: 34px 18px 6px; text-align: center; position: relative; }
+  .hstat + .hstat::before {
+    content: ""; position: absolute; left: 0; top: 34px; bottom: 14px; width: 1px; background: var(--line);
+  }
+  .hstat .n {
+    font-size: clamp(30px, 4.4vw, 50px); font-weight: 850; letter-spacing: -0.04em; line-height: 1;
+  }
+  .hstat .n .u { font-size: 0.42em; font-weight: 700; color: var(--blue-hi); margin-left: 3px; letter-spacing: 0; }
+  .hstat .c { margin-top: 12px; font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; }
+
+  /* ============ MARQUEE ============ */
+  .marquee { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px 0; overflow: hidden; background: var(--bg-2); }
+  .mq-track { display: flex; gap: 64px; width: max-content; animation: mq 38s linear infinite; }
+  @keyframes mq { to { transform: translateX(-50%); } }
+  .mq-item { display: flex; align-items: center; gap: 64px; }
+  .mq-item span {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--faint); white-space: nowrap;
+  }
+  .mq-item span b { color: var(--blue-hi); font-weight: 700; }
+  .mq-item i { width: 5px; height: 5px; border-radius: 50%; background: var(--blue); opacity: .6; flex: 0 0 auto; }
+
+  /* ============ PROBLEM ============ */
+  .prob-list { margin-top: clamp(48px, 6vw, 80px); border-top: 1px solid var(--line); }
+  .prow {
+    display: grid; grid-template-columns: 110px 1fr 1.1fr; gap: 28px; align-items: baseline;
+    padding: 38px 8px; border-bottom: 1px solid var(--line);
+    transition: background .3s;
+  }
+  .prow:hover { background: var(--surface); }
+  .prow .no {
+    font-size: 15px; font-weight: 800; letter-spacing: 0.12em; color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .prow h3 { font-size: clamp(19px, 2.2vw, 24px); font-weight: 750; letter-spacing: -0.02em; }
+  .prow p { font-size: 15.5px; color: var(--muted); line-height: 1.7; }
+  .prob-punch {
+    margin-top: clamp(56px, 7vw, 88px); text-align: center;
+    font-size: clamp(24px, 3.4vw, 38px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.35;
+  }
+
+  /* ============ SOLUTION (3 steps) ============ */
+  .dark-2 { background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .steps { margin-top: clamp(52px, 6vw, 84px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .card {
+    position: relative; border: 1px solid var(--line); border-radius: var(--r-lg);
+    background: var(--surface); padding: 40px 34px 44px;
+    transition: border-color .3s, transform .3s, background .3s;
+    overflow: hidden;
+  }
+  .card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: var(--grad); opacity: 0; transition: opacity .3s;
+  }
+  .card:hover { border-color: rgba(110, 168, 255, 0.4); transform: translateY(-4px); background: var(--surface-2); }
+  .card:hover::before { opacity: 1; }
+  .step .sno {
+    font-size: 13px; font-weight: 800; letter-spacing: 0.26em; color: var(--blue-hi);
+    font-variant-numeric: tabular-nums;
+  }
+  .step h3 { margin-top: 46px; font-size: clamp(20px, 2.2vw, 25px); }
+  .step p { margin-top: 14px; font-size: 15.5px; color: var(--muted); line-height: 1.7; }
+  .step .ic {
+    position: absolute; top: 34px; right: 30px; width: 42px; height: 42px;
+    color: var(--blue-hi); opacity: .85;
+  }
+
+  /* ============ 정직한 AI — 문서 목업 ============ */
+  .split { display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(44px, 6vw, 88px); align-items: center; }
+  .split .lead { margin-top: 24px; font-size: 18px; color: var(--muted); line-height: 1.8; }
+  .split .lead b { color: var(--white); }
+  .split h2 { font-size: clamp(30px, 3.8vw, 46px); margin-top: 26px; }
+  .kpoints { margin-top: 36px; display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line); }
+  .kp { display: flex; gap: 18px; padding: 22px 4px; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .kp .tick { flex: 0 0 auto; width: 22px; height: 22px; margin-top: 2px; color: var(--cyan); }
+  .kp p { font-size: 15.5px; color: var(--muted); }
+  .kp p b { color: var(--white); font-weight: 700; }
+
+  .docmock {
+    border: 1px solid var(--line-strong); border-radius: var(--r-lg);
+    background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(61,127,255,0.06) inset;
+    overflow: hidden;
+  }
+  .doc-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 22px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,0.03);
+  }
+  .doc-bar .t { font-size: 12px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--faint); }
+  .doc-bar .score {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800;
+    color: var(--cyan); font-variant-numeric: tabular-nums;
+  }
+  .doc-bar .score i { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); }
+  .doc-body { padding: 26px 26px 30px; display: flex; flex-direction: column; gap: 14px; }
+  .dline {
+    border: 1px solid var(--line); border-radius: 13px; padding: 16px 18px;
+    display: flex; gap: 14px; align-items: flex-start; background: rgba(255,255,255,0.02);
+  }
+  .dline .tag {
+    flex: 0 0 auto; font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
+    padding: 4px 10px; border-radius: 7px; margin-top: 2px;
+  }
+  .tag.ok { background: rgba(56, 214, 232, 0.13); color: var(--cyan); }
+  .tag.need { background: rgba(240, 179, 92, 0.13); color: var(--gold); }
+  .dline p { font-size: 14.5px; color: #C3CCDB; line-height: 1.65; }
+  .dline code {
+    font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12.5px;
+    background: rgba(240, 179, 92, 0.14); color: var(--gold);
+    padding: 2px 8px; border-radius: 6px;
+  }
+  .doc-progress { margin-top: 6px; padding: 4px 2px 0; }
+  .doc-progress .plabel { display: flex; justify-content: space-between; font-size: 12px; color: var(--faint); font-weight: 700; letter-spacing: 0.08em; }
+  .doc-progress .ptrack { margin-top: 9px; height: 7px; border-radius: 99px; background: rgba(255,255,255,0.07); overflow: hidden; }
+  .doc-progress .pfill { height: 100%; width: 0; border-radius: 99px; background: var(--grad); transition: width 1.6s cubic-bezier(.16,1,.3,1); }
+
+  /* ============ BENEFITS ============ */
+  .ben-grid { margin-top: clamp(52px, 6vw, 84px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .ben h3 { margin-top: 24px; font-size: 19.5px; letter-spacing: -0.02em; }
+  .ben p { margin-top: 12px; font-size: 15px; color: var(--muted); line-height: 1.7; }
+  .ben .ic { width: 40px; height: 40px; color: var(--blue-hi); }
+  .ben b { color: var(--white); }
+
+  /* ============ COMPARE ============ */
+  .cmp-scroll { margin-top: clamp(52px, 6vw, 84px); overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+  table.cmp { width: 100%; border-collapse: collapse; min-width: 680px; }
+  table.cmp th, table.cmp td { padding: 22px 26px; text-align: left; border-bottom: 1px solid var(--line); font-size: 15.5px; }
+  table.cmp thead th {
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--faint);
+    font-weight: 700; background: rgba(255,255,255,0.025);
+  }
+  table.cmp thead th.us {
+    color: #04101E; background: var(--grad); border-bottom: none;
+  }
+  table.cmp td.us { background: rgba(61, 127, 255, 0.1); font-weight: 750; color: var(--white); border-left: 1px solid rgba(110,168,255,.25); border-right: 1px solid rgba(110,168,255,.25); }
+  table.cmp tbody tr:last-child td.us { border-bottom: 1px solid rgba(110,168,255,.25); }
+  table.cmp td.rh { font-weight: 700; color: var(--white); }
+  table.cmp td { color: var(--muted); }
+  table.cmp tr:last-child td { border-bottom: none; }
+  table.cmp .x { color: var(--danger); font-weight: 600; }
+
+  /* ============ FINAL CTA ============ */
+  .final { text-align: center; position: relative; isolation: isolate; overflow: hidden; }
+  .final-glow {
+    position: absolute; z-index: -1; width: 1100px; height: 900px; left: 50%; bottom: -55%;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(61,127,255,0.2) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .final .eb { justify-content: center; }
+  .final h2 { font-size: clamp(36px, 5.4vw, 66px); margin-top: 28px; }
+  .final .lead { margin: 26px auto 0; max-width: 52ch; font-size: 18.5px; color: var(--muted); line-height: 1.75; }
+  .final .btn-fill { margin-top: 46px; padding: 20px 52px; font-size: 18px; }
+
+  /* ============ FAQ ============ */
+  .faq { max-width: 800px; margin: clamp(72px, 9vw, 110px) auto 0; text-align: left; border-top: 1px solid var(--line); }
+  details.q { border-bottom: 1px solid var(--line); }
+  details.q summary {
+    list-style: none; cursor: pointer; padding: 26px 6px;
+    font-weight: 700; font-size: 17.5px; letter-spacing: -0.01em;
+    display: flex; justify-content: space-between; align-items: center; gap: 18px;
+    transition: color .2s;
+  }
+  details.q summary:hover { color: var(--blue-hi); }
+  details.q summary::-webkit-details-marker { display: none; }
+  details.q .pm { color: var(--blue-hi); font-weight: 400; font-size: 26px; line-height: 1; transition: transform .25s; flex: 0 0 auto; }
+  details.q[open] .pm { transform: rotate(45deg); }
+  details.q .a { padding: 0 6px 28px; color: var(--muted); font-size: 15.5px; line-height: 1.75; max-width: 68ch; }
+
+  /* ============ FOOTER ============ */
+  footer { border-top: 1px solid var(--line); padding: 52px 0 60px; background: var(--bg-2); }
+  .foot-in { display: flex; justify-content: space-between; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+  footer .disc { margin-top: 14px; font-size: 12.5px; color: var(--faint); max-width: 640px; line-height: 1.8; }
+
+  /* ============ REVEAL ============ */
+  .rv { opacity: 0; transform: translateY(28px); transition: opacity .85s cubic-bezier(.16,1,.3,1), transform .85s cubic-bezier(.16,1,.3,1); }
+  .rv.in { opacity: 1; transform: none; }
+  .rv[data-d="1"] { transition-delay: .1s; }
+  .rv[data-d="2"] { transition-delay: .2s; }
+  .rv[data-d="3"] { transition-delay: .3s; }
+  .rv[data-d="4"] { transition-delay: .4s; }
+  @media (prefers-reduced-motion: reduce) {
+    .rv { opacity: 1; transform: none; transition: none; }
+    html { scroll-behavior: auto; }
+    .mq-track { animation: none; }
+    .hero .badge .pulse { animation: none; }
+    .btn, .card, .doc-progress .pfill { transition: none; }
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 980px) {
+    .steps, .ben-grid { grid-template-columns: 1fr; }
+    .split { grid-template-columns: 1fr; }
+    .hero-stats { grid-template-columns: repeat(2, 1fr); }
+    .hstat:nth-child(3)::before { display: none; }
+    .hstat { padding-top: 28px; }
+    .prow { grid-template-columns: 64px 1fr; }
+    .prow p { grid-column: 2; }
+  }
+  @media (max-width: 620px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 22px; }
+    .hero { min-height: auto; }
+    .hero-cta { flex-direction: column; align-items: stretch; }
+    .hero-cta .btn { width: 100%; }
+    .nav-cta-tx { display: none; }
+    .hero-stats { grid-template-columns: 1fr 1fr; }
+    .prow { grid-template-columns: 1fr; gap: 10px; padding: 30px 4px; }
+    .prow p { grid-column: 1; }
+  }
+</style>
+
+<!-- ================= NAV ================= -->
+<nav>
+  <div class="wrap nav-in">
+    <div class="logo">
+      <span class="word">BIZ<i>PLAN</i></span>
+      <span class="by">by BLAN</span>
+    </div>
+    <!-- TODO: BIZPLAN 솔루션 페이지 URL로 교체 -->
+    <a class="btn btn-fill btn-sm cta" href="#">
+      <span class="nav-cta-tx">무료로 시작하기</span><span class="ar" aria-hidden="true">→</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="hero-grid-lines" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="hero-in">
+      <span class="badge rv"><span class="pulse" aria-hidden="true"></span>정부지원사업 사업계획서 AI</span>
+      <h1 class="rv" data-d="1">
+        감으로 쓰지 마세요.<br />
+        <span class="grad-text">합격한 문서</span>가 알려준<br />
+        기준으로 씁니다.
+      </h1>
+      <p class="sub rv" data-d="2">
+        실제 합격·불합격 사업계획서를 분석해 <b>합격을 가르는 요인</b>을 찾았습니다.<br />
+        심사위원의 진짜 관점을, 당신의 첫 초안에 그대로 담습니다.
+      </p>
+      <div class="hero-cta rv" data-d="3">
+        <!-- TODO: BIZPLAN 솔루션 페이지 URL로 교체 -->
+        <a class="btn btn-fill cta" href="#">10분 만에 무료 초안 받기 <span class="ar" aria-hidden="true">→</span></a>
+        <a class="btn btn-line" href="#how">작동 방식 보기</a>
+      </div>
+      <p class="cta-sub rv" data-d="3">신용카드 없이 시작 · 질문 <b>10개</b>면 초안 완성</p>
+    </div>
+
+    <div class="hero-stats rv" data-d="4">
+      <div class="hstat">
+        <div class="n tnum"><span data-count="2500">0</span><span class="u">건+</span></div>
+        <div class="c">심사위원 데이터 반영</div>
+      </div>
+      <div class="hstat">
+        <div class="n tnum"><span data-count="10000">0</span><span class="u">건+</span></div>
+        <div class="c">멘토링·교육 학습</div>
+      </div>
+      <div class="hstat">
+        <div class="n tnum"><span data-count="4">0</span><span class="u">단계</span></div>
+        <div class="c">PSST 공식 구조 완벽 대응</div>
+      </div>
+      <div class="hstat">
+        <div class="n tnum"><span data-count="10">0</span><span class="u">분</span></div>
+        <div class="c">답변 시작부터 초안까지</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= MARQUEE ================= -->
+<div class="marquee" aria-hidden="true">
+  <div class="mq-track">
+    <div class="mq-item">
+      <span>Data-Driven <b>Business Plan</b></span><i></i>
+      <span>심사위원 데이터 <b>2,500+</b></span><i></i>
+      <span>멘토링 학습 <b>10,000+</b></span><i></i>
+      <span>심사위원 관점 <b>AI Feedback</b></span><i></i>
+      <span>초기창업패키지 <b>PSST 특화</b></span><i></i>
+      <span>초안 생성 <b>10 Min</b></span><i></i>
+    </div>
+    <div class="mq-item">
+      <span>Data-Driven <b>Business Plan</b></span><i></i>
+      <span>심사위원 데이터 <b>2,500+</b></span><i></i>
+      <span>멘토링 학습 <b>10,000+</b></span><i></i>
+      <span>심사위원 관점 <b>AI Feedback</b></span><i></i>
+      <span>초기창업패키지 <b>PSST 특화</b></span><i></i>
+      <span>초안 생성 <b>10 Min</b></span><i></i>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PROBLEM ================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eb">Problem</span>
+      <h2>"이렇게 쓰는 게<br />맞는 걸까?"</h2>
+      <p class="lead">처음 쓰는 사업계획서가 어려운 이유는 실력이 아닙니다.
+        무엇이 합격을 가르는지, 그 <b style="color:var(--white)">기준</b>을 아무도 알려주지 않기 때문입니다.</p>
+    </div>
+
+    <div class="prob-list">
+      <div class="prow rv">
+        <span class="no tnum">01</span>
+        <h3>빈 양식 앞에서 커서만 깜빡인다</h3>
+        <p>60개 항목을 무엇으로 채워야 할지 감이 오지 않습니다. 시작조차 못 하고 마감이 다가옵니다.</p>
+      </div>
+      <div class="prow rv">
+        <span class="no tnum">02</span>
+        <h3>남의 합격작을 봐도 이유를 모른다</h3>
+        <p>합격 사례를 구해 읽어도, 그 문서가 '왜' 붙었는지 설명해주는 사람은 없습니다.</p>
+      </div>
+      <div class="prow rv">
+        <span class="no tnum">03</span>
+        <h3>ChatGPT는 없는 숫자를 지어낸다</h3>
+        <p>그럴듯해 보이지만 거짓 매출, 거짓 근거가 섞입니다. 심사에서 거짓 수치는 치명적입니다.</p>
+      </div>
+      <div class="prow rv">
+        <span class="no tnum">04</span>
+        <h3>컨설팅은 수백만 원, 첫 도전엔 부담</h3>
+        <p>붙을지도 모르는 첫 지원에 큰돈을 쓰기는 어렵습니다. 결국 혼자 쓰다 지칩니다.</p>
+      </div>
+    </div>
+
+    <p class="prob-punch rv">필요한 건 더 많은 노력이 아니라,<br /><span class="grad-text">합격이 만들어지는 기준</span>입니다.</p>
+  </div>
+</section>
+
+<!-- ================= SOLUTION ================= -->
+<section class="dark-2" id="how">
+  <div class="wrap">
+    <div class="sec-head center rv">
+      <span class="eb center">How It Works</span>
+      <h2>합격을 만든 요인을,<br />시스템이 이미 알고 있습니다</h2>
+      <p class="lead">실제 합격·불합격 문서와 <b style="color:var(--white)">심사위원의 실제 피드백</b>을 학습했습니다.
+        AI가 '심사위원의 눈'으로 초안을 쓰고, 부족한 곳을 짚어줍니다.</p>
+    </div>
+
+    <div class="steps">
+      <div class="card step rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg>
+        <span class="sno tnum">STEP 01</span>
+        <h3>질문 10개에 답하기</h3>
+        <p>핵심 10문항이면 충분합니다. 어려운 항목은 건너뛰어도 초안이 만들어집니다.</p>
+      </div>
+      <div class="card step rv" data-d="1">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <span class="sno tnum">STEP 02</span>
+        <h3>초안 + 피드백 자동 생성</h3>
+        <p>전체 초안이 완성되고, 부족한 곳엔 AI가 심사위원 관점의 꼬리질문 메모를 답니다.</p>
+      </div>
+      <div class="card step rv" data-d="2">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m22 4-10 10-3-3"/></svg>
+        <span class="sno tnum">STEP 03</span>
+        <h3>채울수록 완성도 상승</h3>
+        <p>메모에 답할수록 사업계획서 완성도 게이지가 실시간으로 올라갑니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HONEST AI ================= -->
+<section>
+  <div class="wrap split">
+    <div class="rv">
+      <span class="eb">Honest AI</span>
+      <h2>확실하지 않은 것은,<br /><span class="grad-text">지어내지 않습니다</span></h2>
+      <p class="lead">
+        <b>심사위원 데이터 2,500건+</b>과 <b>멘토링·교육 10,000건+</b>을 학습해
+        무엇이 통하고 무엇이 탈락하는지 알고 씁니다.<br />
+        그리고 근거 없는 숫자는 절대 만들지 않습니다.
+      </p>
+      <div class="kpoints">
+        <div class="kp">
+          <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <p><b>근거 기반 문장과 AI 추론 문장을 구분</b>해서 보여줍니다</p>
+        </div>
+        <div class="kp">
+          <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <p>답변에 없는 수치는 <b>[수치 필요]로 정직하게 표시</b>합니다</p>
+        </div>
+        <div class="kp">
+          <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <p>완성되면 <b>공식 양식 그대로 DOCX로 출력</b>합니다</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="docmock rv" data-d="1" aria-label="AI 작성 화면 예시">
+      <div class="doc-bar">
+        <span class="t">Business Plan — Draft</span>
+        <span class="score tnum"><i aria-hidden="true"></i>AI 피드백 메모 4건</span>
+      </div>
+      <div class="doc-body">
+        <div class="dline">
+          <span class="tag ok">근거 기반</span>
+          <p>고객 인터뷰 12건에서 도출한 핵심 문제를 정의하고, 검증된 답변만으로 서술합니다.</p>
+        </div>
+        <div class="dline">
+          <span class="tag need">수치 필요</span>
+          <p>연 매출 목표는 <code>[수치 필요]</code> — 답변에 없는 숫자는 임의로 만들지 않습니다.</p>
+        </div>
+        <div class="dline">
+          <span class="tag ok">심사 관점</span>
+          <p>심사위원이 가장 자주 지적하는 '정량 근거'부터 먼저 점검합니다.</p>
+        </div>
+        <div class="dline">
+          <span class="tag need">보완 제안</span>
+          <p>시장 규모의 출처가 약합니다. AI가 메모로 보완을 요청합니다.</p>
+        </div>
+        <div class="doc-progress">
+          <div class="plabel"><span>사업계획서 완성도</span><span class="tnum pnum">0%</span></div>
+          <div class="ptrack"><div class="pfill" data-to="78"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BENEFITS ================= -->
+<section class="dark-2">
+  <div class="wrap">
+    <div class="sec-head center rv">
+      <span class="eb center">What You Get</span>
+      <h2>단순 생성기가 아닙니다</h2>
+    </div>
+    <div class="ben-grid">
+      <div class="card ben rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        <h3>감이 아닌 데이터 기준</h3>
+        <p><b>합격·불합격 데이터를 학습한 AI</b>가, 심사에서 통하는 방향으로 씁니다.</p>
+      </div>
+      <div class="card ben rv" data-d="1">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>
+        <h3>10문항이면 끝</h3>
+        <p>빈 화면의 막막함이 사라집니다. 답할 수 있는 것부터 가볍게 시작하세요.</p>
+      </div>
+      <div class="card ben rv" data-d="2">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+        <h3>지어내지 않는 정직한 AI</h3>
+        <p>없는 수치는 만들지 않고 <b>[수치 필요]</b>로 표시합니다. 거짓 근거로 탈락할 일이 없습니다.</p>
+      </div>
+      <div class="card ben rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></svg>
+        <h3>부족한 정보만 콕 집어 질문</h3>
+        <p>양식 변환 전, 초안이 커버하지 못한 부분만 추려 되묻습니다. <b>이미 답한 건 다시 묻지 않습니다.</b></p>
+      </div>
+      <div class="card ben rv" data-d="1">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h12"/></svg>
+        <h3>초기창업패키지 양식 특화</h3>
+        <p>공식 PSST 구조 <b>그대로 출력</b>합니다. 청년사관학교 등 다른 지원사업 양식도 순차 업데이트 예정.</p>
+      </div>
+      <div class="card ben rv" data-d="2">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+        <h3>AI가 짚어주는 보완점</h3>
+        <p>어디가 약한지 AI가 본문에 메모로 알려줘, <b>채워야 할 곳만</b> 채우면 됩니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMPARE ================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eb">Comparison</span>
+      <h2>다른 방법과<br />무엇이 다른가</h2>
+    </div>
+    <div class="cmp-scroll rv" data-d="1">
+      <table class="cmp">
+        <thead>
+          <tr><th>기준</th><th>직접 작성</th><th>ChatGPT</th><th>컨설팅</th><th class="us">BIZPLAN</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="rh">합격 기준 반영</td><td class="x">없음</td><td class="x">없음</td><td>사람 경험</td><td class="us">데이터로 반영</td></tr>
+          <tr><td class="rh">거짓 수치 위험</td><td>—</td><td class="x">높음</td><td>낮음</td><td class="us">구조적 차단</td></tr>
+          <tr><td class="rh">보완점 짚어주기</td><td class="x">스스로 찾아야 함</td><td>일반론 수준</td><td>컨설턴트마다 다름</td><td class="us">심사 데이터 기반 메모</td></tr>
+          <tr><td class="rh">초안이 나오기까지</td><td>며칠</td><td>반나절 + 수정 반복</td><td>1~2주 대기</td><td class="us">질문 답변 10분</td></tr>
+          <tr><td class="rh">공식 양식 서식</td><td class="x">직접 맞춰야 함</td><td class="x">서식 깨짐</td><td>건별 계약</td><td class="us">초창패 양식 그대로</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FINAL CTA + FAQ ================= -->
+<section class="final dark-2">
+  <div class="final-glow" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eb center rv">Start Free</span>
+    <h2 class="rv" data-d="1">먼저 초안부터,<br /><span class="grad-text">무료로 받아보세요</span></h2>
+    <p class="lead rv" data-d="2">질문 10개에 답하면, 합격 데이터로 쓴 사업계획서 초안이 만들어집니다.<br />마음에 들 때 이어서 완성하세요.</p>
+    <!-- TODO: BIZPLAN 솔루션 페이지 URL로 교체 -->
+    <a class="btn btn-fill cta rv" data-d="3" href="#">사업계획서 만들기 <span class="ar" aria-hidden="true">→</span></a>
+    <p class="cta-sub rv" data-d="3">신용카드 없이 시작 · 핵심 섹션 무료 열람</p>
+
+    <div class="faq">
+      <details class="q rv"><summary>정말 질문 10개만 답하면 되나요?<span class="pm" aria-hidden="true">+</span></summary>
+        <div class="a">네. 핵심 10문항으로 전체 초안이 생성됩니다. 나머지 세부 내용은 AI가 본문에 메모(꼬리질문)로 되물어 채워가는 방식이라, 처음부터 모든 걸 알 필요가 없습니다.</div>
+      </details>
+      <details class="q rv"><summary>AI가 거짓 정보를 넣지 않나요?<span class="pm" aria-hidden="true">+</span></summary>
+        <div class="a">답변에 없는 수치·고유명사는 임의로 생성하지 않고 [수치 필요]로 표시합니다. 근거 있는 문장과 AI가 추론한 문장도 구분해 보여줘, 제출 전 직접 확인할 수 있습니다.</div>
+      </details>
+      <details class="q rv"><summary>어떤 지원사업에 쓸 수 있나요?<span class="pm" aria-hidden="true">+</span></summary>
+        <div class="a">현재는 초기창업패키지 공식 양식(PSST 구조)에 최적화되어 있습니다. 청년창업사관학교, 창업도약패키지 등 다른 지원사업 전용 양식은 순차적으로 업데이트될 예정입니다.</div>
+      </details>
+      <details class="q rv"><summary>결과물은 어떻게 받나요?<span class="pm" aria-hidden="true">+</span></summary>
+        <div class="a">완성된 사업계획서는 DOCX 파일로 다운로드할 수 있습니다. 그대로 제출하거나, 필요한 부분만 추가 편집해 사용하세요.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap foot-in">
+    <div>
+      <div class="logo"><span class="word">BIZ<i>PLAN</i></span><span class="by">by BLAN</span></div>
+      <p class="disc">
+        * 반영 데이터(심사위원 피드백·멘토링·교육 건수)는 자사 보유 데이터 기준이며, 관련 근거 자료를 보관하고 있습니다.
+        본 서비스는 합격을 보장하지 않으며, 실제 심사 결과는 사업 아이템과 작성 내용에 따라 달라질 수 있습니다.
+      </p>
+    </div>
+    <!-- TODO: BIZPLAN 솔루션 페이지 URL로 교체 -->
+    <a class="btn btn-fill btn-sm cta" href="#">무료로 시작하기 <span class="ar" aria-hidden="true">→</span></a>
+  </div>
+</footer>
+
+<script>
+  // ---------- scroll reveal ----------
+  (function () {
+    var els = document.querySelectorAll('.rv');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+
+  // ---------- count-up ----------
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var nums = document.querySelectorAll('[data-count]');
+    var fmt = function (n) { return n.toLocaleString('en-US'); };
+    if (reduce) { nums.forEach(function (el) { el.textContent = fmt(parseInt(el.getAttribute('data-count'), 10)); }); return; }
+    var run = function (el) {
+      var target = parseInt(el.getAttribute('data-count'), 10);
+      var start = null, dur = 1400;
+      function tick(ts) {
+        if (!start) start = ts;
+        var p = Math.min((ts - start) / dur, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(Math.round(target * eased));
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    };
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { run(en.target); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.5 });
+    nums.forEach(function (e) { io.observe(e); });
+  })();
+
+  // ---------- doc mock progress ----------
+  (function () {
+    var fill = document.querySelector('.pfill');
+    var label = document.querySelector('.pnum');
+    if (!fill) return;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var to = parseInt(fill.getAttribute('data-to'), 10);
+    var setNow = function () { fill.style.width = to + '%'; if (label) label.textContent = to + '%'; };
+    if (reduce) { setNow(); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        io.unobserve(en.target);
+        requestAnimationFrame(function () { fill.style.width = to + '%'; });
+        var start = null, dur = 1600;
+        function tick(ts) {
+          if (!start) start = ts;
+          var p = Math.min((ts - start) / dur, 1);
+          var eased = 1 - Math.pow(1 - p, 3);
+          if (label) label.textContent = Math.round(to * eased) + '%';
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      });
+    }, { threshold: 0.4 });
+    io.observe(fill);
+  })();
+</script>
