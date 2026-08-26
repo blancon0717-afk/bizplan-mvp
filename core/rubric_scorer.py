@@ -189,3 +189,31 @@ def advice_for(feature: str) -> str:
         return _sp.ADVICE.get(feature, "계획서에 관련 내용을 명기하세요.")
     except Exception:
         return "계획서에 관련 내용을 명기하세요."
+
+
+# ── 벤치마크용 피처 추출 (Sonnet 5) ──────────────────────────────────────────
+# 골드셋 20건 기준 일치율 Haiku 72.5% vs Sonnet 5 88.4% (2026-08 파일럿).
+# Sonnet 5는 thinking 기본 활성이라 반드시 비활성 + 여유 max_tokens — 잘리면 Structurer가
+# 예외를 던지고 여기서 None을 반환한다(기본값 오염 금지).
+
+_EXTRACT_MODEL = "claude-sonnet-5"
+
+
+def extract_features(text: str) -> "dict | None":
+    """사업계획서 전문 → 루브릭 피처 50개 dict. 키 없음/실패/잘림 시 None."""
+    import logging
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key or not (text or "").strip():
+        return None
+    try:
+        from claude_structurer import Structurer as _Structurer
+
+        st = _Structurer(
+            api_key=api_key, model=_EXTRACT_MODEL,
+            max_tokens=4000, thinking={"type": "disabled"},
+        )
+        return st.structure(text)
+    except Exception as e:  # noqa: BLE001 — 호출부가 available=False로 처리
+        logging.getLogger(__name__).warning("벤치마크 피처 추출 실패: %s", e)
+        return None

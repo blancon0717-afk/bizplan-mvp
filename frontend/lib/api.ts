@@ -5,7 +5,7 @@ import type {
   GenerationResults,
   Program,
   Question,
-  RubricScoreResult,
+  BenchmarkResult,
   SectionResult,
   SupportProgramMatch,
 } from "@/lib/types";
@@ -98,7 +98,7 @@ export const api = {
     ),
 
   getScore: (sessionId: string) =>
-    request<RubricScoreResult>(`/sessions/${sessionId}/score`),
+    request<BenchmarkResult>(`/sessions/${sessionId}/score`),
 
   recommend: (profile: CompanyProfile) =>
     request<{ programs: SupportProgramMatch[] }>("/matching/recommend", {

@@ -1,0 +1,3712 @@
+{
+ "version": "v1",
+ "built_at": "2026-08-26T03:44:12.886697+00:00",
+ "n_total": 549,
+ "score_items": [
+  "투자의향서 확보 여부",
+  "MOU 보유 개수",
+  "견적서 보유 개수",
+  "아이템 관련 특허 보유 개수 (등록 기준)",
+  "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+  "수상이력",
+  "아이템 관련 경력 증빙",
+  "실제 제조 OR 서비스 사진 보유 여부",
+  "실제 실험 사진 보유 여부",
+  "MVP 테스트 실행 여부",
+  "수요처 확보 여부",
+  "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+  "대표자/팀원 관련 자격증서",
+  "구매 의향서 보유",
+  "기타 기업 인증 개수",
+  "FGI"
+ ],
+ "programs": {
+  "예비창업패키지": {
+   "n": 156,
+   "n_pass": 96,
+   "pass_rate": 0.615,
+   "features": [
+    {
+     "feature": "아이템특이성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 96
+    },
+    {
+     "feature": "비즈니스 모델 다양화",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 96
+    },
+    {
+     "feature": "실제 제조 OR 서비스 사진 보유 여부",
+     "pass_prevalence": 0.969,
+     "fail_prevalence": 0.983,
+     "delta_pp": -1.5,
+     "fisher_p": 1.0,
+     "n_pass_with": 93
+    },
+    {
+     "feature": "아이템 관련 경력 증빙",
+     "pass_prevalence": 0.958,
+     "fail_prevalence": 0.867,
+     "delta_pp": 9.2,
+     "fisher_p": 0.0602,
+     "n_pass_with": 92
+    },
+    {
+     "feature": "대표자 해당 아이템 산업 경험/기술 보유 여부",
+     "pass_prevalence": 0.938,
+     "fail_prevalence": 0.817,
+     "delta_pp": 12.1,
+     "fisher_p": 0.0319,
+     "n_pass_with": 90
+    },
+    {
+     "feature": "영업 및 마케팅 네트워크 보유",
+     "pass_prevalence": 0.823,
+     "fail_prevalence": 0.917,
+     "delta_pp": -9.4,
+     "fisher_p": 0.1548,
+     "n_pass_with": 79
+    },
+    {
+     "feature": "해외 진출 가능성",
+     "pass_prevalence": 0.656,
+     "fail_prevalence": 0.667,
+     "delta_pp": -1.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "제조 전문 네트워크 (기술자) 보유",
+     "pass_prevalence": 0.646,
+     "fail_prevalence": 0.517,
+     "delta_pp": 12.9,
+     "fisher_p": 0.132,
+     "n_pass_with": 62
+    },
+    {
+     "feature": "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "pass_prevalence": 0.531,
+     "fail_prevalence": 0.467,
+     "delta_pp": 6.5,
+     "fisher_p": 0.5108,
+     "n_pass_with": 51
+    },
+    {
+     "feature": "개발(S/W) 네트워크 보유",
+     "pass_prevalence": 0.521,
+     "fail_prevalence": 0.517,
+     "delta_pp": 0.4,
+     "fisher_p": 1.0,
+     "n_pass_with": 50
+    },
+    {
+     "feature": "MVP 테스트 실행 여부",
+     "pass_prevalence": 0.521,
+     "fail_prevalence": 0.35,
+     "delta_pp": 17.1,
+     "fisher_p": 0.0474,
+     "n_pass_with": 50
+    },
+    {
+     "feature": "수요처 네트워크 보유",
+     "pass_prevalence": 0.51,
+     "fail_prevalence": 0.417,
+     "delta_pp": 9.4,
+     "fisher_p": 0.3229,
+     "n_pass_with": 49
+    },
+    {
+     "feature": "필수 재료 공급처 네트워크 보유",
+     "pass_prevalence": 0.51,
+     "fail_prevalence": 0.317,
+     "delta_pp": 19.4,
+     "fisher_p": 0.0206,
+     "n_pass_with": 49
+    },
+    {
+     "feature": "R&D 인력 or 자체 학습 데이터 네트워크 보유",
+     "pass_prevalence": 0.448,
+     "fail_prevalence": 0.233,
+     "delta_pp": 21.5,
+     "fisher_p": 0.01,
+     "n_pass_with": 43
+    },
+    {
+     "feature": "견적서 보유 개수",
+     "pass_prevalence": 0.427,
+     "fail_prevalence": 0.383,
+     "delta_pp": 4.4,
+     "fisher_p": 0.6192,
+     "n_pass_with": 41
+    },
+    {
+     "feature": "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "pass_prevalence": 0.385,
+     "fail_prevalence": 0.2,
+     "delta_pp": 18.5,
+     "fisher_p": 0.0207,
+     "n_pass_with": 37
+    },
+    {
+     "feature": "MOU 보유 개수",
+     "pass_prevalence": 0.365,
+     "fail_prevalence": 0.35,
+     "delta_pp": 1.5,
+     "fisher_p": 0.8658,
+     "n_pass_with": 35
+    },
+    {
+     "feature": "디자인 네트워크 보유",
+     "pass_prevalence": 0.354,
+     "fail_prevalence": 0.3,
+     "delta_pp": 5.4,
+     "fisher_p": 0.6008,
+     "n_pass_with": 34
+    },
+    {
+     "feature": "해당 시장 전문 자문 네트워크 보유 위원",
+     "pass_prevalence": 0.292,
+     "fail_prevalence": 0.3,
+     "delta_pp": -0.8,
+     "fisher_p": 1.0,
+     "n_pass_with": 28
+    },
+    {
+     "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.281,
+     "fail_prevalence": 0.333,
+     "delta_pp": -5.2,
+     "fisher_p": 0.5909,
+     "n_pass_with": 27
+    },
+    {
+     "feature": "대표자/팀원 관련 자격증서",
+     "pass_prevalence": 0.271,
+     "fail_prevalence": 0.283,
+     "delta_pp": -1.3,
+     "fisher_p": 0.8563,
+     "n_pass_with": 26
+    },
+    {
+     "feature": "실제 실험 사진 보유 여부",
+     "pass_prevalence": 0.24,
+     "fail_prevalence": 0.117,
+     "delta_pp": 12.3,
+     "fisher_p": 0.0634,
+     "n_pass_with": 23
+    },
+    {
+     "feature": "수요처 확보 여부",
+     "pass_prevalence": 0.24,
+     "fail_prevalence": 0.133,
+     "delta_pp": 10.6,
+     "fisher_p": 0.1483,
+     "n_pass_with": 23
+    },
+    {
+     "feature": "개발인력(sw) 보유(팀원 기준)",
+     "pass_prevalence": 0.229,
+     "fail_prevalence": 0.217,
+     "delta_pp": 1.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 22
+    },
+    {
+     "feature": "해당 시장 전문가(팀원 기준)",
+     "pass_prevalence": 0.208,
+     "fail_prevalence": 0.217,
+     "delta_pp": -0.8,
+     "fisher_p": 1.0,
+     "n_pass_with": 20
+    },
+    {
+     "feature": "제조 전문 인력 (기술자) 보유(팀원 기준)",
+     "pass_prevalence": 0.198,
+     "fail_prevalence": 0.083,
+     "delta_pp": 11.5,
+     "fisher_p": 0.0682,
+     "n_pass_with": 19
+    },
+    {
+     "feature": "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)",
+     "pass_prevalence": 0.188,
+     "fail_prevalence": 0.167,
+     "delta_pp": 2.1,
+     "fisher_p": 0.8319,
+     "n_pass_with": 18
+    },
+    {
+     "feature": "수상이력",
+     "pass_prevalence": 0.177,
+     "fail_prevalence": 0.15,
+     "delta_pp": 2.7,
+     "fisher_p": 0.8257,
+     "n_pass_with": 17
+    },
+    {
+     "feature": "청년 여부(만 39세 이하)",
+     "pass_prevalence": 0.167,
+     "fail_prevalence": 0.167,
+     "delta_pp": 0.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "디자인 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.167,
+     "fail_prevalence": 0.283,
+     "delta_pp": -11.7,
+     "fisher_p": 0.1069,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "여성 대표 여부",
+     "pass_prevalence": 0.156,
+     "fail_prevalence": 0.183,
+     "delta_pp": -2.7,
+     "fisher_p": 0.6649,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "R&D 인력 보유(팀원 기준)",
+     "pass_prevalence": 0.146,
+     "fail_prevalence": 0.1,
+     "delta_pp": 4.6,
+     "fisher_p": 0.4685,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "투자의향서 확보 여부",
+     "pass_prevalence": 0.146,
+     "fail_prevalence": 0.05,
+     "delta_pp": 9.6,
+     "fisher_p": 0.0694,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "대표자 사업 경험 여부 (매출 1억 이상)",
+     "pass_prevalence": 0.135,
+     "fail_prevalence": 0.133,
+     "delta_pp": 0.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "아이템 관련 특허 보유 개수 (등록 기준)",
+     "pass_prevalence": 0.135,
+     "fail_prevalence": 0.133,
+     "delta_pp": 0.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "구매 의향서 보유",
+     "pass_prevalence": 0.115,
+     "fail_prevalence": 0.1,
+     "delta_pp": 1.5,
+     "fisher_p": 1.0,
+     "n_pass_with": 11
+    },
+    {
+     "feature": "소재지+주관기관 일치 여부",
+     "pass_prevalence": 0.094,
+     "fail_prevalence": 0.017,
+     "delta_pp": 7.7,
+     "fisher_p": 0.0898,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "FGI",
+     "pass_prevalence": 0.073,
+     "fail_prevalence": 0.083,
+     "delta_pp": -1.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 7
+    },
+    {
+     "feature": "고용",
+     "pass_prevalence": 0.042,
+     "fail_prevalence": 0.033,
+     "delta_pp": 0.8,
+     "fisher_p": 1.0,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "아이템 관련 인증 & 디자인 특허 & 상표 등록 개수 -> 기업 인증 아님 주의",
+     "pass_prevalence": 0.031,
+     "fail_prevalence": 0.067,
+     "delta_pp": -3.5,
+     "fisher_p": 0.4299,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "직전 매출 (수출 제외)",
+     "pass_prevalence": 0.031,
+     "fail_prevalence": 0.017,
+     "delta_pp": 1.5,
+     "fisher_p": 1.0,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "총매출 (직전매출 + 직전 수출) -> 자동 계산 수정금지",
+     "pass_prevalence": 0.031,
+     "fail_prevalence": 0.017,
+     "delta_pp": 1.5,
+     "fisher_p": 1.0,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "자체 생산 시설 보유",
+     "pass_prevalence": 0.01,
+     "fail_prevalence": 0.017,
+     "delta_pp": -0.6,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "납품 확정 계약서 보유 여부",
+     "pass_prevalence": 0.01,
+     "fail_prevalence": 0.0,
+     "delta_pp": 1.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "기술임치",
+     "pass_prevalence": 0.01,
+     "fail_prevalence": 0.0,
+     "delta_pp": 1.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "누적 투자",
+     "pass_prevalence": 0.01,
+     "fail_prevalence": 0.033,
+     "delta_pp": -2.3,
+     "fisher_p": 0.5592,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "기대출 및 보증 금액 (최근 1년)",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "기술이전협약서",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "기타 기업 인증 개수",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.017,
+     "delta_pp": -1.7,
+     "fisher_p": 0.3846,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "직전 수출",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    }
+   ],
+   "checklist": {
+    "items": [
+     "투자의향서 확보 여부",
+     "MOU 보유 개수",
+     "견적서 보유 개수",
+     "아이템 관련 특허 보유 개수 (등록 기준)",
+     "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "수상이력",
+     "아이템 관련 경력 증빙",
+     "실제 제조 OR 서비스 사진 보유 여부",
+     "실제 실험 사진 보유 여부",
+     "MVP 테스트 실행 여부",
+     "수요처 확보 여부",
+     "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "대표자/팀원 관련 자격증서",
+     "구매 의향서 보유",
+     "기타 기업 인증 개수",
+     "FGI"
+    ],
+    "max": 16,
+    "pass_mean": 5.55,
+    "pass_median": 6.0,
+    "pass_p25": 4.0,
+    "pass_p75": 7.0,
+    "fail_mean": 4.67,
+    "pass_score_hist": {
+     "2": 6,
+     "3": 10,
+     "4": 17,
+     "5": 14,
+     "6": 14,
+     "7": 21,
+     "8": 6,
+     "9": 7,
+     "11": 1
+    }
+   },
+   "score_bands": [
+    {
+     "band": "하위",
+     "score_min": 1,
+     "score_max": 4,
+     "n": 68,
+     "pass_rate": 0.485
+    },
+    {
+     "band": "중위",
+     "score_min": 5,
+     "score_max": 6,
+     "n": 41,
+     "pass_rate": 0.683
+    },
+    {
+     "band": "상위",
+     "score_min": 7,
+     "score_max": 11,
+     "n": 47,
+     "pass_rate": 0.745
+    }
+   ],
+   "lift_pp": 26.0,
+   "display_mode": "empirical_rate"
+  },
+  "창업중심대학-예창": {
+   "n": 37,
+   "n_pass": 16,
+   "pass_rate": 0.432,
+   "features": [
+    {
+     "feature": "아이템특이성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "실제 제조 OR 서비스 사진 보유 여부",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 0.952,
+     "delta_pp": 4.8,
+     "fisher_p": 1.0,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "비즈니스 모델 다양화",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "대표자 해당 아이템 산업 경험/기술 보유 여부",
+     "pass_prevalence": 0.875,
+     "fail_prevalence": 0.905,
+     "delta_pp": -3.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "아이템 관련 경력 증빙",
+     "pass_prevalence": 0.875,
+     "fail_prevalence": 0.952,
+     "delta_pp": -7.7,
+     "fisher_p": 0.5676,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "해외 진출 가능성",
+     "pass_prevalence": 0.875,
+     "fail_prevalence": 0.81,
+     "delta_pp": 6.5,
+     "fisher_p": 0.6796,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "개발(S/W) 네트워크 보유",
+     "pass_prevalence": 0.688,
+     "fail_prevalence": 0.524,
+     "delta_pp": 16.4,
+     "fisher_p": 0.5,
+     "n_pass_with": 11
+    },
+    {
+     "feature": "영업 및 마케팅 네트워크 보유",
+     "pass_prevalence": 0.625,
+     "fail_prevalence": 0.905,
+     "delta_pp": -28.0,
+     "fisher_p": 0.0554,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "제조 전문 네트워크 (기술자) 보유",
+     "pass_prevalence": 0.562,
+     "fail_prevalence": 0.667,
+     "delta_pp": -10.4,
+     "fisher_p": 0.7332,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "수요처 네트워크 보유",
+     "pass_prevalence": 0.562,
+     "fail_prevalence": 0.571,
+     "delta_pp": -0.9,
+     "fisher_p": 1.0,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "pass_prevalence": 0.562,
+     "fail_prevalence": 0.524,
+     "delta_pp": 3.9,
+     "fisher_p": 1.0,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "MVP 테스트 실행 여부",
+     "pass_prevalence": 0.5,
+     "fail_prevalence": 0.476,
+     "delta_pp": 2.4,
+     "fisher_p": 1.0,
+     "n_pass_with": 8
+    },
+    {
+     "feature": "MOU 보유 개수",
+     "pass_prevalence": 0.5,
+     "fail_prevalence": 0.429,
+     "delta_pp": 7.1,
+     "fisher_p": 0.7463,
+     "n_pass_with": 8
+    },
+    {
+     "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.375,
+     "fail_prevalence": 0.429,
+     "delta_pp": -5.4,
+     "fisher_p": 1.0,
+     "n_pass_with": 6
+    },
+    {
+     "feature": "해당 시장 전문 자문 네트워크 보유 위원",
+     "pass_prevalence": 0.375,
+     "fail_prevalence": 0.429,
+     "delta_pp": -5.4,
+     "fisher_p": 1.0,
+     "n_pass_with": 6
+    },
+    {
+     "feature": "R&D 인력 or 자체 학습 데이터 네트워크 보유",
+     "pass_prevalence": 0.312,
+     "fail_prevalence": 0.381,
+     "delta_pp": -6.8,
+     "fisher_p": 0.7386,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "필수 재료 공급처 네트워크 보유",
+     "pass_prevalence": 0.312,
+     "fail_prevalence": 0.476,
+     "delta_pp": -16.4,
+     "fisher_p": 0.5,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)",
+     "pass_prevalence": 0.312,
+     "fail_prevalence": 0.476,
+     "delta_pp": -16.4,
+     "fisher_p": 0.5,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "투자의향서 확보 여부",
+     "pass_prevalence": 0.312,
+     "fail_prevalence": 0.095,
+     "delta_pp": 21.7,
+     "fisher_p": 0.2022,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "대표자/팀원 관련 자격증서",
+     "pass_prevalence": 0.312,
+     "fail_prevalence": 0.143,
+     "delta_pp": 17.0,
+     "fisher_p": 0.254,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "청년 여부(만 39세 이하)",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.095,
+     "delta_pp": 15.5,
+     "fisher_p": 0.3707,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "개발인력(sw) 보유(팀원 기준)",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.048,
+     "delta_pp": 20.2,
+     "fisher_p": 0.1444,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "R&D 인력 보유(팀원 기준)",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.143,
+     "delta_pp": 10.7,
+     "fisher_p": 0.4373,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "디자인 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.095,
+     "delta_pp": 15.5,
+     "fisher_p": 0.3707,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "해당 시장 전문가(팀원 기준)",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.333,
+     "delta_pp": -8.3,
+     "fisher_p": 0.7228,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "디자인 네트워크 보유",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.238,
+     "delta_pp": 1.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "FGI",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.095,
+     "delta_pp": 15.5,
+     "fisher_p": 0.3707,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "수요처 확보 여부",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.286,
+     "delta_pp": -3.6,
+     "fisher_p": 1.0,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "견적서 보유 개수",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.429,
+     "delta_pp": -17.9,
+     "fisher_p": 0.3149,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.381,
+     "delta_pp": -13.1,
+     "fisher_p": 0.4912,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "수상이력",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.095,
+     "delta_pp": 15.5,
+     "fisher_p": 0.3707,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "고용",
+     "pass_prevalence": 0.25,
+     "fail_prevalence": 0.143,
+     "delta_pp": 10.7,
+     "fisher_p": 0.4373,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "실제 실험 사진 보유 여부",
+     "pass_prevalence": 0.188,
+     "fail_prevalence": 0.19,
+     "delta_pp": -0.3,
+     "fisher_p": 1.0,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "대표자 사업 경험 여부 (매출 1억 이상)",
+     "pass_prevalence": 0.125,
+     "fail_prevalence": 0.286,
+     "delta_pp": -16.1,
+     "fisher_p": 0.4227,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "제조 전문 인력 (기술자) 보유(팀원 기준)",
+     "pass_prevalence": 0.125,
+     "fail_prevalence": 0.143,
+     "delta_pp": -1.8,
+     "fisher_p": 1.0,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "아이템 관련 특허 보유 개수 (등록 기준)",
+     "pass_prevalence": 0.125,
+     "fail_prevalence": 0.238,
+     "delta_pp": -11.3,
+     "fisher_p": 0.6745,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "아이템 관련 인증 & 디자인 특허 & 상표 등록 개수 -> 기업 인증 아님 주의",
+     "pass_prevalence": 0.125,
+     "fail_prevalence": 0.143,
+     "delta_pp": -1.8,
+     "fisher_p": 1.0,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "구매 의향서 보유",
+     "pass_prevalence": 0.125,
+     "fail_prevalence": 0.048,
+     "delta_pp": 7.7,
+     "fisher_p": 0.5676,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "여성 대표 여부",
+     "pass_prevalence": 0.062,
+     "fail_prevalence": 0.095,
+     "delta_pp": -3.3,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "기술임치",
+     "pass_prevalence": 0.062,
+     "fail_prevalence": 0.048,
+     "delta_pp": 1.5,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "누적 투자",
+     "pass_prevalence": 0.062,
+     "fail_prevalence": 0.0,
+     "delta_pp": 6.2,
+     "fisher_p": 0.4324,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "소재지+주관기관 일치 여부",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.048,
+     "delta_pp": -4.8,
+     "fisher_p": 1.0,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "자체 생산 시설 보유",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "기대출 및 보증 금액 (최근 1년)",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "납품 확정 계약서 보유 여부",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "기술이전협약서",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "기타 기업 인증 개수",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "직전 매출 (수출 제외)",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.095,
+     "delta_pp": -9.5,
+     "fisher_p": 0.4955,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "직전 수출",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "총매출 (직전매출 + 직전 수출) -> 자동 계산 수정금지",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.095,
+     "delta_pp": -9.5,
+     "fisher_p": 0.4955,
+     "n_pass_with": 0
+    }
+   ],
+   "checklist": {
+    "items": [
+     "투자의향서 확보 여부",
+     "MOU 보유 개수",
+     "견적서 보유 개수",
+     "아이템 관련 특허 보유 개수 (등록 기준)",
+     "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "수상이력",
+     "아이템 관련 경력 증빙",
+     "실제 제조 OR 서비스 사진 보유 여부",
+     "실제 실험 사진 보유 여부",
+     "MVP 테스트 실행 여부",
+     "수요처 확보 여부",
+     "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "대표자/팀원 관련 자격증서",
+     "구매 의향서 보유",
+     "기타 기업 인증 개수",
+     "FGI"
+    ],
+    "max": 16,
+    "pass_mean": 5.75,
+    "pass_median": 5.5,
+    "pass_p25": 4.75,
+    "pass_p75": 7.0,
+    "fail_mean": 5.33,
+    "pass_score_hist": {
+     "2": 1,
+     "4": 3,
+     "5": 4,
+     "6": 1,
+     "7": 5,
+     "8": 1,
+     "9": 1
+    }
+   },
+   "score_bands": [
+    {
+     "band": "하위",
+     "score_min": 2,
+     "score_max": 5,
+     "n": 22,
+     "pass_rate": 0.364
+    },
+    {
+     "band": "중위",
+     "score_min": 6,
+     "score_max": 6,
+     "n": 3,
+     "pass_rate": 0.333
+    },
+    {
+     "band": "상위",
+     "score_min": 7,
+     "score_max": 11,
+     "n": 12,
+     "pass_rate": 0.583
+    }
+   ],
+   "lift_pp": 21.9,
+   "display_mode": "distribution_position"
+  },
+  "창업중심대학-초창": {
+   "n": 81,
+   "n_pass": 23,
+   "pass_rate": 0.284,
+   "features": [
+    {
+     "feature": "아이템특이성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 23
+    },
+    {
+     "feature": "실제 제조 OR 서비스 사진 보유 여부",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 23
+    },
+    {
+     "feature": "비즈니스 모델 다양화",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 23
+    },
+    {
+     "feature": "대표자 해당 아이템 산업 경험/기술 보유 여부",
+     "pass_prevalence": 0.957,
+     "fail_prevalence": 0.897,
+     "delta_pp": 6.0,
+     "fisher_p": 0.6666,
+     "n_pass_with": 22
+    },
+    {
+     "feature": "아이템 관련 경력 증빙",
+     "pass_prevalence": 0.957,
+     "fail_prevalence": 0.966,
+     "delta_pp": -0.9,
+     "fisher_p": 1.0,
+     "n_pass_with": 22
+    },
+    {
+     "feature": "고용",
+     "pass_prevalence": 0.957,
+     "fail_prevalence": 0.931,
+     "delta_pp": 2.5,
+     "fisher_p": 1.0,
+     "n_pass_with": 22
+    },
+    {
+     "feature": "영업 및 마케팅 네트워크 보유",
+     "pass_prevalence": 0.913,
+     "fail_prevalence": 0.914,
+     "delta_pp": -0.1,
+     "fisher_p": 1.0,
+     "n_pass_with": 21
+    },
+    {
+     "feature": "수요처 네트워크 보유",
+     "pass_prevalence": 0.87,
+     "fail_prevalence": 0.741,
+     "delta_pp": 12.8,
+     "fisher_p": 0.2515,
+     "n_pass_with": 20
+    },
+    {
+     "feature": "해외 진출 가능성",
+     "pass_prevalence": 0.87,
+     "fail_prevalence": 0.914,
+     "delta_pp": -4.4,
+     "fisher_p": 0.6816,
+     "n_pass_with": 20
+    },
+    {
+     "feature": "MVP 테스트 실행 여부",
+     "pass_prevalence": 0.783,
+     "fail_prevalence": 0.724,
+     "delta_pp": 5.8,
+     "fisher_p": 0.7797,
+     "n_pass_with": 18
+    },
+    {
+     "feature": "직전 매출 (수출 제외)",
+     "pass_prevalence": 0.739,
+     "fail_prevalence": 0.81,
+     "delta_pp": -7.1,
+     "fisher_p": 0.5488,
+     "n_pass_with": 17
+    },
+    {
+     "feature": "총매출 (직전매출 + 직전 수출) -> 자동 계산 수정금지",
+     "pass_prevalence": 0.739,
+     "fail_prevalence": 0.81,
+     "delta_pp": -7.1,
+     "fisher_p": 0.5488,
+     "n_pass_with": 17
+    },
+    {
+     "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.696,
+     "fail_prevalence": 0.621,
+     "delta_pp": 7.5,
+     "fisher_p": 0.6127,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "제조 전문 네트워크 (기술자) 보유",
+     "pass_prevalence": 0.696,
+     "fail_prevalence": 0.672,
+     "delta_pp": 2.3,
+     "fisher_p": 1.0,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "아이템 관련 특허 보유 개수 (등록 기준)",
+     "pass_prevalence": 0.652,
+     "fail_prevalence": 0.414,
+     "delta_pp": 23.8,
+     "fisher_p": 0.0833,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "pass_prevalence": 0.609,
+     "fail_prevalence": 0.672,
+     "delta_pp": -6.4,
+     "fisher_p": 0.6121,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "pass_prevalence": 0.609,
+     "fail_prevalence": 0.517,
+     "delta_pp": 9.1,
+     "fisher_p": 0.6214,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "필수 재료 공급처 네트워크 보유",
+     "pass_prevalence": 0.565,
+     "fail_prevalence": 0.483,
+     "delta_pp": 8.2,
+     "fisher_p": 0.6236,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "MOU 보유 개수",
+     "pass_prevalence": 0.565,
+     "fail_prevalence": 0.397,
+     "delta_pp": 16.9,
+     "fisher_p": 0.2171,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "개발(S/W) 네트워크 보유",
+     "pass_prevalence": 0.522,
+     "fail_prevalence": 0.466,
+     "delta_pp": 5.6,
+     "fisher_p": 0.8057,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "R&D 인력 or 자체 학습 데이터 네트워크 보유",
+     "pass_prevalence": 0.522,
+     "fail_prevalence": 0.569,
+     "delta_pp": -4.7,
+     "fisher_p": 0.8055,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "대표자 사업 경험 여부 (매출 1억 이상)",
+     "pass_prevalence": 0.478,
+     "fail_prevalence": 0.621,
+     "delta_pp": -14.2,
+     "fisher_p": 0.3191,
+     "n_pass_with": 11
+    },
+    {
+     "feature": "디자인 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.435,
+     "fail_prevalence": 0.345,
+     "delta_pp": 9.0,
+     "fisher_p": 0.4574,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "실제 실험 사진 보유 여부",
+     "pass_prevalence": 0.435,
+     "fail_prevalence": 0.362,
+     "delta_pp": 7.3,
+     "fisher_p": 0.6157,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "수요처 확보 여부",
+     "pass_prevalence": 0.435,
+     "fail_prevalence": 0.534,
+     "delta_pp": -10.0,
+     "fisher_p": 0.467,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "기타 기업 인증 개수",
+     "pass_prevalence": 0.391,
+     "fail_prevalence": 0.155,
+     "delta_pp": 23.6,
+     "fisher_p": 0.0358,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "개발인력(sw) 보유(팀원 기준)",
+     "pass_prevalence": 0.348,
+     "fail_prevalence": 0.293,
+     "delta_pp": 5.5,
+     "fisher_p": 0.7901,
+     "n_pass_with": 8
+    },
+    {
+     "feature": "대표자/팀원 관련 자격증서",
+     "pass_prevalence": 0.348,
+     "fail_prevalence": 0.293,
+     "delta_pp": 5.5,
+     "fisher_p": 0.7901,
+     "n_pass_with": 8
+    },
+    {
+     "feature": "R&D 인력 보유(팀원 기준)",
+     "pass_prevalence": 0.304,
+     "fail_prevalence": 0.276,
+     "delta_pp": 2.8,
+     "fisher_p": 0.791,
+     "n_pass_with": 7
+    },
+    {
+     "feature": "제조 전문 인력 (기술자) 보유(팀원 기준)",
+     "pass_prevalence": 0.261,
+     "fail_prevalence": 0.19,
+     "delta_pp": 7.1,
+     "fisher_p": 0.5488,
+     "n_pass_with": 6
+    },
+    {
+     "feature": "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)",
+     "pass_prevalence": 0.261,
+     "fail_prevalence": 0.448,
+     "delta_pp": -18.7,
+     "fisher_p": 0.1383,
+     "n_pass_with": 6
+    },
+    {
+     "feature": "소재지+주관기관 일치 여부",
+     "pass_prevalence": 0.217,
+     "fail_prevalence": 0.086,
+     "delta_pp": 13.1,
+     "fisher_p": 0.1371,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "디자인 네트워크 보유",
+     "pass_prevalence": 0.217,
+     "fail_prevalence": 0.155,
+     "delta_pp": 6.2,
+     "fisher_p": 0.5254,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "자체 생산 시설 보유",
+     "pass_prevalence": 0.217,
+     "fail_prevalence": 0.224,
+     "delta_pp": -0.7,
+     "fisher_p": 1.0,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "아이템 관련 인증 & 디자인 특허 & 상표 등록 개수 -> 기업 인증 아님 주의",
+     "pass_prevalence": 0.217,
+     "fail_prevalence": 0.207,
+     "delta_pp": 1.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "견적서 보유 개수",
+     "pass_prevalence": 0.217,
+     "fail_prevalence": 0.362,
+     "delta_pp": -14.5,
+     "fisher_p": 0.2927,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "수상이력",
+     "pass_prevalence": 0.217,
+     "fail_prevalence": 0.207,
+     "delta_pp": 1.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "투자의향서 확보 여부",
+     "pass_prevalence": 0.174,
+     "fail_prevalence": 0.086,
+     "delta_pp": 8.8,
+     "fisher_p": 0.2647,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "구매 의향서 보유",
+     "pass_prevalence": 0.174,
+     "fail_prevalence": 0.155,
+     "delta_pp": 1.9,
+     "fisher_p": 1.0,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "해당 시장 전문가(팀원 기준)",
+     "pass_prevalence": 0.13,
+     "fail_prevalence": 0.328,
+     "delta_pp": -19.7,
+     "fisher_p": 0.0979,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "해당 시장 전문 자문 네트워크 보유 위원",
+     "pass_prevalence": 0.13,
+     "fail_prevalence": 0.328,
+     "delta_pp": -19.7,
+     "fisher_p": 0.0979,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "FGI",
+     "pass_prevalence": 0.13,
+     "fail_prevalence": 0.155,
+     "delta_pp": -2.5,
+     "fisher_p": 1.0,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "누적 투자",
+     "pass_prevalence": 0.13,
+     "fail_prevalence": 0.069,
+     "delta_pp": 6.1,
+     "fisher_p": 0.3989,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "기대출 및 보증 금액 (최근 1년)",
+     "pass_prevalence": 0.087,
+     "fail_prevalence": 0.017,
+     "delta_pp": 7.0,
+     "fisher_p": 0.1927,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "납품 확정 계약서 보유 여부",
+     "pass_prevalence": 0.087,
+     "fail_prevalence": 0.034,
+     "delta_pp": 5.2,
+     "fisher_p": 0.3184,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "기술이전협약서",
+     "pass_prevalence": 0.087,
+     "fail_prevalence": 0.034,
+     "delta_pp": 5.2,
+     "fisher_p": 0.3184,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "여성 대표 여부",
+     "pass_prevalence": 0.043,
+     "fail_prevalence": 0.069,
+     "delta_pp": -2.5,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "청년 여부(만 39세 이하)",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.017,
+     "delta_pp": -1.7,
+     "fisher_p": 1.0,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "기술임치",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.086,
+     "delta_pp": -8.6,
+     "fisher_p": 0.3145,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "직전 수출",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.052,
+     "delta_pp": -5.2,
+     "fisher_p": 0.5544,
+     "n_pass_with": 0
+    }
+   ],
+   "checklist": {
+    "items": [
+     "투자의향서 확보 여부",
+     "MOU 보유 개수",
+     "견적서 보유 개수",
+     "아이템 관련 특허 보유 개수 (등록 기준)",
+     "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "수상이력",
+     "아이템 관련 경력 증빙",
+     "실제 제조 OR 서비스 사진 보유 여부",
+     "실제 실험 사진 보유 여부",
+     "MVP 테스트 실행 여부",
+     "수요처 확보 여부",
+     "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "대표자/팀원 관련 자격증서",
+     "구매 의향서 보유",
+     "기타 기업 인증 개수",
+     "FGI"
+    ],
+    "max": 16,
+    "pass_mean": 7.7,
+    "pass_median": 8.0,
+    "pass_p25": 6.0,
+    "pass_p75": 10.0,
+    "fail_mean": 7.0,
+    "pass_score_hist": {
+     "3": 1,
+     "4": 2,
+     "5": 2,
+     "6": 3,
+     "7": 2,
+     "8": 4,
+     "9": 2,
+     "10": 3,
+     "11": 4
+    }
+   },
+   "score_bands": [
+    {
+     "band": "하위",
+     "score_min": 2,
+     "score_max": 6,
+     "n": 38,
+     "pass_rate": 0.211
+    },
+    {
+     "band": "중위",
+     "score_min": 7,
+     "score_max": 8,
+     "n": 19,
+     "pass_rate": 0.316
+    },
+    {
+     "band": "상위",
+     "score_min": 9,
+     "score_max": 13,
+     "n": 24,
+     "pass_rate": 0.375
+    }
+   ],
+   "lift_pp": 16.4,
+   "display_mode": "distribution_position"
+  },
+  "청년창업사관학교": {
+   "n": 103,
+   "n_pass": 63,
+   "pass_rate": 0.612,
+   "features": [
+    {
+     "feature": "아이템특이성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "실제 제조 OR 서비스 사진 보유 여부",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "해외 진출 가능성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "비즈니스 모델 다양화",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 0.975,
+     "delta_pp": 2.5,
+     "fisher_p": 0.3883,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "대표자 해당 아이템 산업 경험/기술 보유 여부",
+     "pass_prevalence": 0.968,
+     "fail_prevalence": 0.875,
+     "delta_pp": 9.3,
+     "fisher_p": 0.1059,
+     "n_pass_with": 61
+    },
+    {
+     "feature": "아이템 관련 경력 증빙",
+     "pass_prevalence": 0.952,
+     "fail_prevalence": 0.875,
+     "delta_pp": 7.7,
+     "fisher_p": 0.2561,
+     "n_pass_with": 60
+    },
+    {
+     "feature": "영업 및 마케팅 네트워크 보유",
+     "pass_prevalence": 0.921,
+     "fail_prevalence": 0.775,
+     "delta_pp": 14.6,
+     "fisher_p": 0.0434,
+     "n_pass_with": 58
+    },
+    {
+     "feature": "직전 매출 (수출 제외)",
+     "pass_prevalence": 0.714,
+     "fail_prevalence": 0.625,
+     "delta_pp": 8.9,
+     "fisher_p": 0.39,
+     "n_pass_with": 45
+    },
+    {
+     "feature": "고용",
+     "pass_prevalence": 0.714,
+     "fail_prevalence": 0.65,
+     "delta_pp": 6.4,
+     "fisher_p": 0.5187,
+     "n_pass_with": 45
+    },
+    {
+     "feature": "총매출 (직전매출 + 직전 수출) -> 자동 계산 수정금지",
+     "pass_prevalence": 0.714,
+     "fail_prevalence": 0.625,
+     "delta_pp": 8.9,
+     "fisher_p": 0.39,
+     "n_pass_with": 45
+    },
+    {
+     "feature": "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "pass_prevalence": 0.683,
+     "fail_prevalence": 0.65,
+     "delta_pp": 3.3,
+     "fisher_p": 0.8304,
+     "n_pass_with": 43
+    },
+    {
+     "feature": "수요처 네트워크 보유",
+     "pass_prevalence": 0.651,
+     "fail_prevalence": 0.575,
+     "delta_pp": 7.6,
+     "fisher_p": 0.5327,
+     "n_pass_with": 41
+    },
+    {
+     "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.635,
+     "fail_prevalence": 0.6,
+     "delta_pp": 3.5,
+     "fisher_p": 0.8353,
+     "n_pass_with": 40
+    },
+    {
+     "feature": "제조 전문 네트워크 (기술자) 보유",
+     "pass_prevalence": 0.619,
+     "fail_prevalence": 0.55,
+     "delta_pp": 6.9,
+     "fisher_p": 0.5404,
+     "n_pass_with": 39
+    },
+    {
+     "feature": "MVP 테스트 실행 여부",
+     "pass_prevalence": 0.619,
+     "fail_prevalence": 0.575,
+     "delta_pp": 4.4,
+     "fisher_p": 0.684,
+     "n_pass_with": 39
+    },
+    {
+     "feature": "필수 재료 공급처 네트워크 보유",
+     "pass_prevalence": 0.571,
+     "fail_prevalence": 0.3,
+     "delta_pp": 27.1,
+     "fisher_p": 0.0087,
+     "n_pass_with": 36
+    },
+    {
+     "feature": "청년 여부(만 39세 이하)",
+     "pass_prevalence": 0.524,
+     "fail_prevalence": 0.45,
+     "delta_pp": 7.4,
+     "fisher_p": 0.5457,
+     "n_pass_with": 33
+    },
+    {
+     "feature": "개발(S/W) 네트워크 보유",
+     "pass_prevalence": 0.508,
+     "fail_prevalence": 0.45,
+     "delta_pp": 5.8,
+     "fisher_p": 0.6863,
+     "n_pass_with": 32
+    },
+    {
+     "feature": "견적서 보유 개수",
+     "pass_prevalence": 0.508,
+     "fail_prevalence": 0.325,
+     "delta_pp": 18.3,
+     "fisher_p": 0.1025,
+     "n_pass_with": 32
+    },
+    {
+     "feature": "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)",
+     "pass_prevalence": 0.476,
+     "fail_prevalence": 0.4,
+     "delta_pp": 7.6,
+     "fisher_p": 0.5429,
+     "n_pass_with": 30
+    },
+    {
+     "feature": "대표자 사업 경험 여부 (매출 1억 이상)",
+     "pass_prevalence": 0.444,
+     "fail_prevalence": 0.3,
+     "delta_pp": 14.4,
+     "fisher_p": 0.1538,
+     "n_pass_with": 28
+    },
+    {
+     "feature": "MOU 보유 개수",
+     "pass_prevalence": 0.444,
+     "fail_prevalence": 0.4,
+     "delta_pp": 4.4,
+     "fisher_p": 0.6876,
+     "n_pass_with": 28
+    },
+    {
+     "feature": "수요처 확보 여부",
+     "pass_prevalence": 0.429,
+     "fail_prevalence": 0.35,
+     "delta_pp": 7.9,
+     "fisher_p": 0.5362,
+     "n_pass_with": 27
+    },
+    {
+     "feature": "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "pass_prevalence": 0.413,
+     "fail_prevalence": 0.425,
+     "delta_pp": -1.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 26
+    },
+    {
+     "feature": "여성 대표 여부",
+     "pass_prevalence": 0.349,
+     "fail_prevalence": 0.3,
+     "delta_pp": 4.9,
+     "fisher_p": 0.6708,
+     "n_pass_with": 22
+    },
+    {
+     "feature": "R&D 인력 or 자체 학습 데이터 네트워크 보유",
+     "pass_prevalence": 0.349,
+     "fail_prevalence": 0.45,
+     "delta_pp": -10.1,
+     "fisher_p": 0.4069,
+     "n_pass_with": 22
+    },
+    {
+     "feature": "디자인 네트워크 보유",
+     "pass_prevalence": 0.286,
+     "fail_prevalence": 0.35,
+     "delta_pp": -6.4,
+     "fisher_p": 0.5187,
+     "n_pass_with": 18
+    },
+    {
+     "feature": "해당 시장 전문 자문 네트워크 보유 위원",
+     "pass_prevalence": 0.27,
+     "fail_prevalence": 0.25,
+     "delta_pp": 2.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 17
+    },
+    {
+     "feature": "아이템 관련 특허 보유 개수 (등록 기준)",
+     "pass_prevalence": 0.27,
+     "fail_prevalence": 0.25,
+     "delta_pp": 2.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 17
+    },
+    {
+     "feature": "대표자/팀원 관련 자격증서",
+     "pass_prevalence": 0.254,
+     "fail_prevalence": 0.175,
+     "delta_pp": 7.9,
+     "fisher_p": 0.4677,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "디자인 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.238,
+     "fail_prevalence": 0.4,
+     "delta_pp": -16.2,
+     "fisher_p": 0.1221,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "개발인력(sw) 보유(팀원 기준)",
+     "pass_prevalence": 0.222,
+     "fail_prevalence": 0.3,
+     "delta_pp": -7.8,
+     "fisher_p": 0.4857,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "실제 실험 사진 보유 여부",
+     "pass_prevalence": 0.222,
+     "fail_prevalence": 0.2,
+     "delta_pp": 2.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "소재지+주관기관 일치 여부",
+     "pass_prevalence": 0.206,
+     "fail_prevalence": 0.1,
+     "delta_pp": 10.6,
+     "fisher_p": 0.1837,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "아이템 관련 인증 & 디자인 특허 & 상표 등록 개수 -> 기업 인증 아님 주의",
+     "pass_prevalence": 0.206,
+     "fail_prevalence": 0.225,
+     "delta_pp": -1.9,
+     "fisher_p": 0.8108,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "R&D 인력 보유(팀원 기준)",
+     "pass_prevalence": 0.19,
+     "fail_prevalence": 0.25,
+     "delta_pp": -6.0,
+     "fisher_p": 0.4726,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "수상이력",
+     "pass_prevalence": 0.19,
+     "fail_prevalence": 0.15,
+     "delta_pp": 4.0,
+     "fisher_p": 0.7909,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "해당 시장 전문가(팀원 기준)",
+     "pass_prevalence": 0.175,
+     "fail_prevalence": 0.25,
+     "delta_pp": -7.5,
+     "fisher_p": 0.4527,
+     "n_pass_with": 11
+    },
+    {
+     "feature": "제조 전문 인력 (기술자) 보유(팀원 기준)",
+     "pass_prevalence": 0.159,
+     "fail_prevalence": 0.2,
+     "delta_pp": -4.1,
+     "fisher_p": 0.6044,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "투자의향서 확보 여부",
+     "pass_prevalence": 0.159,
+     "fail_prevalence": 0.1,
+     "delta_pp": 5.9,
+     "fisher_p": 0.5576,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "기타 기업 인증 개수",
+     "pass_prevalence": 0.127,
+     "fail_prevalence": 0.075,
+     "delta_pp": 5.2,
+     "fisher_p": 0.5223,
+     "n_pass_with": 8
+    },
+    {
+     "feature": "구매 의향서 보유",
+     "pass_prevalence": 0.095,
+     "fail_prevalence": 0.075,
+     "delta_pp": 2.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 6
+    },
+    {
+     "feature": "자체 생산 시설 보유",
+     "pass_prevalence": 0.079,
+     "fail_prevalence": 0.05,
+     "delta_pp": 2.9,
+     "fisher_p": 0.703,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "기대출 및 보증 금액 (최근 1년)",
+     "pass_prevalence": 0.079,
+     "fail_prevalence": 0.05,
+     "delta_pp": 2.9,
+     "fisher_p": 0.703,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "납품 확정 계약서 보유 여부",
+     "pass_prevalence": 0.063,
+     "fail_prevalence": 0.0,
+     "delta_pp": 6.3,
+     "fisher_p": 0.1554,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "직전 수출",
+     "pass_prevalence": 0.063,
+     "fail_prevalence": 0.075,
+     "delta_pp": -1.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "FGI",
+     "pass_prevalence": 0.048,
+     "fail_prevalence": 0.075,
+     "delta_pp": -2.7,
+     "fisher_p": 0.6751,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "누적 투자",
+     "pass_prevalence": 0.032,
+     "fail_prevalence": 0.05,
+     "delta_pp": -1.8,
+     "fisher_p": 0.6407,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "기술임치",
+     "pass_prevalence": 0.016,
+     "fail_prevalence": 0.0,
+     "delta_pp": 1.6,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "기술이전협약서",
+     "pass_prevalence": 0.016,
+     "fail_prevalence": 0.0,
+     "delta_pp": 1.6,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    }
+   ],
+   "checklist": {
+    "items": [
+     "투자의향서 확보 여부",
+     "MOU 보유 개수",
+     "견적서 보유 개수",
+     "아이템 관련 특허 보유 개수 (등록 기준)",
+     "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "수상이력",
+     "아이템 관련 경력 증빙",
+     "실제 제조 OR 서비스 사진 보유 여부",
+     "실제 실험 사진 보유 여부",
+     "MVP 테스트 실행 여부",
+     "수요처 확보 여부",
+     "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "대표자/팀원 관련 자격증서",
+     "구매 의향서 보유",
+     "기타 기업 인증 개수",
+     "FGI"
+    ],
+    "max": 16,
+    "pass_mean": 6.41,
+    "pass_median": 6.0,
+    "pass_p25": 5.0,
+    "pass_p75": 7.5,
+    "fail_mean": 5.7,
+    "pass_score_hist": {
+     "3": 3,
+     "4": 9,
+     "5": 9,
+     "6": 11,
+     "7": 15,
+     "8": 6,
+     "9": 6,
+     "10": 3,
+     "11": 1
+    }
+   },
+   "score_bands": [
+    {
+     "band": "하위",
+     "score_min": 1,
+     "score_max": 5,
+     "n": 41,
+     "pass_rate": 0.512
+    },
+    {
+     "band": "중위",
+     "score_min": 6,
+     "score_max": 7,
+     "n": 38,
+     "pass_rate": 0.684
+    },
+    {
+     "band": "상위",
+     "score_min": 8,
+     "score_max": 12,
+     "n": 24,
+     "pass_rate": 0.667
+    }
+   ],
+   "lift_pp": 15.5,
+   "display_mode": "empirical_rate"
+  },
+  "초기창업패키지": {
+   "n": 172,
+   "n_pass": 63,
+   "pass_rate": 0.366,
+   "features": [
+    {
+     "feature": "아이템특이성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "비즈니스 모델 다양화",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 0.991,
+     "delta_pp": 0.9,
+     "fisher_p": 1.0,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "아이템 관련 경력 증빙",
+     "pass_prevalence": 0.984,
+     "fail_prevalence": 0.936,
+     "delta_pp": 4.8,
+     "fisher_p": 0.2606,
+     "n_pass_with": 62
+    },
+    {
+     "feature": "실제 제조 OR 서비스 사진 보유 여부",
+     "pass_prevalence": 0.984,
+     "fail_prevalence": 0.982,
+     "delta_pp": 0.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 62
+    },
+    {
+     "feature": "대표자 해당 아이템 산업 경험/기술 보유 여부",
+     "pass_prevalence": 0.937,
+     "fail_prevalence": 0.899,
+     "delta_pp": 3.7,
+     "fisher_p": 0.5765,
+     "n_pass_with": 59
+    },
+    {
+     "feature": "고용",
+     "pass_prevalence": 0.937,
+     "fail_prevalence": 0.761,
+     "delta_pp": 17.5,
+     "fisher_p": 0.0033,
+     "n_pass_with": 59
+    },
+    {
+     "feature": "영업 및 마케팅 네트워크 보유",
+     "pass_prevalence": 0.889,
+     "fail_prevalence": 0.917,
+     "delta_pp": -2.9,
+     "fisher_p": 0.5904,
+     "n_pass_with": 56
+    },
+    {
+     "feature": "수요처 네트워크 보유",
+     "pass_prevalence": 0.841,
+     "fail_prevalence": 0.661,
+     "delta_pp": 18.1,
+     "fisher_p": 0.0126,
+     "n_pass_with": 53
+    },
+    {
+     "feature": "해외 진출 가능성",
+     "pass_prevalence": 0.825,
+     "fail_prevalence": 0.798,
+     "delta_pp": 2.7,
+     "fisher_p": 0.6938,
+     "n_pass_with": 52
+    },
+    {
+     "feature": "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "pass_prevalence": 0.778,
+     "fail_prevalence": 0.67,
+     "delta_pp": 10.8,
+     "fisher_p": 0.1639,
+     "n_pass_with": 49
+    },
+    {
+     "feature": "MVP 테스트 실행 여부",
+     "pass_prevalence": 0.746,
+     "fail_prevalence": 0.706,
+     "delta_pp": 4.0,
+     "fisher_p": 0.6019,
+     "n_pass_with": 47
+    },
+    {
+     "feature": "대표자 사업 경험 여부 (매출 1억 이상)",
+     "pass_prevalence": 0.683,
+     "fail_prevalence": 0.349,
+     "delta_pp": 33.4,
+     "fisher_p": 0.0,
+     "n_pass_with": 43
+    },
+    {
+     "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.683,
+     "fail_prevalence": 0.541,
+     "delta_pp": 14.1,
+     "fisher_p": 0.078,
+     "n_pass_with": 43
+    },
+    {
+     "feature": "제조 전문 네트워크 (기술자) 보유",
+     "pass_prevalence": 0.635,
+     "fail_prevalence": 0.578,
+     "delta_pp": 5.7,
+     "fisher_p": 0.5199,
+     "n_pass_with": 40
+    },
+    {
+     "feature": "수요처 확보 여부",
+     "pass_prevalence": 0.619,
+     "fail_prevalence": 0.45,
+     "delta_pp": 17.0,
+     "fisher_p": 0.0397,
+     "n_pass_with": 39
+    },
+    {
+     "feature": "직전 매출 (수출 제외)",
+     "pass_prevalence": 0.603,
+     "fail_prevalence": 0.661,
+     "delta_pp": -5.7,
+     "fisher_p": 0.5106,
+     "n_pass_with": 38
+    },
+    {
+     "feature": "총매출 (직전매출 + 직전 수출) -> 자동 계산 수정금지",
+     "pass_prevalence": 0.603,
+     "fail_prevalence": 0.67,
+     "delta_pp": -6.7,
+     "fisher_p": 0.4108,
+     "n_pass_with": 38
+    },
+    {
+     "feature": "R&D 인력 or 자체 학습 데이터 네트워크 보유",
+     "pass_prevalence": 0.524,
+     "fail_prevalence": 0.486,
+     "delta_pp": 3.8,
+     "fisher_p": 0.7517,
+     "n_pass_with": 33
+    },
+    {
+     "feature": "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "pass_prevalence": 0.524,
+     "fail_prevalence": 0.459,
+     "delta_pp": 6.5,
+     "fisher_p": 0.4322,
+     "n_pass_with": 33
+    },
+    {
+     "feature": "개발(S/W) 네트워크 보유",
+     "pass_prevalence": 0.46,
+     "fail_prevalence": 0.578,
+     "delta_pp": -11.8,
+     "fisher_p": 0.1549,
+     "n_pass_with": 29
+    },
+    {
+     "feature": "아이템 관련 특허 보유 개수 (등록 기준)",
+     "pass_prevalence": 0.46,
+     "fail_prevalence": 0.266,
+     "delta_pp": 19.4,
+     "fisher_p": 0.0121,
+     "n_pass_with": 29
+    },
+    {
+     "feature": "필수 재료 공급처 네트워크 보유",
+     "pass_prevalence": 0.444,
+     "fail_prevalence": 0.385,
+     "delta_pp": 5.9,
+     "fisher_p": 0.5199,
+     "n_pass_with": 28
+    },
+    {
+     "feature": "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)",
+     "pass_prevalence": 0.365,
+     "fail_prevalence": 0.367,
+     "delta_pp": -0.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 23
+    },
+    {
+     "feature": "대표자/팀원 관련 자격증서",
+     "pass_prevalence": 0.365,
+     "fail_prevalence": 0.239,
+     "delta_pp": 12.7,
+     "fisher_p": 0.0826,
+     "n_pass_with": 23
+    },
+    {
+     "feature": "MOU 보유 개수",
+     "pass_prevalence": 0.349,
+     "fail_prevalence": 0.486,
+     "delta_pp": -13.7,
+     "fisher_p": 0.1102,
+     "n_pass_with": 22
+    },
+    {
+     "feature": "R&D 인력 보유(팀원 기준)",
+     "pass_prevalence": 0.317,
+     "fail_prevalence": 0.183,
+     "delta_pp": 13.4,
+     "fisher_p": 0.0605,
+     "n_pass_with": 20
+    },
+    {
+     "feature": "개발인력(sw) 보유(팀원 기준)",
+     "pass_prevalence": 0.302,
+     "fail_prevalence": 0.284,
+     "delta_pp": 1.7,
+     "fisher_p": 0.8623,
+     "n_pass_with": 19
+    },
+    {
+     "feature": "디자인 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.302,
+     "fail_prevalence": 0.349,
+     "delta_pp": -4.7,
+     "fisher_p": 0.6148,
+     "n_pass_with": 19
+    },
+    {
+     "feature": "제조 전문 인력 (기술자) 보유(팀원 기준)",
+     "pass_prevalence": 0.286,
+     "fail_prevalence": 0.147,
+     "delta_pp": 13.9,
+     "fisher_p": 0.0456,
+     "n_pass_with": 18
+    },
+    {
+     "feature": "실제 실험 사진 보유 여부",
+     "pass_prevalence": 0.254,
+     "fail_prevalence": 0.266,
+     "delta_pp": -1.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "해당 시장 전문 자문 네트워크 보유 위원",
+     "pass_prevalence": 0.238,
+     "fail_prevalence": 0.339,
+     "delta_pp": -10.1,
+     "fisher_p": 0.1733,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "견적서 보유 개수",
+     "pass_prevalence": 0.222,
+     "fail_prevalence": 0.358,
+     "delta_pp": -13.6,
+     "fisher_p": 0.0861,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "해당 시장 전문가(팀원 기준)",
+     "pass_prevalence": 0.19,
+     "fail_prevalence": 0.248,
+     "delta_pp": -5.7,
+     "fisher_p": 0.4523,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "기타 기업 인증 개수",
+     "pass_prevalence": 0.19,
+     "fail_prevalence": 0.092,
+     "delta_pp": 9.9,
+     "fisher_p": 0.0951,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "자체 생산 시설 보유",
+     "pass_prevalence": 0.175,
+     "fail_prevalence": 0.101,
+     "delta_pp": 7.4,
+     "fisher_p": 0.2352,
+     "n_pass_with": 11
+    },
+    {
+     "feature": "소재지+주관기관 일치 여부",
+     "pass_prevalence": 0.159,
+     "fail_prevalence": 0.183,
+     "delta_pp": -2.5,
+     "fisher_p": 0.8352,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "납품 확정 계약서 보유 여부",
+     "pass_prevalence": 0.159,
+     "fail_prevalence": 0.064,
+     "delta_pp": 9.5,
+     "fisher_p": 0.0624,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "수상이력",
+     "pass_prevalence": 0.159,
+     "fail_prevalence": 0.211,
+     "delta_pp": -5.2,
+     "fisher_p": 0.4301,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "디자인 네트워크 보유",
+     "pass_prevalence": 0.127,
+     "fail_prevalence": 0.239,
+     "delta_pp": -11.2,
+     "fisher_p": 0.1109,
+     "n_pass_with": 8
+    },
+    {
+     "feature": "아이템 관련 인증 & 디자인 특허 & 상표 등록 개수 -> 기업 인증 아님 주의",
+     "pass_prevalence": 0.111,
+     "fail_prevalence": 0.183,
+     "delta_pp": -7.2,
+     "fisher_p": 0.2776,
+     "n_pass_with": 7
+    },
+    {
+     "feature": "기대출 및 보증 금액 (최근 1년)",
+     "pass_prevalence": 0.111,
+     "fail_prevalence": 0.028,
+     "delta_pp": 8.4,
+     "fisher_p": 0.0385,
+     "n_pass_with": 7
+    },
+    {
+     "feature": "여성 대표 여부",
+     "pass_prevalence": 0.095,
+     "fail_prevalence": 0.11,
+     "delta_pp": -1.5,
+     "fisher_p": 1.0,
+     "n_pass_with": 6
+    },
+    {
+     "feature": "FGI",
+     "pass_prevalence": 0.095,
+     "fail_prevalence": 0.156,
+     "delta_pp": -6.1,
+     "fisher_p": 0.3534,
+     "n_pass_with": 6
+    },
+    {
+     "feature": "누적 투자",
+     "pass_prevalence": 0.095,
+     "fail_prevalence": 0.064,
+     "delta_pp": 3.1,
+     "fisher_p": 0.5521,
+     "n_pass_with": 6
+    },
+    {
+     "feature": "투자의향서 확보 여부",
+     "pass_prevalence": 0.079,
+     "fail_prevalence": 0.064,
+     "delta_pp": 1.5,
+     "fisher_p": 0.7606,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "구매 의향서 보유",
+     "pass_prevalence": 0.063,
+     "fail_prevalence": 0.092,
+     "delta_pp": -2.8,
+     "fisher_p": 0.5778,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "직전 수출",
+     "pass_prevalence": 0.063,
+     "fail_prevalence": 0.018,
+     "delta_pp": 4.5,
+     "fisher_p": 0.1933,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "기술임치",
+     "pass_prevalence": 0.032,
+     "fail_prevalence": 0.009,
+     "delta_pp": 2.3,
+     "fisher_p": 0.555,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "기술이전협약서",
+     "pass_prevalence": 0.032,
+     "fail_prevalence": 0.009,
+     "delta_pp": 2.3,
+     "fisher_p": 0.555,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "청년 여부(만 39세 이하)",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.064,
+     "delta_pp": -6.4,
+     "fisher_p": 0.0484,
+     "n_pass_with": 0
+    }
+   ],
+   "checklist": {
+    "items": [
+     "투자의향서 확보 여부",
+     "MOU 보유 개수",
+     "견적서 보유 개수",
+     "아이템 관련 특허 보유 개수 (등록 기준)",
+     "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "수상이력",
+     "아이템 관련 경력 증빙",
+     "실제 제조 OR 서비스 사진 보유 여부",
+     "실제 실험 사진 보유 여부",
+     "MVP 테스트 실행 여부",
+     "수요처 확보 여부",
+     "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "대표자/팀원 관련 자격증서",
+     "구매 의향서 보유",
+     "기타 기업 인증 개수",
+     "FGI"
+    ],
+    "max": 16,
+    "pass_mean": 6.87,
+    "pass_median": 7.0,
+    "pass_p25": 5.5,
+    "pass_p75": 8.0,
+    "fail_mean": 6.43,
+    "pass_score_hist": {
+     "3": 1,
+     "4": 7,
+     "5": 8,
+     "6": 11,
+     "7": 16,
+     "8": 5,
+     "9": 9,
+     "10": 4,
+     "11": 1,
+     "12": 1
+    }
+   },
+   "score_bands": [
+    {
+     "band": "하위",
+     "score_min": 1,
+     "score_max": 6,
+     "n": 82,
+     "pass_rate": 0.329
+    },
+    {
+     "band": "중위",
+     "score_min": 7,
+     "score_max": 7,
+     "n": 33,
+     "pass_rate": 0.485
+    },
+    {
+     "band": "상위",
+     "score_min": 8,
+     "score_max": 12,
+     "n": 57,
+     "pass_rate": 0.351
+    }
+   ],
+   "lift_pp": 2.2,
+   "display_mode": "distribution_position"
+  }
+ },
+ "groups": {
+  "초창그룹": {
+   "members": [
+    "초기창업패키지",
+    "창업중심대학-초창"
+   ],
+   "n": 253,
+   "n_pass": 86,
+   "features": [
+    {
+     "feature": "아이템특이성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 86
+    },
+    {
+     "feature": "비즈니스 모델 다양화",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 0.994,
+     "delta_pp": 0.6,
+     "fisher_p": 1.0,
+     "n_pass_with": 86
+    },
+    {
+     "feature": "실제 제조 OR 서비스 사진 보유 여부",
+     "pass_prevalence": 0.988,
+     "fail_prevalence": 0.988,
+     "delta_pp": 0.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 85
+    },
+    {
+     "feature": "아이템 관련 경력 증빙",
+     "pass_prevalence": 0.977,
+     "fail_prevalence": 0.946,
+     "delta_pp": 3.1,
+     "fisher_p": 0.3416,
+     "n_pass_with": 84
+    },
+    {
+     "feature": "대표자 해당 아이템 산업 경험/기술 보유 여부",
+     "pass_prevalence": 0.942,
+     "fail_prevalence": 0.898,
+     "delta_pp": 4.4,
+     "fisher_p": 0.3465,
+     "n_pass_with": 81
+    },
+    {
+     "feature": "고용",
+     "pass_prevalence": 0.942,
+     "fail_prevalence": 0.82,
+     "delta_pp": 12.2,
+     "fisher_p": 0.0071,
+     "n_pass_with": 81
+    },
+    {
+     "feature": "영업 및 마케팅 네트워크 보유",
+     "pass_prevalence": 0.895,
+     "fail_prevalence": 0.916,
+     "delta_pp": -2.1,
+     "fisher_p": 0.6461,
+     "n_pass_with": 77
+    },
+    {
+     "feature": "수요처 네트워크 보유",
+     "pass_prevalence": 0.849,
+     "fail_prevalence": 0.689,
+     "delta_pp": 16.0,
+     "fisher_p": 0.0061,
+     "n_pass_with": 73
+    },
+    {
+     "feature": "해외 진출 가능성",
+     "pass_prevalence": 0.837,
+     "fail_prevalence": 0.838,
+     "delta_pp": -0.1,
+     "fisher_p": 1.0,
+     "n_pass_with": 72
+    },
+    {
+     "feature": "MVP 테스트 실행 여부",
+     "pass_prevalence": 0.756,
+     "fail_prevalence": 0.713,
+     "delta_pp": 4.3,
+     "fisher_p": 0.5515,
+     "n_pass_with": 65
+    },
+    {
+     "feature": "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "pass_prevalence": 0.733,
+     "fail_prevalence": 0.671,
+     "delta_pp": 6.2,
+     "fisher_p": 0.3886,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.686,
+     "fail_prevalence": 0.569,
+     "delta_pp": 11.7,
+     "fisher_p": 0.0781,
+     "n_pass_with": 59
+    },
+    {
+     "feature": "제조 전문 네트워크 (기술자) 보유",
+     "pass_prevalence": 0.651,
+     "fail_prevalence": 0.611,
+     "delta_pp": 4.0,
+     "fisher_p": 0.5846,
+     "n_pass_with": 56
+    },
+    {
+     "feature": "직전 매출 (수출 제외)",
+     "pass_prevalence": 0.64,
+     "fail_prevalence": 0.713,
+     "delta_pp": -7.3,
+     "fisher_p": 0.2538,
+     "n_pass_with": 55
+    },
+    {
+     "feature": "총매출 (직전매출 + 직전 수출) -> 자동 계산 수정금지",
+     "pass_prevalence": 0.64,
+     "fail_prevalence": 0.719,
+     "delta_pp": -7.9,
+     "fisher_p": 0.2,
+     "n_pass_with": 55
+    },
+    {
+     "feature": "대표자 사업 경험 여부 (매출 1억 이상)",
+     "pass_prevalence": 0.628,
+     "fail_prevalence": 0.443,
+     "delta_pp": 18.5,
+     "fisher_p": 0.0078,
+     "n_pass_with": 54
+    },
+    {
+     "feature": "수요처 확보 여부",
+     "pass_prevalence": 0.57,
+     "fail_prevalence": 0.479,
+     "delta_pp": 9.1,
+     "fisher_p": 0.1861,
+     "n_pass_with": 49
+    },
+    {
+     "feature": "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "pass_prevalence": 0.547,
+     "fail_prevalence": 0.479,
+     "delta_pp": 6.7,
+     "fisher_p": 0.3534,
+     "n_pass_with": 47
+    },
+    {
+     "feature": "R&D 인력 or 자체 학습 데이터 네트워크 보유",
+     "pass_prevalence": 0.523,
+     "fail_prevalence": 0.515,
+     "delta_pp": 0.8,
+     "fisher_p": 1.0,
+     "n_pass_with": 45
+    },
+    {
+     "feature": "아이템 관련 특허 보유 개수 (등록 기준)",
+     "pass_prevalence": 0.512,
+     "fail_prevalence": 0.317,
+     "delta_pp": 19.4,
+     "fisher_p": 0.004,
+     "n_pass_with": 44
+    },
+    {
+     "feature": "개발(S/W) 네트워크 보유",
+     "pass_prevalence": 0.477,
+     "fail_prevalence": 0.539,
+     "delta_pp": -6.2,
+     "fisher_p": 0.3563,
+     "n_pass_with": 41
+    },
+    {
+     "feature": "필수 재료 공급처 네트워크 보유",
+     "pass_prevalence": 0.477,
+     "fail_prevalence": 0.419,
+     "delta_pp": 5.8,
+     "fisher_p": 0.4232,
+     "n_pass_with": 41
+    },
+    {
+     "feature": "MOU 보유 개수",
+     "pass_prevalence": 0.407,
+     "fail_prevalence": 0.455,
+     "delta_pp": -4.8,
+     "fisher_p": 0.5051,
+     "n_pass_with": 35
+    },
+    {
+     "feature": "대표자/팀원 관련 자격증서",
+     "pass_prevalence": 0.36,
+     "fail_prevalence": 0.257,
+     "delta_pp": 10.3,
+     "fisher_p": 0.1084,
+     "n_pass_with": 31
+    },
+    {
+     "feature": "디자인 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.337,
+     "fail_prevalence": 0.347,
+     "delta_pp": -1.0,
+     "fisher_p": 0.8899,
+     "n_pass_with": 29
+    },
+    {
+     "feature": "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)",
+     "pass_prevalence": 0.337,
+     "fail_prevalence": 0.395,
+     "delta_pp": -5.8,
+     "fisher_p": 0.412,
+     "n_pass_with": 29
+    },
+    {
+     "feature": "개발인력(sw) 보유(팀원 기준)",
+     "pass_prevalence": 0.314,
+     "fail_prevalence": 0.287,
+     "delta_pp": 2.7,
+     "fisher_p": 0.6655,
+     "n_pass_with": 27
+    },
+    {
+     "feature": "R&D 인력 보유(팀원 기준)",
+     "pass_prevalence": 0.314,
+     "fail_prevalence": 0.216,
+     "delta_pp": 9.8,
+     "fisher_p": 0.0933,
+     "n_pass_with": 27
+    },
+    {
+     "feature": "실제 실험 사진 보유 여부",
+     "pass_prevalence": 0.302,
+     "fail_prevalence": 0.299,
+     "delta_pp": 0.3,
+     "fisher_p": 1.0,
+     "n_pass_with": 26
+    },
+    {
+     "feature": "제조 전문 인력 (기술자) 보유(팀원 기준)",
+     "pass_prevalence": 0.279,
+     "fail_prevalence": 0.162,
+     "delta_pp": 11.7,
+     "fisher_p": 0.0321,
+     "n_pass_with": 24
+    },
+    {
+     "feature": "기타 기업 인증 개수",
+     "pass_prevalence": 0.244,
+     "fail_prevalence": 0.114,
+     "delta_pp": 13.0,
+     "fisher_p": 0.0103,
+     "n_pass_with": 21
+    },
+    {
+     "feature": "견적서 보유 개수",
+     "pass_prevalence": 0.221,
+     "fail_prevalence": 0.359,
+     "delta_pp": -13.8,
+     "fisher_p": 0.0313,
+     "n_pass_with": 19
+    },
+    {
+     "feature": "해당 시장 전문 자문 네트워크 보유 위원",
+     "pass_prevalence": 0.209,
+     "fail_prevalence": 0.335,
+     "delta_pp": -12.6,
+     "fisher_p": 0.0415,
+     "n_pass_with": 18
+    },
+    {
+     "feature": "자체 생산 시설 보유",
+     "pass_prevalence": 0.186,
+     "fail_prevalence": 0.144,
+     "delta_pp": 4.2,
+     "fisher_p": 0.467,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "소재지+주관기관 일치 여부",
+     "pass_prevalence": 0.174,
+     "fail_prevalence": 0.15,
+     "delta_pp": 2.5,
+     "fisher_p": 0.5916,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "해당 시장 전문가(팀원 기준)",
+     "pass_prevalence": 0.174,
+     "fail_prevalence": 0.275,
+     "delta_pp": -10.1,
+     "fisher_p": 0.0883,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "수상이력",
+     "pass_prevalence": 0.174,
+     "fail_prevalence": 0.21,
+     "delta_pp": -3.5,
+     "fisher_p": 0.6175,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "디자인 네트워크 보유",
+     "pass_prevalence": 0.151,
+     "fail_prevalence": 0.21,
+     "delta_pp": -5.8,
+     "fisher_p": 0.3114,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "아이템 관련 인증 & 디자인 특허 & 상표 등록 개수 -> 기업 인증 아님 주의",
+     "pass_prevalence": 0.14,
+     "fail_prevalence": 0.192,
+     "delta_pp": -5.2,
+     "fisher_p": 0.3817,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "납품 확정 계약서 보유 여부",
+     "pass_prevalence": 0.14,
+     "fail_prevalence": 0.054,
+     "delta_pp": 8.6,
+     "fisher_p": 0.0287,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "FGI",
+     "pass_prevalence": 0.105,
+     "fail_prevalence": 0.156,
+     "delta_pp": -5.1,
+     "fisher_p": 0.3375,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "투자의향서 확보 여부",
+     "pass_prevalence": 0.105,
+     "fail_prevalence": 0.072,
+     "delta_pp": 3.3,
+     "fisher_p": 0.4708,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "기대출 및 보증 금액 (최근 1년)",
+     "pass_prevalence": 0.105,
+     "fail_prevalence": 0.024,
+     "delta_pp": 8.1,
+     "fisher_p": 0.0124,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "누적 투자",
+     "pass_prevalence": 0.105,
+     "fail_prevalence": 0.066,
+     "delta_pp": 3.9,
+     "fisher_p": 0.327,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "구매 의향서 보유",
+     "pass_prevalence": 0.093,
+     "fail_prevalence": 0.114,
+     "delta_pp": -2.1,
+     "fisher_p": 0.6732,
+     "n_pass_with": 8
+    },
+    {
+     "feature": "여성 대표 여부",
+     "pass_prevalence": 0.081,
+     "fail_prevalence": 0.096,
+     "delta_pp": -1.4,
+     "fisher_p": 0.8196,
+     "n_pass_with": 7
+    },
+    {
+     "feature": "기술이전협약서",
+     "pass_prevalence": 0.047,
+     "fail_prevalence": 0.018,
+     "delta_pp": 2.9,
+     "fisher_p": 0.2328,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "직전 수출",
+     "pass_prevalence": 0.047,
+     "fail_prevalence": 0.03,
+     "delta_pp": 1.7,
+     "fisher_p": 0.494,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "기술임치",
+     "pass_prevalence": 0.023,
+     "fail_prevalence": 0.036,
+     "delta_pp": -1.3,
+     "fisher_p": 0.7199,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "청년 여부(만 39세 이하)",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.048,
+     "delta_pp": -4.8,
+     "fisher_p": 0.054,
+     "n_pass_with": 0
+    }
+   ],
+   "checklist": {
+    "items": [
+     "투자의향서 확보 여부",
+     "MOU 보유 개수",
+     "견적서 보유 개수",
+     "아이템 관련 특허 보유 개수 (등록 기준)",
+     "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "수상이력",
+     "아이템 관련 경력 증빙",
+     "실제 제조 OR 서비스 사진 보유 여부",
+     "실제 실험 사진 보유 여부",
+     "MVP 테스트 실행 여부",
+     "수요처 확보 여부",
+     "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "대표자/팀원 관련 자격증서",
+     "구매 의향서 보유",
+     "기타 기업 인증 개수",
+     "FGI"
+    ],
+    "max": 16,
+    "pass_mean": 7.09,
+    "pass_median": 7.0,
+    "pass_p25": 6.0,
+    "pass_p75": 9.0,
+    "fail_mean": 6.63,
+    "pass_score_hist": {
+     "3": 2,
+     "4": 9,
+     "5": 10,
+     "6": 14,
+     "7": 18,
+     "8": 9,
+     "9": 11,
+     "10": 7,
+     "11": 5,
+     "12": 1
+    }
+   }
+  },
+  "예창그룹": {
+   "members": [
+    "예비창업패키지",
+    "창업중심대학-예창"
+   ],
+   "n": 193,
+   "n_pass": 112,
+   "features": [
+    {
+     "feature": "아이템특이성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 112
+    },
+    {
+     "feature": "비즈니스 모델 다양화",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 112
+    },
+    {
+     "feature": "실제 제조 OR 서비스 사진 보유 여부",
+     "pass_prevalence": 0.973,
+     "fail_prevalence": 0.975,
+     "delta_pp": -0.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 109
+    },
+    {
+     "feature": "아이템 관련 경력 증빙",
+     "pass_prevalence": 0.946,
+     "fail_prevalence": 0.889,
+     "delta_pp": 5.8,
+     "fisher_p": 0.1759,
+     "n_pass_with": 106
+    },
+    {
+     "feature": "대표자 해당 아이템 산업 경험/기술 보유 여부",
+     "pass_prevalence": 0.929,
+     "fail_prevalence": 0.84,
+     "delta_pp": 8.9,
+     "fisher_p": 0.0618,
+     "n_pass_with": 104
+    },
+    {
+     "feature": "영업 및 마케팅 네트워크 보유",
+     "pass_prevalence": 0.795,
+     "fail_prevalence": 0.914,
+     "delta_pp": -11.9,
+     "fisher_p": 0.0273,
+     "n_pass_with": 89
+    },
+    {
+     "feature": "해외 진출 가능성",
+     "pass_prevalence": 0.688,
+     "fail_prevalence": 0.704,
+     "delta_pp": -1.6,
+     "fisher_p": 0.8748,
+     "n_pass_with": 77
+    },
+    {
+     "feature": "제조 전문 네트워크 (기술자) 보유",
+     "pass_prevalence": 0.634,
+     "fail_prevalence": 0.556,
+     "delta_pp": 7.8,
+     "fisher_p": 0.2992,
+     "n_pass_with": 71
+    },
+    {
+     "feature": "개발(S/W) 네트워크 보유",
+     "pass_prevalence": 0.545,
+     "fail_prevalence": 0.519,
+     "delta_pp": 2.6,
+     "fisher_p": 0.7708,
+     "n_pass_with": 61
+    },
+    {
+     "feature": "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "pass_prevalence": 0.536,
+     "fail_prevalence": 0.481,
+     "delta_pp": 5.4,
+     "fisher_p": 0.4696,
+     "n_pass_with": 60
+    },
+    {
+     "feature": "수요처 네트워크 보유",
+     "pass_prevalence": 0.518,
+     "fail_prevalence": 0.457,
+     "delta_pp": 6.1,
+     "fisher_p": 0.4662,
+     "n_pass_with": 58
+    },
+    {
+     "feature": "MVP 테스트 실행 여부",
+     "pass_prevalence": 0.518,
+     "fail_prevalence": 0.383,
+     "delta_pp": 13.5,
+     "fisher_p": 0.0791,
+     "n_pass_with": 58
+    },
+    {
+     "feature": "필수 재료 공급처 네트워크 보유",
+     "pass_prevalence": 0.482,
+     "fail_prevalence": 0.358,
+     "delta_pp": 12.4,
+     "fisher_p": 0.1053,
+     "n_pass_with": 54
+    },
+    {
+     "feature": "R&D 인력 or 자체 학습 데이터 네트워크 보유",
+     "pass_prevalence": 0.429,
+     "fail_prevalence": 0.272,
+     "delta_pp": 15.7,
+     "fisher_p": 0.0334,
+     "n_pass_with": 48
+    },
+    {
+     "feature": "견적서 보유 개수",
+     "pass_prevalence": 0.402,
+     "fail_prevalence": 0.395,
+     "delta_pp": 0.7,
+     "fisher_p": 1.0,
+     "n_pass_with": 45
+    },
+    {
+     "feature": "MOU 보유 개수",
+     "pass_prevalence": 0.384,
+     "fail_prevalence": 0.37,
+     "delta_pp": 1.4,
+     "fisher_p": 0.8813,
+     "n_pass_with": 43
+    },
+    {
+     "feature": "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "pass_prevalence": 0.366,
+     "fail_prevalence": 0.247,
+     "delta_pp": 11.9,
+     "fisher_p": 0.0864,
+     "n_pass_with": 41
+    },
+    {
+     "feature": "디자인 네트워크 보유",
+     "pass_prevalence": 0.339,
+     "fail_prevalence": 0.284,
+     "delta_pp": 5.5,
+     "fisher_p": 0.437,
+     "n_pass_with": 38
+    },
+    {
+     "feature": "해당 시장 전문 자문 네트워크 보유 위원",
+     "pass_prevalence": 0.304,
+     "fail_prevalence": 0.333,
+     "delta_pp": -3.0,
+     "fisher_p": 0.754,
+     "n_pass_with": 34
+    },
+    {
+     "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.295,
+     "fail_prevalence": 0.358,
+     "delta_pp": -6.3,
+     "fisher_p": 0.435,
+     "n_pass_with": 33
+    },
+    {
+     "feature": "대표자/팀원 관련 자격증서",
+     "pass_prevalence": 0.277,
+     "fail_prevalence": 0.247,
+     "delta_pp": 3.0,
+     "fisher_p": 0.7413,
+     "n_pass_with": 31
+    },
+    {
+     "feature": "수요처 확보 여부",
+     "pass_prevalence": 0.241,
+     "fail_prevalence": 0.173,
+     "delta_pp": 6.8,
+     "fisher_p": 0.2878,
+     "n_pass_with": 27
+    },
+    {
+     "feature": "개발인력(sw) 보유(팀원 기준)",
+     "pass_prevalence": 0.232,
+     "fail_prevalence": 0.173,
+     "delta_pp": 5.9,
+     "fisher_p": 0.3703,
+     "n_pass_with": 26
+    },
+    {
+     "feature": "실제 실험 사진 보유 여부",
+     "pass_prevalence": 0.232,
+     "fail_prevalence": 0.136,
+     "delta_pp": 9.6,
+     "fisher_p": 0.0997,
+     "n_pass_with": 26
+    },
+    {
+     "feature": "해당 시장 전문가(팀원 기준)",
+     "pass_prevalence": 0.214,
+     "fail_prevalence": 0.247,
+     "delta_pp": -3.3,
+     "fisher_p": 0.6063,
+     "n_pass_with": 24
+    },
+    {
+     "feature": "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)",
+     "pass_prevalence": 0.205,
+     "fail_prevalence": 0.247,
+     "delta_pp": -4.2,
+     "fisher_p": 0.5994,
+     "n_pass_with": 23
+    },
+    {
+     "feature": "제조 전문 인력 (기술자) 보유(팀원 기준)",
+     "pass_prevalence": 0.188,
+     "fail_prevalence": 0.099,
+     "delta_pp": 8.9,
+     "fisher_p": 0.1045,
+     "n_pass_with": 21
+    },
+    {
+     "feature": "수상이력",
+     "pass_prevalence": 0.188,
+     "fail_prevalence": 0.136,
+     "delta_pp": 5.2,
+     "fisher_p": 0.4336,
+     "n_pass_with": 21
+    },
+    {
+     "feature": "청년 여부(만 39세 이하)",
+     "pass_prevalence": 0.179,
+     "fail_prevalence": 0.148,
+     "delta_pp": 3.0,
+     "fisher_p": 0.6957,
+     "n_pass_with": 20
+    },
+    {
+     "feature": "디자인 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.179,
+     "fail_prevalence": 0.235,
+     "delta_pp": -5.6,
+     "fisher_p": 0.3674,
+     "n_pass_with": 20
+    },
+    {
+     "feature": "투자의향서 확보 여부",
+     "pass_prevalence": 0.17,
+     "fail_prevalence": 0.062,
+     "delta_pp": 10.8,
+     "fisher_p": 0.0277,
+     "n_pass_with": 19
+    },
+    {
+     "feature": "R&D 인력 보유(팀원 기준)",
+     "pass_prevalence": 0.161,
+     "fail_prevalence": 0.111,
+     "delta_pp": 5.0,
+     "fisher_p": 0.4025,
+     "n_pass_with": 18
+    },
+    {
+     "feature": "여성 대표 여부",
+     "pass_prevalence": 0.143,
+     "fail_prevalence": 0.16,
+     "delta_pp": -1.8,
+     "fisher_p": 0.8388,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "대표자 사업 경험 여부 (매출 1억 이상)",
+     "pass_prevalence": 0.134,
+     "fail_prevalence": 0.173,
+     "delta_pp": -3.9,
+     "fisher_p": 0.5414,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "아이템 관련 특허 보유 개수 (등록 기준)",
+     "pass_prevalence": 0.134,
+     "fail_prevalence": 0.16,
+     "delta_pp": -2.7,
+     "fisher_p": 0.6803,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "구매 의향서 보유",
+     "pass_prevalence": 0.116,
+     "fail_prevalence": 0.086,
+     "delta_pp": 3.0,
+     "fisher_p": 0.6342,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "FGI",
+     "pass_prevalence": 0.098,
+     "fail_prevalence": 0.086,
+     "delta_pp": 1.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 11
+    },
+    {
+     "feature": "소재지+주관기관 일치 여부",
+     "pass_prevalence": 0.08,
+     "fail_prevalence": 0.025,
+     "delta_pp": 5.6,
+     "fisher_p": 0.1237,
+     "n_pass_with": 9
+    },
+    {
+     "feature": "고용",
+     "pass_prevalence": 0.071,
+     "fail_prevalence": 0.062,
+     "delta_pp": 1.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 8
+    },
+    {
+     "feature": "아이템 관련 인증 & 디자인 특허 & 상표 등록 개수 -> 기업 인증 아님 주의",
+     "pass_prevalence": 0.045,
+     "fail_prevalence": 0.086,
+     "delta_pp": -4.2,
+     "fisher_p": 0.2464,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "직전 매출 (수출 제외)",
+     "pass_prevalence": 0.027,
+     "fail_prevalence": 0.037,
+     "delta_pp": -1.0,
+     "fisher_p": 0.6968,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "총매출 (직전매출 + 직전 수출) -> 자동 계산 수정금지",
+     "pass_prevalence": 0.027,
+     "fail_prevalence": 0.037,
+     "delta_pp": -1.0,
+     "fisher_p": 0.6968,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "기술임치",
+     "pass_prevalence": 0.018,
+     "fail_prevalence": 0.012,
+     "delta_pp": 0.6,
+     "fisher_p": 1.0,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "누적 투자",
+     "pass_prevalence": 0.018,
+     "fail_prevalence": 0.025,
+     "delta_pp": -0.7,
+     "fisher_p": 1.0,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "자체 생산 시설 보유",
+     "pass_prevalence": 0.009,
+     "fail_prevalence": 0.012,
+     "delta_pp": -0.3,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "납품 확정 계약서 보유 여부",
+     "pass_prevalence": 0.009,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.9,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "기대출 및 보증 금액 (최근 1년)",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "기술이전협약서",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "기타 기업 인증 개수",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.012,
+     "delta_pp": -1.2,
+     "fisher_p": 0.4197,
+     "n_pass_with": 0
+    },
+    {
+     "feature": "직전 수출",
+     "pass_prevalence": 0.0,
+     "fail_prevalence": 0.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 0
+    }
+   ],
+   "checklist": {
+    "items": [
+     "투자의향서 확보 여부",
+     "MOU 보유 개수",
+     "견적서 보유 개수",
+     "아이템 관련 특허 보유 개수 (등록 기준)",
+     "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "수상이력",
+     "아이템 관련 경력 증빙",
+     "실제 제조 OR 서비스 사진 보유 여부",
+     "실제 실험 사진 보유 여부",
+     "MVP 테스트 실행 여부",
+     "수요처 확보 여부",
+     "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "대표자/팀원 관련 자격증서",
+     "구매 의향서 보유",
+     "기타 기업 인증 개수",
+     "FGI"
+    ],
+    "max": 16,
+    "pass_mean": 5.58,
+    "pass_median": 6.0,
+    "pass_p25": 4.0,
+    "pass_p75": 7.0,
+    "fail_mean": 4.84,
+    "pass_score_hist": {
+     "2": 7,
+     "3": 10,
+     "4": 20,
+     "5": 18,
+     "6": 15,
+     "7": 26,
+     "8": 7,
+     "9": 8,
+     "11": 1
+    }
+   }
+  },
+  "청창사": {
+   "members": [
+    "청년창업사관학교"
+   ],
+   "n": 103,
+   "n_pass": 63,
+   "features": [
+    {
+     "feature": "아이템특이성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "실제 제조 OR 서비스 사진 보유 여부",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "해외 진출 가능성",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 1.0,
+     "delta_pp": 0.0,
+     "fisher_p": null,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "비즈니스 모델 다양화",
+     "pass_prevalence": 1.0,
+     "fail_prevalence": 0.975,
+     "delta_pp": 2.5,
+     "fisher_p": 0.3883,
+     "n_pass_with": 63
+    },
+    {
+     "feature": "대표자 해당 아이템 산업 경험/기술 보유 여부",
+     "pass_prevalence": 0.968,
+     "fail_prevalence": 0.875,
+     "delta_pp": 9.3,
+     "fisher_p": 0.1059,
+     "n_pass_with": 61
+    },
+    {
+     "feature": "아이템 관련 경력 증빙",
+     "pass_prevalence": 0.952,
+     "fail_prevalence": 0.875,
+     "delta_pp": 7.7,
+     "fisher_p": 0.2561,
+     "n_pass_with": 60
+    },
+    {
+     "feature": "영업 및 마케팅 네트워크 보유",
+     "pass_prevalence": 0.921,
+     "fail_prevalence": 0.775,
+     "delta_pp": 14.6,
+     "fisher_p": 0.0434,
+     "n_pass_with": 58
+    },
+    {
+     "feature": "직전 매출 (수출 제외)",
+     "pass_prevalence": 0.714,
+     "fail_prevalence": 0.625,
+     "delta_pp": 8.9,
+     "fisher_p": 0.39,
+     "n_pass_with": 45
+    },
+    {
+     "feature": "고용",
+     "pass_prevalence": 0.714,
+     "fail_prevalence": 0.65,
+     "delta_pp": 6.4,
+     "fisher_p": 0.5187,
+     "n_pass_with": 45
+    },
+    {
+     "feature": "총매출 (직전매출 + 직전 수출) -> 자동 계산 수정금지",
+     "pass_prevalence": 0.714,
+     "fail_prevalence": 0.625,
+     "delta_pp": 8.9,
+     "fisher_p": 0.39,
+     "n_pass_with": 45
+    },
+    {
+     "feature": "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "pass_prevalence": 0.683,
+     "fail_prevalence": 0.65,
+     "delta_pp": 3.3,
+     "fisher_p": 0.8304,
+     "n_pass_with": 43
+    },
+    {
+     "feature": "수요처 네트워크 보유",
+     "pass_prevalence": 0.651,
+     "fail_prevalence": 0.575,
+     "delta_pp": 7.6,
+     "fisher_p": 0.5327,
+     "n_pass_with": 41
+    },
+    {
+     "feature": "영업 & 유통 마케팅 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.635,
+     "fail_prevalence": 0.6,
+     "delta_pp": 3.5,
+     "fisher_p": 0.8353,
+     "n_pass_with": 40
+    },
+    {
+     "feature": "제조 전문 네트워크 (기술자) 보유",
+     "pass_prevalence": 0.619,
+     "fail_prevalence": 0.55,
+     "delta_pp": 6.9,
+     "fisher_p": 0.5404,
+     "n_pass_with": 39
+    },
+    {
+     "feature": "MVP 테스트 실행 여부",
+     "pass_prevalence": 0.619,
+     "fail_prevalence": 0.575,
+     "delta_pp": 4.4,
+     "fisher_p": 0.684,
+     "n_pass_with": 39
+    },
+    {
+     "feature": "필수 재료 공급처 네트워크 보유",
+     "pass_prevalence": 0.571,
+     "fail_prevalence": 0.3,
+     "delta_pp": 27.1,
+     "fisher_p": 0.0087,
+     "n_pass_with": 36
+    },
+    {
+     "feature": "청년 여부(만 39세 이하)",
+     "pass_prevalence": 0.524,
+     "fail_prevalence": 0.45,
+     "delta_pp": 7.4,
+     "fisher_p": 0.5457,
+     "n_pass_with": 33
+    },
+    {
+     "feature": "개발(S/W) 네트워크 보유",
+     "pass_prevalence": 0.508,
+     "fail_prevalence": 0.45,
+     "delta_pp": 5.8,
+     "fisher_p": 0.6863,
+     "n_pass_with": 32
+    },
+    {
+     "feature": "견적서 보유 개수",
+     "pass_prevalence": 0.508,
+     "fail_prevalence": 0.325,
+     "delta_pp": 18.3,
+     "fisher_p": 0.1025,
+     "n_pass_with": 32
+    },
+    {
+     "feature": "구체적 마케팅 협력처 보유 여부 (마케팅이 바로 가능한 수준 셋팅 완료)",
+     "pass_prevalence": 0.476,
+     "fail_prevalence": 0.4,
+     "delta_pp": 7.6,
+     "fisher_p": 0.5429,
+     "n_pass_with": 30
+    },
+    {
+     "feature": "대표자 사업 경험 여부 (매출 1억 이상)",
+     "pass_prevalence": 0.444,
+     "fail_prevalence": 0.3,
+     "delta_pp": 14.4,
+     "fisher_p": 0.1538,
+     "n_pass_with": 28
+    },
+    {
+     "feature": "MOU 보유 개수",
+     "pass_prevalence": 0.444,
+     "fail_prevalence": 0.4,
+     "delta_pp": 4.4,
+     "fisher_p": 0.6876,
+     "n_pass_with": 28
+    },
+    {
+     "feature": "수요처 확보 여부",
+     "pass_prevalence": 0.429,
+     "fail_prevalence": 0.35,
+     "delta_pp": 7.9,
+     "fisher_p": 0.5362,
+     "n_pass_with": 27
+    },
+    {
+     "feature": "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "pass_prevalence": 0.413,
+     "fail_prevalence": 0.425,
+     "delta_pp": -1.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 26
+    },
+    {
+     "feature": "여성 대표 여부",
+     "pass_prevalence": 0.349,
+     "fail_prevalence": 0.3,
+     "delta_pp": 4.9,
+     "fisher_p": 0.6708,
+     "n_pass_with": 22
+    },
+    {
+     "feature": "R&D 인력 or 자체 학습 데이터 네트워크 보유",
+     "pass_prevalence": 0.349,
+     "fail_prevalence": 0.45,
+     "delta_pp": -10.1,
+     "fisher_p": 0.4069,
+     "n_pass_with": 22
+    },
+    {
+     "feature": "디자인 네트워크 보유",
+     "pass_prevalence": 0.286,
+     "fail_prevalence": 0.35,
+     "delta_pp": -6.4,
+     "fisher_p": 0.5187,
+     "n_pass_with": 18
+    },
+    {
+     "feature": "해당 시장 전문 자문 네트워크 보유 위원",
+     "pass_prevalence": 0.27,
+     "fail_prevalence": 0.25,
+     "delta_pp": 2.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 17
+    },
+    {
+     "feature": "아이템 관련 특허 보유 개수 (등록 기준)",
+     "pass_prevalence": 0.27,
+     "fail_prevalence": 0.25,
+     "delta_pp": 2.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 17
+    },
+    {
+     "feature": "대표자/팀원 관련 자격증서",
+     "pass_prevalence": 0.254,
+     "fail_prevalence": 0.175,
+     "delta_pp": 7.9,
+     "fisher_p": 0.4677,
+     "n_pass_with": 16
+    },
+    {
+     "feature": "디자인 인력 보유 (팀원 기준)",
+     "pass_prevalence": 0.238,
+     "fail_prevalence": 0.4,
+     "delta_pp": -16.2,
+     "fisher_p": 0.1221,
+     "n_pass_with": 15
+    },
+    {
+     "feature": "개발인력(sw) 보유(팀원 기준)",
+     "pass_prevalence": 0.222,
+     "fail_prevalence": 0.3,
+     "delta_pp": -7.8,
+     "fisher_p": 0.4857,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "실제 실험 사진 보유 여부",
+     "pass_prevalence": 0.222,
+     "fail_prevalence": 0.2,
+     "delta_pp": 2.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 14
+    },
+    {
+     "feature": "소재지+주관기관 일치 여부",
+     "pass_prevalence": 0.206,
+     "fail_prevalence": 0.1,
+     "delta_pp": 10.6,
+     "fisher_p": 0.1837,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "아이템 관련 인증 & 디자인 특허 & 상표 등록 개수 -> 기업 인증 아님 주의",
+     "pass_prevalence": 0.206,
+     "fail_prevalence": 0.225,
+     "delta_pp": -1.9,
+     "fisher_p": 0.8108,
+     "n_pass_with": 13
+    },
+    {
+     "feature": "R&D 인력 보유(팀원 기준)",
+     "pass_prevalence": 0.19,
+     "fail_prevalence": 0.25,
+     "delta_pp": -6.0,
+     "fisher_p": 0.4726,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "수상이력",
+     "pass_prevalence": 0.19,
+     "fail_prevalence": 0.15,
+     "delta_pp": 4.0,
+     "fisher_p": 0.7909,
+     "n_pass_with": 12
+    },
+    {
+     "feature": "해당 시장 전문가(팀원 기준)",
+     "pass_prevalence": 0.175,
+     "fail_prevalence": 0.25,
+     "delta_pp": -7.5,
+     "fisher_p": 0.4527,
+     "n_pass_with": 11
+    },
+    {
+     "feature": "제조 전문 인력 (기술자) 보유(팀원 기준)",
+     "pass_prevalence": 0.159,
+     "fail_prevalence": 0.2,
+     "delta_pp": -4.1,
+     "fisher_p": 0.6044,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "투자의향서 확보 여부",
+     "pass_prevalence": 0.159,
+     "fail_prevalence": 0.1,
+     "delta_pp": 5.9,
+     "fisher_p": 0.5576,
+     "n_pass_with": 10
+    },
+    {
+     "feature": "기타 기업 인증 개수",
+     "pass_prevalence": 0.127,
+     "fail_prevalence": 0.075,
+     "delta_pp": 5.2,
+     "fisher_p": 0.5223,
+     "n_pass_with": 8
+    },
+    {
+     "feature": "구매 의향서 보유",
+     "pass_prevalence": 0.095,
+     "fail_prevalence": 0.075,
+     "delta_pp": 2.0,
+     "fisher_p": 1.0,
+     "n_pass_with": 6
+    },
+    {
+     "feature": "자체 생산 시설 보유",
+     "pass_prevalence": 0.079,
+     "fail_prevalence": 0.05,
+     "delta_pp": 2.9,
+     "fisher_p": 0.703,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "기대출 및 보증 금액 (최근 1년)",
+     "pass_prevalence": 0.079,
+     "fail_prevalence": 0.05,
+     "delta_pp": 2.9,
+     "fisher_p": 0.703,
+     "n_pass_with": 5
+    },
+    {
+     "feature": "납품 확정 계약서 보유 여부",
+     "pass_prevalence": 0.063,
+     "fail_prevalence": 0.0,
+     "delta_pp": 6.3,
+     "fisher_p": 0.1554,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "직전 수출",
+     "pass_prevalence": 0.063,
+     "fail_prevalence": 0.075,
+     "delta_pp": -1.2,
+     "fisher_p": 1.0,
+     "n_pass_with": 4
+    },
+    {
+     "feature": "FGI",
+     "pass_prevalence": 0.048,
+     "fail_prevalence": 0.075,
+     "delta_pp": -2.7,
+     "fisher_p": 0.6751,
+     "n_pass_with": 3
+    },
+    {
+     "feature": "누적 투자",
+     "pass_prevalence": 0.032,
+     "fail_prevalence": 0.05,
+     "delta_pp": -1.8,
+     "fisher_p": 0.6407,
+     "n_pass_with": 2
+    },
+    {
+     "feature": "기술임치",
+     "pass_prevalence": 0.016,
+     "fail_prevalence": 0.0,
+     "delta_pp": 1.6,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    },
+    {
+     "feature": "기술이전협약서",
+     "pass_prevalence": 0.016,
+     "fail_prevalence": 0.0,
+     "delta_pp": 1.6,
+     "fisher_p": 1.0,
+     "n_pass_with": 1
+    }
+   ],
+   "checklist": {
+    "items": [
+     "투자의향서 확보 여부",
+     "MOU 보유 개수",
+     "견적서 보유 개수",
+     "아이템 관련 특허 보유 개수 (등록 기준)",
+     "아이템관련 특허 출원 여부 (출원상태 YNLY)",
+     "수상이력",
+     "아이템 관련 경력 증빙",
+     "실제 제조 OR 서비스 사진 보유 여부",
+     "실제 실험 사진 보유 여부",
+     "MVP 테스트 실행 여부",
+     "수요처 확보 여부",
+     "데이터 보유 여부 (고객 및 아이템 관련) -> AI/빅데이터 가공용 Yr 잠재고객 데이터 등",
+     "대표자/팀원 관련 자격증서",
+     "구매 의향서 보유",
+     "기타 기업 인증 개수",
+     "FGI"
+    ],
+    "max": 16,
+    "pass_mean": 6.41,
+    "pass_median": 6.0,
+    "pass_p25": 5.0,
+    "pass_p75": 7.5,
+    "fail_mean": 5.7,
+    "pass_score_hist": {
+     "3": 3,
+     "4": 9,
+     "5": 9,
+     "6": 11,
+     "7": 15,
+     "8": 6,
+     "9": 6,
+     "10": 3,
+     "11": 1
+    }
+   }
+  }
+ }
+}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import logging
 import time
@@ -14,7 +15,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from services.session_store import get_session, get_usage_count, increment_usage, is_unlocked, load_results, save_results, save_action_plan, load_action_plan, load_framework_draft
+from services.session_store import get_session, get_usage_count, increment_usage, is_unlocked, load_results, save_results, save_action_plan, load_action_plan, load_framework_draft, save_benchmark_cache, load_benchmark_cache
+from core.benchmark import evaluate as benchmark_evaluate, gaps_for_prompt
 from core.docx_export import export_to_docx, export_to_official_docx
 from core.forms import load_form
 from core.generation import regenerate_section
@@ -264,9 +266,12 @@ _ACTION_PLAN_PROMPT = """\
 [피드백 메모]
 {feedback_memos}
 
+[합격작 대비 부족한 항목 — 실제 합격 사업계획서 통계]
+{benchmark_gaps}
+
 위 정보를 바탕으로 아래 기준으로 액션플랜 작성:
 
-1. 지금 사업에서 없는 것(MVP, 시장검증, 거래처, 인증, 특허 등)을 파악
+1. 지금 사업에서 없는 것(MVP, 시장검증, 거래처, 인증, 특허 등)을 파악 — '합격작 대비 부족한 항목'을 1순위로 다룰 것
 2. 공고 예상 시기 역산해서 월별 실행 타임라인 작성
 3. 각 액션은 아래 형식으로 작성:
 
@@ -360,6 +365,12 @@ def generate_action_plan(session_id: str):
         for r in results
     )
 
+    # 5. 합격작 대비 부족 항목 (벤치마크 캐시가 있을 때만 — 추가 LLM 호출 없음)
+    cache = load_benchmark_cache(session_id)
+    benchmark_gaps = gaps_for_prompt(
+        benchmark_evaluate(cache["features"], session.program_code) if cache else {}
+    )
+
     from core.llm import call_claude
     try:
         text, _ = call_claude(
@@ -371,6 +382,7 @@ def generate_action_plan(session_id: str):
                 plan_summary=plan_summary,
                 weak_sections=weak_sections,
                 feedback_memos=feedback_memos,
+                benchmark_gaps=benchmark_gaps,
             ),
             model="claude-haiku-4-5-20251001",
             max_tokens=4096,
@@ -432,7 +444,15 @@ def document_check(session_id: str):
 
 
 @router.get("/sessions/{session_id}/score")
-def get_rubric_score(session_id: str):
+def get_benchmark_score(session_id: str):
+    """초안 전문 → 피처 추출(Sonnet 5, 본문 해시 캐시) → 합격작 벤치마크 대조.
+
+    확률(%)은 benchmark_v1.json display_mode가 empirical_rate인 프로그램에서만 내려간다.
+    추출 실패/잘림 시 available=False (기본값으로 위장하지 않음).
+    """
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
     results = load_results(session_id)
     if results is None:
         raise HTTPException(status_code=404, detail="Results not found")
@@ -441,49 +461,38 @@ def get_rubric_score(session_id: str):
         f"[{r.section_title}]\n{r.user_edited_content or r.content or ''}"
         for r in results
     )
+    content_hash = hashlib.sha256(full_text.encode("utf-8")).hexdigest()[:16]
 
-    from core.rubric_scorer import score_with_haiku
-    _t0 = time.time()
-    ps = score_with_haiku(full_text)
-    _duration_ms = int((time.time() - _t0) * 1000)
+    cache = load_benchmark_cache(session_id)
+    if cache and cache.get("hash") == content_hash:
+        features = cache["features"]
+    else:
+        from core.rubric_scorer import extract_features
+        _t0 = time.time()
+        features = extract_features(full_text)
+        _duration_ms = int((time.time() - _t0) * 1000)
+        try:  # structurer는 call_claude()를 우회하므로 여기서 직접 로그 기록
+            _log_path = Path("logs/llm_calls.jsonl")
+            _log_path.parent.mkdir(parents=True, exist_ok=True)
+            with _log_path.open("a", encoding="utf-8") as _f:
+                _f.write(json.dumps({
+                    "call_id": str(uuid.uuid4())[:8],
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "model": "claude-sonnet-5",
+                    "purpose": "benchmark_extract",
+                    "session_id": session_id,
+                    "duration_ms": _duration_ms,
+                    "stop_reason": "end_turn" if features else "failed",
+                    "user_preview": full_text[:300],
+                    "response_full": "ok" if features else "None",
+                }, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
+        if features is None:
+            return {"available": False, "reason": "extract_failed"}
+        save_benchmark_cache(session_id, content_hash, features)
 
-    # delivery2 structurer는 call_claude()를 우회하므로 여기서 직접 로그 기록
-    try:
-        _log_path = Path("logs/llm_calls.jsonl")
-        _log_path.parent.mkdir(parents=True, exist_ok=True)
-        _entry = {
-            "call_id": str(uuid.uuid4())[:8],
-            "timestamp": datetime.utcnow().isoformat(),
-            "model": "claude-haiku-4-5-20251001",
-            "purpose": "rubric_score",
-            "session_id": session_id,
-            "input_tokens": None,
-            "output_tokens": None,
-            "cache_creation_input_tokens": 0,
-            "cache_read_input_tokens": 0,
-            "duration_ms": _duration_ms,
-            "stop_reason": "end_turn",
-            "system_preview": "(delivery2 structurer — token counts unavailable)",
-            "user_preview": full_text[:300],
-            "response_full": f"prob_pct={ps.prob_pct}" if ps else "None",
-        }
-        with _log_path.open("a", encoding="utf-8") as _f:
-            _f.write(json.dumps(_entry, ensure_ascii=False) + "\n")
-    except Exception:
-        pass
-
-    if ps is None:
-        return {"available": False}
-
-    return {
-        "available": True,
-        "prob_pct": ps.prob_pct,
-        "base_rate_pct": round(ps.base_rate * 100),
-        "hits": [
-            {"feature": h["feature"], "direction": h.get("direction", "+")}
-            for h in ps.significant_hits
-        ],
-    }
+    return benchmark_evaluate(features, session.program_code)
 
 
 @router.get("/sessions/{session_id}/usage")

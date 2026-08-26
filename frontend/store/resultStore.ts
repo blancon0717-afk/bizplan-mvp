@@ -6,7 +6,6 @@ import { api } from "@/lib/api";
 interface ResultState {
   sections: SectionResult[];
   overallCompletion: number;
-  localProbPct: number;
   activeSectionId: string | null;
   isRegenerating: Record<string, boolean>;
 
@@ -24,7 +23,6 @@ interface ResultState {
   updateSectionSuggestions: (sectionId: string, suggestions: InlineSuggestion[]) => void;
   editSection: (sessionId: string, sectionId: string, content: string) => Promise<void>;
   regenerateSection: (sessionId: string, sectionId: string, memoResponse?: string, memoIndex?: number) => Promise<void>;
-  syncProbPct: (pct: number) => void;
 }
 
 function recomputeEffective(section: SectionResult): number {
@@ -35,10 +33,6 @@ function recomputeEffective(section: SectionResult): number {
     (s) => s.response.trim()
   ).length;
   return Math.round(base + (100 - base) * (resolved / total));
-}
-
-function computeLocalProbPct(overallCompletion: number): number {
-  return Math.round(overallCompletion * 0.85);
 }
 
 function computeOverall(sections: SectionResult[]): number {
@@ -53,7 +47,6 @@ function computeOverall(sections: SectionResult[]): number {
 export const useResultStore = create<ResultState>((set, get) => ({
   sections: [],
   overallCompletion: 0,
-  localProbPct: 0,
   activeSectionId: null,
   isRegenerating: {},
 
@@ -61,7 +54,6 @@ export const useResultStore = create<ResultState>((set, get) => ({
     set({
       sections,
       overallCompletion: overall,
-      localProbPct: computeLocalProbPct(overall),
       activeSectionId: sections[0]?.section_id ?? null,
       isRegenerating: {},
     }),
@@ -89,7 +81,6 @@ export const useResultStore = create<ResultState>((set, get) => ({
           : s
       ),
       overallCompletion: overall,
-      localProbPct: computeLocalProbPct(overall),
     }));
   },
 
@@ -102,7 +93,6 @@ export const useResultStore = create<ResultState>((set, get) => ({
       return {
         sections,
         overallCompletion: overall,
-        localProbPct: computeLocalProbPct(overall),
       };
     });
   },
@@ -142,5 +132,4 @@ export const useResultStore = create<ResultState>((set, get) => ({
     }
   },
 
-  syncProbPct: (pct: number) => set({ localProbPct: pct }),
 }));

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import RubricBadge from "@/components/result/RubricBadge";
+import RubricScorePanel from "@/components/result/RubricScorePanel";
 
 const MarkdownRenderer = dynamic(() => import("@/components/MarkdownRenderer"), {
   loading: () => <div className="animate-pulse text-sm text-slate-400 py-4">로딩 중...</div>,
@@ -12,7 +13,7 @@ import DocumentPanel, { type DocumentPanelHandle } from "@/components/result/Doc
 import MemoPanel, { type MemoPanelHandle } from "@/components/result/MemoPanel";
 import { useResultStore } from "@/store/resultStore";
 import { api } from "@/lib/api";
-import type { RubricScoreResult } from "@/lib/types";
+import type { BenchmarkResult } from "@/lib/types";
 import EmailGateModal, { hasLeadEmail } from "@/components/EmailGateModal";
 
 export default function ResultPage() {
@@ -20,8 +21,8 @@ export default function ResultPage() {
   const router = useRouter();
   const sessionId = params.sessionId as string;
 
-  const { sections, overallCompletion, localProbPct, activeSectionId, isRegenerating,
-    init, setActiveSectionId, updateSectionSuggestions, updateSectionAfterRegen, regenerateSection, editSection, syncProbPct } = useResultStore();
+  const { sections, overallCompletion, activeSectionId, isRegenerating,
+    init, setActiveSectionId, updateSectionSuggestions, updateSectionAfterRegen, regenerateSection, editSection } = useResultStore();
 
   const documentPanelRef = useRef<DocumentPanelHandle>(null);
   const memoPanelRef = useRef<MemoPanelHandle>(null);
@@ -31,7 +32,7 @@ export default function ResultPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [showEmailGate, setShowEmailGate] = useState(false);
   const [programName, setProgramName] = useState("");
-  const [rubricScore, setRubricScore] = useState<RubricScoreResult | null>(null);
+  const [rubricScore, setRubricScore] = useState<BenchmarkResult | null>(null);
   const [isLoadingScore, setIsLoadingScore] = useState(false);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
@@ -64,10 +65,7 @@ export default function ResultPage() {
         // 루브릭 채점 — 결과 로드 후 비동기로 실행
         setIsLoadingScore(true);
         api.getScore(sessionId)
-          .then((score) => {
-            setRubricScore(score);
-            if (score?.prob_pct != null) syncProbPct(score.prob_pct);
-          })
+          .then(setRubricScore)
           .catch(() => {})
           .finally(() => setIsLoadingScore(false));
         api.getUsage(sessionId).then(setUsageData).catch(() => {});
@@ -302,8 +300,8 @@ export default function ResultPage() {
 
           <div className="flex items-center gap-3 flex-shrink-0">
             {isLoadingScore
-              ? <span className="text-sm text-slate-400 animate-pulse">합격률 계산 중...</span>
-              : <RubricBadge probPct={localProbPct} />
+              ? <span className="text-sm text-slate-400 animate-pulse">합격작 벤치마크 계산 중...</span>
+              : <RubricBadge result={rubricScore} />
             }
             {(yellowCount > 0 || redCount > 0) && (
               <div className="relative group">
@@ -405,6 +403,7 @@ export default function ResultPage() {
           </div>
         </div>
       </header>
+      <RubricScorePanel result={rubricScore} isLoading={isLoadingScore} />
 
       {/* 재생성 에러 배너 */}
       {regenError && (

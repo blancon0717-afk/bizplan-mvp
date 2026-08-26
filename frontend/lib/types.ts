@@ -100,16 +100,34 @@ export interface GenerationResults {
   unlocked?: boolean;
 }
 
-export interface RubricFeature {
+/** 합격작 벤치마크 항목 — 실제 서류심사 통계 대비 이 문서의 보유 여부 */
+export interface BenchmarkItem {
   feature: string;
-  direction: string;
+  label: string;
+  pass_pct: number;
+  fail_pct: number;
+  delta_pp: number;
+  present: boolean;
 }
 
-export interface RubricScoreResult {
+export interface BenchmarkResult {
   available: boolean;
-  prob_pct?: number;
-  base_rate_pct?: number;
-  hits?: RubricFeature[];
+  reason?: string;
+  program?: string;
+  group?: string;
+  /** empirical_rate: 점수대 실측 합격률 표기 허용 / distribution_position: 합격작 평균 대비 위치만 */
+  display_mode?: "empirical_rate" | "distribution_position";
+  score?: number;
+  score_max?: number;
+  pass_mean?: number;
+  pass_median?: number;
+  fail_mean?: number;
+  band?: { band: string; score_min: number; score_max: number; n: number } | null;
+  empirical_pass_rate_pct?: number | null;
+  n_docs?: number;
+  n_pass_docs?: number;
+  gaps?: BenchmarkItem[];
+  strengths?: BenchmarkItem[];
 }
 
 export interface SectionProgress {
