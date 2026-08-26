@@ -272,12 +272,16 @@ def save_action_plan(session_id: str, text: str) -> None:
     path.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def save_benchmark_cache(session_id: str, content_hash: str, features: dict) -> None:
-    """벤치마크용 추출 피처를 본문 해시와 함께 캐시 (본문 불변 시 재추출 방지)."""
+def save_benchmark_cache(session_id: str, content_hash: str, features: dict,
+                         key: str = "benchmark_cache") -> None:
+    """벤치마크용 추출 피처를 본문 해시와 함께 캐시 (본문 불변 시 재추출 방지).
+
+    key: 'benchmark_cache'(변환 결과 기준) / 'benchmark_cache_framework'(초안 기준, 갭 인터뷰용)
+    """
     raw = _read_raw(session_id)
     if raw is None:
         return
-    raw["benchmark_cache"] = {
+    raw[key] = {
         "hash": content_hash,
         "features": features,
         "at": datetime.now(timezone.utc).isoformat(),
@@ -285,11 +289,11 @@ def save_benchmark_cache(session_id: str, content_hash: str, features: dict) -> 
     _write_raw(session_id, raw)
 
 
-def load_benchmark_cache(session_id: str) -> Optional[dict]:
+def load_benchmark_cache(session_id: str, key: str = "benchmark_cache") -> Optional[dict]:
     raw = _read_raw(session_id)
     if raw is None:
         return None
-    cache = raw.get("benchmark_cache")
+    cache = raw.get(key)
     return cache if isinstance(cache, dict) and cache.get("features") else None
 
 

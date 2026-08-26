@@ -37,6 +37,9 @@ export interface GapQuestion {
   question: string;
   hint: string;
   target_sections: string[];
+  /** 벤치마크 유래 질문의 근거 문구 (합격작 N%가 언급) */
+  evidence?: string;
+  source?: "benchmark" | string;
 }
 
 export interface Question {

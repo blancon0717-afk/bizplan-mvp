@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -57,6 +58,7 @@ from core.generation import (
 from core.interview import load_initial_questions, load_followup_questions
 from core.judgment import apply_post_judgment, calculate_overall_completion
 from core.skills import load_skills
+from core.benchmark import insight_note as benchmark_insight_note
 
 router = APIRouter(tags=["generation"])
 logger = logging.getLogger(__name__)
@@ -715,6 +717,30 @@ def _get_form_mapping(session_id: str, framework_results, form, draft_hash: str)
     save_form_mapping(session_id, form.program_code, draft_hash, mapping)
     return mapping
 
+# ── 벤치마크 부족 항목 → 갭 인터뷰 질문 (초안 기준 피처, 세션 캐시) ─────────────
+def _benchmark_gap_questions(session_id: str, program_code: str, framework_results, form) -> list[dict]:
+    """초안 전문의 피처를 추출(Sonnet 5, 본문 해시 캐시)해 합격작 대비 부족 항목 질문을 만든다.
+    실패 시 빈 목록(갭 인터뷰를 막지 않음).
+    """
+    try:
+        from core.benchmark import evaluate as _bm_eval, gap_questions as _bm_questions
+        from core.rubric_scorer import extract_features as _extract
+        from services.session_store import load_benchmark_cache as _load_c, save_benchmark_cache as _save_c
+        text = "\n\n".join(f"## {r.section_title}\n{r.display_content()}" for r in framework_results)
+        h = hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+        cache = _load_c(session_id, key="benchmark_cache_framework")
+        if cache and cache.get("hash") == h:
+            features = cache["features"]
+        else:
+            features = _extract(text)
+            if features is None:
+                return []
+            _save_c(session_id, h, features, key="benchmark_cache_framework")
+        return _bm_questions(_bm_eval(features, program_code), form.sections)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("[benchmark gap questions 실패] %s/%s: %s", session_id, program_code, e)
+        return []
+
 
 @router.get("/forms/{program_code}/gap_questions")
 async def get_gap_questions(program_code: str, session_id: str | None = None):
@@ -744,6 +770,8 @@ async def get_gap_questions(program_code: str, session_id: str | None = None):
                 questions = filter_gap_questions(form.gap_questions, mapping)
             except Exception as e:  # noqa: BLE001 — 필터 실패는 변환을 막지 않음(전체 질문 반환)
                 logger.warning("[gap_questions 필터 실패] %s/%s: %s", session_id, program_code, e)
+            extra = await run_in_threadpool(_benchmark_gap_questions, session_id, program_code, framework_results, form)
+            questions = list(questions) + extra
     return {"program_code": program_code, "questions": questions}
 
 
@@ -802,6 +830,8 @@ async def convert_to_form_endpoint(session_id: str, body: ConvertToFormRequest):
                 draft_analysis=analysis,
                 progress_cb=_emit,
                 gap_answers=body.gap_answers,
+                extra_gap_questions=_benchmark_gap_questions(session_id, body.program_code, framework_results, form),
+                benchmark_note=benchmark_insight_note(body.program_code),
             )
 
         task = loop.run_in_executor(_executor, _convert_all)

@@ -1816,6 +1816,8 @@ def convert_to_form(
     draft_analysis: dict | None = None,
     progress_cb=None,
     gap_answers: dict[str, str] | None = None,
+    extra_gap_questions: list[dict] | None = None,
+    benchmark_note: str | None = None,
 ) -> list[SectionResult]:
     """프레임워크 초안 → 선택한 양식 섹션 구조로 변환.
 
@@ -1863,7 +1865,8 @@ def convert_to_form(
     # 갭 보완 인터뷰 답변 → target_sections별 주입 블록 (섹션id → ["- Q...\n  A...", ...])
     gap_notes_by_section: dict[str, list[str]] = {}
     if gap_answers:
-        for q in getattr(form, "gap_questions", []) or []:
+        # 양식 고정 질문 + 벤치마크 부족 항목 질문(bq*) 모두 반영
+        for q in list(getattr(form, "gap_questions", []) or []) + list(extra_gap_questions or []):
             ans = (gap_answers.get(str(q.get("id", ""))) or "").strip()
             if not ans:
                 continue
@@ -1935,6 +1938,9 @@ def convert_to_form(
         section_instructions = section.instructions or "(별도 지시 없음)"
         if voucher_note and section.id in _VOUCHER_LINKED_SECTION_IDS:
             section_instructions = voucher_note.strip() + "\n\n" + section_instructions
+        # 합격작 통계 인사이트 — 근거 있을 때만 서술(지어내기 금지)하도록 Solution/Scale-up/Team 섹션에 주입
+        if benchmark_note and section.category in ("Solution", "Scale-up", "Team"):
+            section_instructions = section_instructions + "\n\n" + benchmark_note.strip()
 
         section_context = _context_for(section)
         gap_notes = gap_notes_by_section.get(section.id)

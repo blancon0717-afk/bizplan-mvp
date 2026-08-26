@@ -273,6 +273,9 @@ function RecommendPageInner() {
                   >
                     {qi + 1}. {q.question}
                   </label>
+                  {q.evidence && (
+                    <p className="text-xs text-blue-600 mb-1.5">📊 {q.evidence}</p>
+                  )}
                   <textarea
                     id={`gap-${q.id}`}
                     rows={2}
